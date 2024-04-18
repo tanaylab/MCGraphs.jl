@@ -1,0 +1,11 @@
+name = "MCGraphs"
+uuid = "06cff92e-be78-4dbf-a0c5-a6e9a1d215b9"
+authors = ["Oren Ben-Kiki <oren@ben-kiki.org>"]
+version = "0.1.0"
+
+[deps]
+Daf = "1375bf9c-a47d-45a1-aad5-626dd8629d98"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+
+[compat]
+julia = "1.10"
