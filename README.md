@@ -1,25 +1,35 @@
-"""
-Generate graphs for visualizing scRNA-seq metacells data in a `Daf` data set.
+# MCGraphs - Generate graphs for visualizing scRNA-seq metacells data in a Daf data set.
+
+## Motivation
 
 The goals of this are:
 
-  - Provide a specific set of graphs allowing for investigation and visualization of the metacells data.
+  - Provide a specific set of graphs allowing for investigation and visualization of the
+    [Metacells.jl](https://tanaylab.github.io/Metacells.jl) data stored in
+    [Daf.jl](https://tanaylab.github.io/Metacells.jl).
   - Generate static PNG and/or SVG files (for publishing).
   - Generate interactive graphs in Jupyter notebook, both from Python and from R (for exploration).
   - Provide guided UI in Jupyter notebook for accessing and customizing the graphs, as well as generating standard
     dashboards of related graphs.
   - Be reasonably efficient when the data is large.
+  - Be separated from the `Metacells` package itself, so people only doing computations will not be forced to
+    bring in the plotting packages as dependencies.
+
+If/when this is mature, this should replace [MCView](https://github.com/tanaylab/MCView). Right now this is very much
+WIP. See the [v0.1.0 documentation](https://tanaylab.github.io/MCGraphs.jl/v0.1.0) for details.
+
+## Architecture
 
 The overall architecture of the solution is based on the following layered implementation:
 
 Julia code:
 
-  - [`Validations`](@ref MCGraphs.Validations) contains functions for validating user input which can be invoked by the
-    UI to ensure valid inputs.
+  - `Validations` contains functions for validating user input which can be invoked by the UI to ensure valid inputs.
   - `Renderers` contains functions that actually render graphs, given the graph data and configuration. Each basic
     graph type has its own specification for the data and for the configuration. For example, a scatter plot data
     contains x coordinates, y coordinates, and colors, while the configuration controls the graph size, point shape and
-    size, axis and graph titles, etc. We render most graphs using `Plotly`, but use `ClusterGrammer` for heatmaps.
+    size, axis and graph titles, etc. We render most graphs using [Plotly](https://plotly.com/julia/), but use
+    [ClusterGrammer2](https://github.com/ismms-himc/clustergrammer2) for heatmaps.
   - `Extractors` contains functions that extract graph data from a `Daf` data set. For example, a gene-gene plot will
     extract the expression of two genes in all metacells as the x and y coordinates, colored according to the type of
     the metacells.
@@ -28,7 +38,8 @@ Julia code:
     example, the default titles of a gene-gene plot would be different from the default titles of a differential
     expression plot, even though both will use the same scatter plot renderer.
 
-Jupyter notebook code (need to be implemented in all Jupyter languages):
+Jupyter notebook code (need to be implemented in all Jupyter languages, requiring TODO: separate `MCGraphs.py` and
+`MCGraphs.r` packages):
 
   - `Controllers` are Jupyter notebook UI elements for specifying which data to extract for a graph, or the
     configuration of a graph. For example, a data controller for a gene-gene plot will allow selecting the two genes,
@@ -49,22 +60,34 @@ dedicated controllers that write data back into the `Daf` data set, which is typ
 read-only base data set combined with a small writeable data set containing the manually entered data. This allows
 reusing the same base data set with multiple alternative manual annotations.
 
-!!! note
+While the overall architecture of the code here generalizes well, the functionality here is intentionally restricted to
+what we found useful for visualizing scRNA-seq metacells data in `Daf` data sets. Likewise, the amount of customization
+of the graphs is intentionally limited. The intent here is to make it as easy as possible for the analyst working in
+Jupyter notebook to explore the data, and generate graphs for academic papers, **not** to create yet another
+end-all-be-all graphs framework (of which there are too many already).
 
-    While the overall architecture of the code here generalizes well, the functionality here is intentionally restricted
-    to what we found useful for visualizing scRNA-seq metacells data in `Daf` data sets. Likewise, the amount of
-    customization of the graphs is intentionally limited. The intent here is to make it as easy as possible for the
-    analyst working in Jupyter notebook to explore the data, and generate graphs for academic papers, **not** to create
-    yet another end-all-be-all graphs framework (of which there are too many already).
+## Installation
 
-This is intentionally separated from the [`Metacells.jl`]((https://github.com/tanaylab/Metacells.jl) package itself,
-which is dedicated to computing the metacells.
-"""
-module MCGraphs
+Just `Pkg.add("MCGraphs")`, like installing any other Julia package. However, if being used in Jupyter notebook,
+you will probably want to install the language specific package instead:
 
-using Reexport
+TODO: To install the Python wrappers...
 
-include("validations.jl")
-@reexport using .Validations
+TODO: To install the R wrappers...
 
-end # module
+## License (MIT)
+
+Copyright © 2024 Weizmann Institute of Science
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
