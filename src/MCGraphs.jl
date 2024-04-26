@@ -17,4 +17,7 @@ using Reexport
 include("validations.jl")
 @reexport using .Validations
 
+include("renderers.jl")
+@reexport using .Renderers
+
 end # module

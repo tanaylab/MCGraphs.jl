@@ -9,3 +9,4 @@ test_prefixes(ARGS)
 abort_on_first_failure(true)
 
 include("validations.jl")
+include("renderers.jl")

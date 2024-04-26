@@ -5,11 +5,11 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>MCGraphs · MCGraphs.jl v0.1.0
+<title>Renderers · MCGraphs.jl v0.1.0
 </title>
-<meta name="title" content="MCGraphs · MCGraphs.jl v0.1.0"/>
-<meta property="og:title" content="MCGraphs · MCGraphs.jl v0.1.0"/>
-<meta property="twitter:title" content="MCGraphs · MCGraphs.jl v0.1.0"/>
+<meta name="title" content="Renderers · MCGraphs.jl v0.1.0"/>
+<meta property="og:title" content="Renderers · MCGraphs.jl v0.1.0"/>
+<meta property="twitter:title" content="Renderers · MCGraphs.jl v0.1.0"/>
 <meta name="description" content="Documentation for MCGraphs.jl v0.1.0."/>
 <meta property="og:description" content="Documentation for MCGraphs.jl v0.1.0."/>
 <meta property="twitter:description" content="Documentation for MCGraphs.jl v0.1.0."/>
@@ -48,25 +48,31 @@
 <button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)
 </button>
 <ul class="docs-menu">
-<li class="is-active">
+<li>
 <a class="tocitem" href="index.html">MCGraphs
 </a>
+</li>
+<li>
+<a class="tocitem" href="validations.html">Validations
+</a>
+</li>
+<li class="is-active">
+<a class="tocitem" href="renderers.html">Renderers
+</a>
 <ul class="internal">
-<li class="toplevel">
+<li>
+<a class="tocitem" href="#Distribution">
+<span>Distribution
+</span>
+</a>
+</li>
+<li>
 <a class="tocitem" href="#Index">
 <span>Index
 </span>
 </a>
 </li>
 </ul>
-</li>
-<li>
-<a class="tocitem" href="validations.html">Validations
-</a>
-</li>
-<li>
-<a class="tocitem" href="renderers.html">Renderers
-</a>
 </li>
 </ul>
 <div class="docs-version-selector field has-addons">
@@ -89,13 +95,13 @@
 <nav class="breadcrumb">
 <ul class="is-hidden-mobile">
 <li class="is-active">
-<a href="index.html">MCGraphs
+<a href="renderers.html">Renderers
 </a>
 </li>
 </ul>
 <ul class="is-hidden-tablet">
 <li class="is-active">
-<a href="index.html">MCGraphs
+<a href="renderers.html">Renderers
 </a>
 </li>
 </ul>
@@ -114,20 +120,20 @@
 </div>
 </header>
 <article class="content" id="documenter-page">
-<h1 id="MCGraphs">
-<a class="docs-heading-anchor" href="#MCGraphs">MCGraphs
+<h1 id="Renderers">
+<a class="docs-heading-anchor" href="#Renderers">Renderers
 </a>
-<a id="MCGraphs-1">
+<a id="Renderers-1">
 </a>
-<a class="docs-heading-anchor-permalink" href="#MCGraphs" title="Permalink">
+<a class="docs-heading-anchor-permalink" href="#Renderers" title="Permalink">
 </a>
 </h1>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.MCGraphs" href="#MCGraphs.MCGraphs">
-<code>MCGraphs.MCGraphs
+<a class="docstring-binding" id="MCGraphs.Renderers" href="#MCGraphs.Renderers">
+<code>MCGraphs.Renderers
 </code>
 </a> — 
 <span class="docstring-category">Module
@@ -135,73 +141,175 @@
 </header>
 <section>
 <div>
-<p>Generate graphs for visualizing scRNA-seq metacells data in a 
-<code>Daf
-</code> data set. The symbols from the main sub-modules are re-exported from the main 
-<code>MCGraphs
-</code> namespace. These sub-modules are:
+<p>Render interactive or static graphs.
 </p>
-<ul>
-<li>
-<a href="validations.html#MCGraphs.Validations">
-<code>Validations
-</code>
-</a> - general API allowing controllers to validate use input.
-</li>
-<li>
-<code>Renderers
-</code> - TODO: functions that actually render graphs given their data and configuration.
-</li>
-<li>
-<code>Extractors
-</code> - TODO: functions that extract graph data from metacells 
-<code>Daf
-</code> data sets.
-</li>
-<li>
-<code>Plotters
-</code> - TODO: functions that combine extraction and rendering, creating a graph in one call.
-</li>
-<li>
-<code>Controllers
-</code> - TODO: UI elements for specifying graph data or configuration.
-</li>
-<li>
-<code>Widgets
-</code> - TODO: Combine multiple controllers for generating a complete graph.
-</li>
-<li>
-<code>Menus
-</code> - TODO: A tree of menus for selecting and generating a single graph or a dashboard of multiple graphs.
-</li>
-</ul>
+<p>This provides a selection of basic graph types needed for metacells visualization. For each one, we define a 
+<code>struct
+</code> containing all the data for the graph, and a separate 
+<code>struct
+</code> containing the configuration of the graph. The rendering function takes both and either returns a JavaScript blob needed to create the interactive graph, or writes the graph to a file.
+</p>
 </div>
 </section>
 </article>
-<h1 id="Index">
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.render" href="#MCGraphs.Renderers.render">
+<code>MCGraphs.Renderers.render
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">render(
+    data::SomeGraphData,
+    configuration::SomeGraphConfiguration = SomeGraphConfiguration()
+)::Nothing
+</code>
+</pre>
+<p>Render a graph given its data and configuration. The implementation depends on the specific graph.
+</p>
+</div>
+</section>
+</article>
+<h2 id="Distribution">
+<a class="docs-heading-anchor" href="#Distribution">Distribution
+</a>
+<a id="Distribution-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Distribution" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphData" href="#MCGraphs.Renderers.DistributionGraphData">
+<code>MCGraphs.Renderers.DistributionGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef struct DistributionGraphData
+    values::AbstractVector{&lt;:AbstractFloat}
+    colors::Maybe{AbstractStringVector} = nothing
+end
+</code>
+</pre>
+<p>The data for a distribution graph. The 
+<code>values
+</code> vector is mandatory. The 
+<code>colors
+</code> vector is optional and not normally specified. It only has an effect if the 
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
+<code>DistributionGraphConfiguration
+</code>
+</a> specifies showing the points.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphConfiguration" href="#MCGraphs.Renderers.DistributionGraphConfiguration">
+<code>MCGraphs.Renderers.DistributionGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef struct DistributionGraphConfiguration &lt;: ObjectWithValidation
+    output::AbstractString = nothing
+    title::AbstractString = nothing
+    values_title::AbstractString = nothing
+    horizontal::Bool = true
+    violin::Bool = true
+    box::Bool = false
+    points::Bool = false
+end
+</code>
+</pre>
+<p>Configure a graph for showing a distribution.
+</p>
+<p>
+<code>output
+</code> can be the path of a file (ending with 
+<code>.png
+</code> or 
+<code>.svg
+</code>). If it is 
+<code>nothing
+</code> (the default), then render a JavaScript blob for an interactive graph.
+</p>
+<p>If specified, 
+<code>title
+</code> is used for the whole graph and 
+<code>values_title
+</code> is used for the values axis.
+</p>
+<p>If 
+<code>horizontal
+</code> (the default), the value would be the X axis and the density would be the Y axis; otherwise, this will be reversed.
+</p>
+<p>If 
+<code>violin
+</code>, show a violin plot. If 
+<code>curve
+</code>, show a density curve (which is just the positive side of the violin plot, so you can&#39;t specify both 
+<code>curve
+</code> and 
+<code>violin
+</code>). If 
+<code>box
+</code>, show a box plot. If 
+<code>points
+</code>, show the data points. Any other combination of these can be used as long as at least one of them is set. By defaults, shows just the 
+<code>curve
+</code> plot.
+</p>
+<p>The optional 
+<code>line_color
+</code>, 
+<code>fill_color
+</code> or 
+<code>point_color
+</code> will be automatically chosen if not specified. The 
+<code>point_color
+</code> is only used if showing the 
+<code>points
+</code>. Also, if the graph data contains a color per point, then it overrides the configuration 
+<code>point_color
+</code>.
+</p>
+</div>
+</section>
+</article>
+<h2 id="Index">
 <a class="docs-heading-anchor" href="#Index">Index
 </a>
 <a id="Index-1">
 </a>
 <a class="docs-heading-anchor-permalink" href="#Index" title="Permalink">
 </a>
-</h1>
+</h2>
 <ul>
-<li>
-<a href="index.html#MCGraphs.MCGraphs">
-<code>MCGraphs.MCGraphs
-</code>
-</a>
-</li>
 <li>
 <a href="renderers.html#MCGraphs.Renderers">
 <code>MCGraphs.Renderers
-</code>
-</a>
-</li>
-<li>
-<a href="validations.html#MCGraphs.Validations">
-<code>MCGraphs.Validations
 </code>
 </a>
 </li>
@@ -218,33 +326,15 @@
 </a>
 </li>
 <li>
-<a href="validations.html#MCGraphs.Validations.ObjectWithValidation">
-<code>MCGraphs.Validations.ObjectWithValidation
-</code>
-</a>
-</li>
-<li>
 <a href="renderers.html#MCGraphs.Renderers.render">
 <code>MCGraphs.Renderers.render
-</code>
-</a>
-</li>
-<li>
-<a href="validations.html#MCGraphs.Validations.assert_valid_object">
-<code>MCGraphs.Validations.assert_valid_object
-</code>
-</a>
-</li>
-<li>
-<a href="validations.html#MCGraphs.Validations.validate_object">
-<code>MCGraphs.Validations.validate_object
 </code>
 </a>
 </li>
 </ul>
 </article>
 <nav class="docs-footer">
-<a class="docs-footer-nextpage" href="validations.html">Validations »
+<a class="docs-footer-prevpage" href="validations.html">« Validations
 </a>
 <div class="flexbox-break">
 </div>

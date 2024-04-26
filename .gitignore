@@ -8,4 +8,5 @@ deps/.did.*
 deps/build.log
 junk*
 tags
+test/actual
 tracefile.info
