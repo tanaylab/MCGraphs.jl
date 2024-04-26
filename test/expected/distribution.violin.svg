@@ -1,0 +1,114 @@
+<svg class="main-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="700" height="500" style="" viewBox="0 0 700 500">
+<rect x="0" y="0" width="700" height="500" style="fill: rgb(255, 255, 255); fill-opacity: 1;"/>
+<defs id="id-1">
+<g class="clips">
+<clipPath id="id-2" class="plotclip">
+<rect width="600" height="390"/>
+</clipPath>
+<clipPath class="axesclip" id="id-3">
+<rect x="50" y="0" width="600" height="500"/>
+</clipPath>
+<clipPath class="axesclip" id="id-4">
+<rect x="0" y="60" width="700" height="390"/>
+</clipPath>
+<clipPath class="axesclip" id="id-5">
+<rect x="50" y="60" width="600" height="390"/>
+</clipPath>
+</g>
+<g class="gradients"/>
+</defs>
+<g class="bglayer">
+<rect class="bg" x="50" y="60" width="600" height="390" style="fill: rgb(229, 236, 246); fill-opacity: 1; stroke-width: 0;"/>
+</g>
+<g class="layer-below">
+<g class="imagelayer"/>
+<g class="shapelayer"/>
+</g>
+<g class="cartesianlayer">
+<g class="subplot xy">
+<g class="layer-subplot">
+<g class="shapelayer"/>
+<g class="imagelayer"/>
+</g>
+<g class="gridlayer">
+<g class="x"/>
+<g class="y">
+<path class="ygrid crisp" transform="translate(0,324.23)" d="M50,0h600" style="stroke: rgb(255, 255, 255); stroke-opacity: 1; stroke-width: 1px;"/>
+<path class="ygrid crisp" transform="translate(0,255)" d="M50,0h600" style="stroke: rgb(255, 255, 255); stroke-opacity: 1; stroke-width: 1px;"/>
+<path class="ygrid crisp" transform="translate(0,185.76999999999998)" d="M50,0h600" style="stroke: rgb(255, 255, 255); stroke-opacity: 1; stroke-width: 1px;"/>
+<path class="ygrid crisp" transform="translate(0,116.53999999999999)" d="M50,0h600" style="stroke: rgb(255, 255, 255); stroke-opacity: 1; stroke-width: 1px;"/>
+</g>
+</g>
+<g class="zerolinelayer">
+<path class="yzl zl crisp" transform="translate(0,393.46)" d="M50,0h600" style="stroke: rgb(255, 255, 255); stroke-opacity: 1; stroke-width: 2px;"/>
+</g>
+<path class="xlines-below"/>
+<path class="ylines-below"/>
+<g class="overlines-below"/>
+<g class="xaxislayer-below"/>
+<g class="yaxislayer-below"/>
+<g class="overaxes-below"/>
+<g class="plot" transform="translate(50,60)" clip-path="url('#id-2')">
+<g class="violinlayer mlayer">
+<g class="trace violins" style="opacity: 1;">
+<path class="violin" d="M314.85,370.5Q322.57,358.59 327.46,352.95C332.75,346.85 339.11,341.07 345.73,335.4C352.81,329.34 360.89,323.62 368.79,317.85C376.91,311.92 385.73,306.23 393.84,300.3C401.73,294.53 409.91,288.86 416.82,282.75C423.19,277.12 429.4,271.38 434,265.2C438.15,259.62 441.53,253.68 443.7,247.65C445.75,241.96 446.47,235.98 447,230.1C447.53,224.28 446.99,218.4 446.9,212.55C446.81,206.7 446.44,200.85 446.44,195C446.44,189.15 446.81,183.3 446.9,177.45C446.99,171.6 447.53,165.72 447,159.9C446.47,154.02 445.75,148.04 443.7,142.35C441.53,136.32 438.15,130.38 434,124.8C429.4,118.62 423.19,112.88 416.82,107.25C409.91,101.14 401.73,95.47 393.84,89.7C385.73,83.77 376.91,78.08 368.79,72.15C360.89,66.38 352.81,60.66 345.73,54.6C339.11,48.93 332.75,43.15 327.46,37.05Q322.57,31.41 314.85,19.5L285.15,19.5Q277.43,31.41 272.54,37.05C267.25,43.15 260.89,48.93 254.27,54.6C247.19,60.66 239.11,66.38 231.21,72.15C223.09,78.08 214.27,83.77 206.16,89.7C198.27,95.47 190.09,101.14 183.18,107.25C176.81,112.88 170.6,118.62 166,124.8C161.85,130.38 158.47,136.32 156.3,142.35C154.25,148.04 153.53,154.02 153,159.9C152.47,165.72 153.01,171.6 153.1,177.45C153.19,183.3 153.56,189.15 153.56,195C153.56,200.85 153.19,206.7 153.1,212.55C153.01,218.4 152.47,224.28 153,230.1C153.53,235.98 154.25,241.96 156.3,247.65C158.47,253.68 161.85,259.62 166,265.2C170.6,271.38 176.81,277.12 183.18,282.75C190.09,288.86 198.27,294.53 206.16,300.3C214.27,306.23 223.09,311.92 231.21,317.85C239.11,323.62 247.19,329.34 254.27,335.4C260.89,341.07 267.25,346.85 272.54,352.95Q277.43,358.59 285.15,370.5Z" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(99, 110, 250); stroke-opacity: 1; fill: rgb(99, 110, 250); fill-opacity: 0.5;"/>
+<g class="points"/>
+</g>
+</g>
+</g>
+<g class="overplot"/>
+<path class="xlines-above crisp" d="M0,0" style="fill: none;"/>
+<path class="ylines-above crisp" d="M0,0" style="fill: none;"/>
+<g class="overlines-above"/>
+<g class="xaxislayer-above">
+<g class="xtick">
+<text text-anchor="middle" x="0" y="463" transform="translate(350,0)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(42, 63, 95); fill-opacity: 1; white-space: pre;">
+trace 0</text>
+</g>
+</g>
+<g class="yaxislayer-above">
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,393.46)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(42, 63, 95); fill-opacity: 1; white-space: pre;">
+0</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,324.23)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(42, 63, 95); fill-opacity: 1; white-space: pre;">
+1</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,255)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(42, 63, 95); fill-opacity: 1; white-space: pre;">
+2</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,185.76999999999998)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(42, 63, 95); fill-opacity: 1; white-space: pre;">
+3</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,116.53999999999999)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(42, 63, 95); fill-opacity: 1; white-space: pre;">
+4</text>
+</g>
+</g>
+<g class="overaxes-above"/>
+</g>
+</g>
+<g class="polarlayer"/>
+<g class="ternarylayer"/>
+<g class="geolayer"/>
+<g class="funnelarealayer"/>
+<g class="pielayer"/>
+<g class="treemaplayer"/>
+<g class="sunburstlayer"/>
+<g class="glimages"/>
+<defs id="id-6">
+<g class="clips"/>
+</defs>
+<g class="layer-above">
+<g class="imagelayer"/>
+<g class="shapelayer"/>
+</g>
+<g class="infolayer">
+<g class="g-gtitle"/>
+<g class="g-xtitle"/>
+<g class="g-ytitle"/>
+</g>
+</svg>

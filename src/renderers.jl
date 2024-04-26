@@ -130,7 +130,8 @@ function render(
     elseif kind == BOX | POINTS
         @assert false
     elseif kind == VIOLIN
-        @assert false
+        trace = violin(; y = data.values)
+        plt = plot(trace)  # NOJET
     elseif kind == VIOLIN | POINTS
         @assert false
     elseif kind == VIOLIN | BOX | POINTS

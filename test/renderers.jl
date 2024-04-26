@@ -78,6 +78,16 @@ nested_test("renderers") do
             """) render(data)
         end
 
+        nested_test("violin") do
+            configuration = DistributionGraphConfiguration(;
+                output = "actual/distribution.violin.svg",
+                curve = false,
+                violin = true,
+            )
+            render(data, configuration)
+            return test_svg("distribution.violin.svg")
+        end
+
         nested_test("box") do
             configuration =
                 DistributionGraphConfiguration(; output = "actual/distribution.box.svg", curve = false, box = true)
