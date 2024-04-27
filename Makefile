@@ -47,7 +47,7 @@ deps/.did.aqua: *.toml src/*.jl test/*.toml test/*.jl deps/aqua.sh deps/aqua.jl
 .PHONY: test
 test: tracefile.info
 
-tracefile.info: *.toml src/*.jl test/*.toml test/*.jl deps/test.sh deps/test.jl deps/clean.sh
+tracefile.info: *.toml src/*.jl test/*.toml test/*.jl test/expected/* deps/test.sh deps/test.jl deps/clean.sh
 	deps/test.sh
 
 .PHONY: line_coverage

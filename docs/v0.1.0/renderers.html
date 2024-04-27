@@ -61,6 +61,12 @@
 </a>
 <ul class="internal">
 <li>
+<a class="tocitem" href="#Orientations">
+<span>Orientations
+</span>
+</a>
+</li>
+<li>
 <a class="tocitem" href="#Distribution">
 <span>Distribution
 </span>
@@ -177,6 +183,40 @@
 </div>
 </section>
 </article>
+<h2 id="Orientations">
+<a class="docs-heading-anchor" href="#Orientations">Orientations
+</a>
+<a id="Orientations-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Orientations" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.ValuesAxis" href="#MCGraphs.Renderers.ValuesAxis">
+<code>MCGraphs.Renderers.ValuesAxis
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>The axis of the values in a distribution or bar graph:
+</p>
+<p>
+<code>HorizontalValues
+</code> - The values are the X axis
+</p>
+<p>
+<code>VerticalValues
+</code> - The values are the Y axis (the default).
+</p>
+</div>
+</section>
+</article>
 <h2 id="Distribution">
 <a class="docs-heading-anchor" href="#Distribution">Distribution
 </a>
@@ -200,20 +240,11 @@
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef struct DistributionGraphData
-    values::AbstractVector{&lt;:AbstractFloat}
-    colors::Maybe{AbstractStringVector} = nothing
+    values::AbstractVector{&lt;:Real}
 end
 </code>
 </pre>
-<p>The data for a distribution graph. The 
-<code>values
-</code> vector is mandatory. The 
-<code>colors
-</code> vector is optional and not normally specified. It only has an effect if the 
-<a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
-<code>DistributionGraphConfiguration
-</code>
-</a> specifies showing the points.
+<p>The data for a distribution graph, which is simply a vector of values.
 </p>
 </div>
 </section>
@@ -234,12 +265,13 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef struct DistributionGraphConfiguration &lt;: ObjectWithValidation
     output::AbstractString = nothing
-    title::AbstractString = nothing
-    values_title::AbstractString = nothing
-    horizontal::Bool = true
-    violin::Bool = true
-    box::Bool = false
-    points::Bool = false
+    graph_title::AbstractString = &quot;&quot;
+    values_title::AbstractString = &quot;&quot;
+    values_axis::ValuesAxis = VerticalValues,
+    show_curve::Bool = false
+    show_violin::Bool = false
+    show_box::Bool = true
+    show_outliers::Bool = false
 end
 </code>
 </pre>
@@ -256,44 +288,34 @@ end
 </code> (the default), then render a JavaScript blob for an interactive graph.
 </p>
 <p>If specified, 
-<code>title
+<code>graph_title
 </code> is used for the whole graph and 
 <code>values_title
-</code> is used for the values axis.
+</code> is used for the values axis. The
 </p>
 <p>If 
 <code>horizontal
 </code> (the default), the value would be the X axis and the density would be the Y axis; otherwise, this will be reversed.
 </p>
 <p>If 
-<code>violin
-</code>, show a violin plot. If 
-<code>curve
+<code>show_curve
 </code>, show a density curve (which is just the positive side of the violin plot, so you can&#39;t specify both 
-<code>curve
+<code>show_curve
 </code> and 
-<code>violin
+<code>show_violin
 </code>). If 
-<code>box
-</code>, show a box plot. If 
-<code>points
-</code>, show the data points. Any other combination of these can be used as long as at least one of them is set. By defaults, shows just the 
-<code>curve
-</code> plot.
+<code>show_violin
+</code>, show a violin plot. If 
+<code>show_box
+</code>, show a box plot. Any other combination of these can be used as long as at least one of them is (explicitly) set.
+</p>
+<p>If 
+<code>show_outliers
+</code>, also show the extreme (outlier) points.
 </p>
 <p>The optional 
-<code>line_color
-</code>, 
-<code>fill_color
-</code> or 
-<code>point_color
-</code> will be automatically chosen if not specified. The 
-<code>point_color
-</code> is only used if showing the 
-<code>points
-</code>. Also, if the graph data contains a color per point, then it overrides the configuration 
-<code>point_color
-</code>.
+<code>color
+</code> will be chosen automatically if not specified.
 </p>
 </div>
 </section>
@@ -322,6 +344,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
 <code>MCGraphs.Renderers.DistributionGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.ValuesAxis">
+<code>MCGraphs.Renderers.ValuesAxis
 </code>
 </a>
 </li>

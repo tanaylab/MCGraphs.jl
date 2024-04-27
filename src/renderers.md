@@ -5,6 +5,12 @@ MCGraphs.Renderers
 MCGraphs.Renderers.render
 ```
 
+## Orientations
+
+```@docs
+MCGraphs.Renderers.ValuesAxis
+```
+
 ## Distribution
 
 ```@docs
