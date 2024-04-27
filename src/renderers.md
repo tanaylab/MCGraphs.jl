@@ -3,11 +3,7 @@
 ```@docs
 MCGraphs.Renderers
 MCGraphs.Renderers.render
-```
-
-## Orientations
-
-```@docs
+MCGraphs.Renderers.GraphConfiguration
 MCGraphs.Renderers.ValuesAxis
 ```
 

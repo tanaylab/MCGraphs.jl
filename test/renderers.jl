@@ -73,15 +73,16 @@ nested_test("renderers") do
                 #! format: on
             ],
         )
+        graph_configuration = GraphConfiguration(; output = "actual.svg")
 
         nested_test("!shape") do
-            configuration = DistributionGraphConfiguration(; output = "actual.svg")
+            configuration = DistributionGraphConfiguration(; graph = graph_configuration)
             @test_throws "must specify at least one of: show_curve, show_violin, show_box" render(data, configuration)
         end
 
         nested_test("curve&violin") do
             configuration =
-                DistributionGraphConfiguration(; output = "actual.svg", show_curve = true, show_violin = true)
+                DistributionGraphConfiguration(; graph = graph_configuration, show_curve = true, show_violin = true)
             @test_throws "can't specify both of: show_curve, show_violin" render(data, configuration)
         end
 
@@ -91,8 +92,20 @@ nested_test("renderers") do
         end
 
         nested_test("box") do
-            configuration =
-                DistributionGraphConfiguration(; output = "actual.svg", show_box = true, values_title = "box")
+            configuration = DistributionGraphConfiguration(;
+                graph = graph_configuration,
+                show_box = true,
+                values_title = "box",
+                trace_title = "trace",
+            )
+
+            nested_test("size") do
+                configuration.graph.title = "size"
+                configuration.graph.height = 96 * 2
+                configuration.graph.width = 96 * 2
+                render(data, configuration)
+                return test_svg("distribution.box.size.svg")
+            end
 
             nested_test("()") do
                 render(data, configuration)
@@ -100,21 +113,21 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.graph_title = "horizontal"
+                configuration.graph.title = "horizontal"
                 configuration.values_axis = HorizontalValues
                 render(data, configuration)
                 return test_svg("distribution.box.horizontal.svg")
             end
 
             nested_test("outliers") do
-                configuration.graph_title = "outliers"
+                configuration.graph.title = "outliers"
                 configuration.show_outliers = true
                 render(data, configuration)
                 return test_svg("distribution.box.outliers.svg")
             end
 
             nested_test("color") do
-                configuration.graph_title = "color"
+                configuration.graph.title = "color"
                 configuration.color = "red"
                 render(data, configuration)
                 return test_svg("distribution.box.color.svg")
@@ -122,8 +135,11 @@ nested_test("renderers") do
         end
 
         nested_test("violin") do
-            configuration =
-                DistributionGraphConfiguration(; output = "actual.svg", show_violin = true, values_title = "violin")
+            configuration = DistributionGraphConfiguration(;
+                graph = graph_configuration,
+                show_violin = true,
+                values_title = "violin",
+            )
 
             nested_test("()") do
                 render(data, configuration)
@@ -131,28 +147,28 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.graph_title = "horizontal"
+                configuration.graph.title = "horizontal"
                 configuration.values_axis = HorizontalValues
                 render(data, configuration)
                 return test_svg("distribution.violin.horizontal.svg")
             end
 
             nested_test("outliers") do
-                configuration.graph_title = "outliers"
+                configuration.graph.title = "outliers"
                 configuration.show_outliers = true
                 render(data, configuration)
                 return test_svg("distribution.violin.outliers.svg")
             end
 
             nested_test("color") do
-                configuration.graph_title = "color"
+                configuration.graph.title = "color"
                 configuration.color = "red"
                 render(data, configuration)
                 return test_svg("distribution.violin.color.svg")
             end
 
             nested_test("box") do
-                configuration.graph_title = "box"
+                configuration.graph.title = "box"
                 configuration.show_box = true
                 render(data, configuration)
                 return test_svg("distribution.violin.box.svg")
@@ -161,7 +177,7 @@ nested_test("renderers") do
 
         nested_test("curve") do
             configuration =
-                DistributionGraphConfiguration(; output = "actual.svg", show_curve = true, values_title = "curve")
+                DistributionGraphConfiguration(; graph = graph_configuration, show_curve = true, values_title = "curve")
 
             nested_test("()") do
                 render(data, configuration)
@@ -169,28 +185,28 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.graph_title = "horizontal"
+                configuration.graph.title = "horizontal"
                 configuration.values_axis = HorizontalValues
                 render(data, configuration)
                 return test_svg("distribution.curve.horizontal.svg")
             end
 
             nested_test("outliers") do
-                configuration.graph_title = "outliers"
+                configuration.graph.title = "outliers"
                 configuration.show_outliers = true
                 render(data, configuration)
                 return test_svg("distribution.curve.outliers.svg")
             end
 
             nested_test("color") do
-                configuration.graph_title = "color"
+                configuration.graph.title = "color"
                 configuration.color = "red"
                 render(data, configuration)
                 return test_svg("distribution.curve.color.svg")
             end
 
             nested_test("box") do
-                configuration.graph_title = "box"
+                configuration.graph.title = "box"
                 configuration.show_box = true
                 render(data, configuration)
                 return test_svg("distribution.curve.box.svg")

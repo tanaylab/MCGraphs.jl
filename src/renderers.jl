@@ -10,8 +10,9 @@ module Renderers
 
 export DistributionGraphConfiguration
 export DistributionGraphData
-export ValuesAxis
+export GraphConfiguration
 export HorizontalValues
+export ValuesAxis
 export VerticalValues
 export render
 
@@ -30,9 +31,31 @@ The axis of the values in a distribution or bar graph:
 @enum ValuesAxis HorizontalValues VerticalValues
 
 """
-    @kwdef struct DistributionGraphConfiguration <: ObjectWithValidation
-        output::AbstractString = nothing
-        graph_title::AbstractString = ""
+    @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
+        file::Maybe{AbstractString} = nothing
+        title::AbstractString = ""
+        width::Maybe{Int} = nothing
+        height::Maybe{Int} = nothing
+    end
+
+Generic configuration that applies to any graph.
+
+If `file` is specified, it is the path of a file (ending with `.png` or `.svg`).
+
+If specified, `graph_title` is used for the whole graph.
+
+The optional `graph_width` and `graph_height` are in pixels, that is, 1/96 of an inch.
+"""
+@kwdef mutable struct GraphConfiguration <: ObjectWithValidation
+    output::Maybe{AbstractString} = nothing
+    title::AbstractString = ""
+    width::Maybe{Int} = nothing
+    height::Maybe{Int} = nothing
+end
+
+"""
+    @kwdef mutable struct DistributionGraphConfiguration <: ObjectWithValidation
+        graph::GraphConfiguration = GraphConfiguration()
         values_title::AbstractString = ""
         values_axis::ValuesAxis = VerticalValues,
         show_curve::Bool = false
@@ -43,27 +66,22 @@ The axis of the values in a distribution or bar graph:
 
 Configure a graph for showing a distribution.
 
-`output` can be the path of a file (ending with `.png` or `.svg`). If it is `nothing` (the default), then render a
-JavaScript blob for an interactive graph.
+The optional `color` will be chosen automatically if not specified.
 
-If specified, `graph_title` is used for the whole graph and `values_title` is used for the values axis. The
-
-If `horizontal` (the default), the value would be the X axis and the density would be the Y axis; otherwise, this will
-be reversed.
+If specified, `values_title` is used for the values axis. The `values_axis` controls whether this would be the X or Y
+axis. The `trace_title` is given to the other axis.
 
 If `show_curve`, show a density curve (which is just the positive side of the violin plot, so you can't specify both
 `show_curve` and `show_violin`). If `show_violin`, show a violin plot. If `show_box`, show a box plot. Any other
 combination of these can be used as long as at least one of them is (explicitly) set.
 
 If `show_outliers`, also show the extreme (outlier) points.
-
-The optional `color` will be chosen automatically if not specified.
 """
 @kwdef mutable struct DistributionGraphConfiguration <: ObjectWithValidation
-    output::Maybe{AbstractString} = nothing
-    graph_title::AbstractString = ""
-    values_title::AbstractString = ""
+    graph::GraphConfiguration = GraphConfiguration()
     color::Maybe{AbstractString} = nothing
+    trace_title::AbstractString = ""
+    values_title::AbstractString = ""
     values_axis::ValuesAxis = VerticalValues
     show_curve::Bool = false
     show_violin::Bool = false
@@ -125,41 +143,18 @@ function render(
         (configuration.show_curve ? CURVE : 0)
     )
     points = configuration.show_outliers ? "outliers" : false
-    orientation = configuration.values_axis == HorizontalValues ? "h" : "v"
 
     if kind == BOX
         if configuration.values_axis == HorizontalValues
-            trace = box(;
-                x = data.values,
-                boxpoints = points,
-                name = configuration.values_title,
-                marker_color = configuration.color,
-            )
+            trace = box(; x = data.values, boxpoints = points, name = "", marker_color = configuration.color)
         else
-            trace = box(;
-                y = data.values,
-                boxpoints = points,
-                name = configuration.values_title,
-                marker_color = configuration.color,
-            )
+            trace = box(; y = data.values, boxpoints = points, name = "", marker_color = configuration.color)
         end
     elseif kind == VIOLIN
         if configuration.values_axis == HorizontalValues
-            trace = violin(;
-                x = data.values,
-                points = points,
-                orientation = orientation,
-                name = configuration.values_title,
-                marker_color = configuration.color,
-            )
+            trace = violin(; x = data.values, points = points, name = "", marker_color = configuration.color)
         else
-            trace = violin(;
-                y = data.values,
-                points = points,
-                orientation = orientation,
-                name = configuration.values_title,
-                marker_color = configuration.color,
-            )
+            trace = violin(; y = data.values, points = points, name = "", marker_color = configuration.color)
         end
     elseif kind == VIOLIN | BOX
         if configuration.values_axis == HorizontalValues
@@ -167,8 +162,7 @@ function render(
                 x = data.values,
                 box_visible = true,
                 points = points,
-                orientation = orientation,
-                name = configuration.values_title,
+                name = "",
                 marker_color = configuration.color,
             )
         else
@@ -176,8 +170,7 @@ function render(
                 y = data.values,
                 box_visible = true,
                 points = points,
-                orientation = orientation,
-                name = configuration.values_title,
+                name = "",
                 marker_color = configuration.color,
             )
         end
@@ -187,8 +180,7 @@ function render(
                 x = data.values,
                 side = "positive",
                 points = points,
-                orientation = orientation,
-                name = configuration.values_title,
+                name = "",
                 marker_color = configuration.color,
             )
         else
@@ -196,8 +188,7 @@ function render(
                 y = data.values,
                 side = "positive",
                 points = points,
-                orientation = orientation,
-                name = configuration.values_title,
+                name = "",
                 marker_color = configuration.color,
             )
         end
@@ -208,8 +199,7 @@ function render(
                 side = "positive",
                 box_visible = true,
                 points = points,
-                orientation = orientation,
-                name = configuration.values_title,
+                name = "",
                 marker_color = configuration.color,
             )
         else
@@ -218,22 +208,36 @@ function render(
                 side = "positive",
                 box_visible = true,
                 points = points,
-                orientation = orientation,
-                name = configuration.values_title,
+                name = "",
                 marker_color = configuration.color,
             )
         end
     else
         @assert false
     end
-    plt = plot(trace, Layout(; title = configuration.graph_title))  # NOJET
 
-    if configuration.output !== nothing
-        savefig(plt, configuration.output)  # NOJET
+    if configuration.values_axis == VerticalValues
+        xaxis_title = configuration.trace_title
+        yaxis_title = configuration.values_title
+    elseif configuration.values_axis == HorizontalValues
+        xaxis_title = configuration.values_title
+        yaxis_title = configuration.trace_title
     else
         @assert false
     end
+    plt = plot(trace, Layout(; title = configuration.graph.title, xaxis_title = xaxis_title, yaxis_title = yaxis_title))  # NOJET
 
+    write_graph(plt, configuration.graph)
+
+    return nothing
+end
+
+function write_graph(plt, graph_configuration::GraphConfiguration)::Nothing
+    if graph_configuration.output !== nothing
+        savefig(plt, graph_configuration.output; height = graph_configuration.height, width = graph_configuration.width)  # NOJET
+    else
+        @assert false
+    end
     return nothing
 end
 

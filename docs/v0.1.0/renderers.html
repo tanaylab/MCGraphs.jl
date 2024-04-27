@@ -61,12 +61,6 @@
 </a>
 <ul class="internal">
 <li>
-<a class="tocitem" href="#Orientations">
-<span>Orientations
-</span>
-</a>
-</li>
-<li>
 <a class="tocitem" href="#Distribution">
 <span>Distribution
 </span>
@@ -183,14 +177,51 @@
 </div>
 </section>
 </article>
-<h2 id="Orientations">
-<a class="docs-heading-anchor" href="#Orientations">Orientations
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a id="Orientations-1">
-</a>
-<a class="docs-heading-anchor-permalink" href="#Orientations" title="Permalink">
-</a>
-</h2>
+<a class="docstring-binding" id="MCGraphs.Renderers.GraphConfiguration" href="#MCGraphs.Renderers.GraphConfiguration">
+<code>MCGraphs.Renderers.GraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct GraphConfiguration &lt;: ObjectWithValidation
+    file::Maybe{AbstractString} = nothing
+    title::AbstractString = &quot;&quot;
+    width::Maybe{Int} = nothing
+    height::Maybe{Int} = nothing
+end
+</code>
+</pre>
+<p>Generic configuration that applies to any graph.
+</p>
+<p>If 
+<code>file
+</code> is specified, it is the path of a file (ending with 
+<code>.png
+</code> or 
+<code>.svg
+</code>).
+</p>
+<p>If specified, 
+<code>graph_title
+</code> is used for the whole graph.
+</p>
+<p>The optional 
+<code>graph_width
+</code> and 
+<code>graph_height
+</code> are in pixels, that is, 1/96 of an inch.
+</p>
+</div>
+</section>
+</article>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
@@ -263,9 +294,8 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef struct DistributionGraphConfiguration &lt;: ObjectWithValidation
-    output::AbstractString = nothing
-    graph_title::AbstractString = &quot;&quot;
+<code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: ObjectWithValidation
+    graph::GraphConfiguration = GraphConfiguration()
     values_title::AbstractString = &quot;&quot;
     values_axis::ValuesAxis = VerticalValues,
     show_curve::Bool = false
@@ -277,25 +307,17 @@ end
 </pre>
 <p>Configure a graph for showing a distribution.
 </p>
-<p>
-<code>output
-</code> can be the path of a file (ending with 
-<code>.png
-</code> or 
-<code>.svg
-</code>). If it is 
-<code>nothing
-</code> (the default), then render a JavaScript blob for an interactive graph.
+<p>The optional 
+<code>color
+</code> will be chosen automatically if not specified.
 </p>
 <p>If specified, 
-<code>graph_title
-</code> is used for the whole graph and 
 <code>values_title
-</code> is used for the values axis. The
-</p>
-<p>If 
-<code>horizontal
-</code> (the default), the value would be the X axis and the density would be the Y axis; otherwise, this will be reversed.
+</code> is used for the values axis. The 
+<code>values_axis
+</code> controls whether this would be the X or Y axis. The 
+<code>trace_title
+</code> is given to the other axis.
 </p>
 <p>If 
 <code>show_curve
@@ -312,10 +334,6 @@ end
 <p>If 
 <code>show_outliers
 </code>, also show the extreme (outlier) points.
-</p>
-<p>The optional 
-<code>color
-</code> will be chosen automatically if not specified.
 </p>
 </div>
 </section>
@@ -344,6 +362,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
 <code>MCGraphs.Renderers.DistributionGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
+<code>MCGraphs.Renderers.GraphConfiguration
 </code>
 </a>
 </li>
