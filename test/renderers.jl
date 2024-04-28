@@ -73,17 +73,51 @@ nested_test("renderers") do
                 #! format: on
             ],
         )
-        graph_configuration = GraphConfiguration(; output = "actual.svg")
+        graph_configuration = GraphConfiguration(; output_file = "actual.svg")
 
         nested_test("!shape") do
+            configuration = DistributionGraphConfiguration(;
+                graph = graph_configuration,
+                shape = DistributionShapeConfiguration(; show_box = false),
+            )
+            @test_throws "must specify at least one of: shape.show_box, shape.show_violin, shape.show_curve" render(
+                data,
+                configuration,
+            )
+        end
+
+        nested_test("!output_file") do
+            @test_throws "must specify at least one of: graph.output_file, graph.show_interactive" render(data)
+        end
+
+        nested_test("!width") do
             configuration = DistributionGraphConfiguration(; graph = graph_configuration)
-            @test_throws "must specify at least one of: show_curve, show_violin, show_box" render(data, configuration)
+            configuration.graph.width = 0
+            @test_throws "non-positive graph width: 0" render(data, configuration)
+        end
+
+        nested_test("!height") do
+            configuration = DistributionGraphConfiguration(; graph = graph_configuration)
+            configuration.graph.height = 0
+            @test_throws "non-positive graph height: 0" render(data, configuration)
+        end
+
+        nested_test("!range") do
+            configuration = DistributionGraphConfiguration(; graph = graph_configuration)
+            configuration.values_axis.minimum = 1
+            configuration.values_axis.maximum = 0
+            @test_throws dedent("""
+                values axis maximum: 0
+                is not larger than minimum: 1
+            """) render(data, configuration)
         end
 
         nested_test("curve&violin") do
-            configuration =
-                DistributionGraphConfiguration(; graph = graph_configuration, show_curve = true, show_violin = true)
-            @test_throws "can't specify both of: show_curve, show_violin" render(data, configuration)
+            configuration = DistributionGraphConfiguration(;
+                graph = graph_configuration,
+                shape = DistributionShapeConfiguration(; show_curve = true, show_violin = true),
+            )
+            @test_throws "can't specify both of: shape.show_violin, shape.show_curve" render(data, configuration)
         end
 
         nested_test("!values") do
@@ -92,11 +126,10 @@ nested_test("renderers") do
         end
 
         nested_test("box") do
+            data.title = "trace"
             configuration = DistributionGraphConfiguration(;
                 graph = graph_configuration,
-                show_box = true,
-                values_title = "box",
-                trace_title = "trace",
+                values_axis = AxisConfiguration(; title = "box"),
             )
 
             nested_test("size") do
@@ -114,14 +147,14 @@ nested_test("renderers") do
 
             nested_test("horizontal") do
                 configuration.graph.title = "horizontal"
-                configuration.values_axis = HorizontalValues
+                configuration.orientation = HorizontalValues
                 render(data, configuration)
                 return test_svg("distribution.box.horizontal.svg")
             end
 
             nested_test("outliers") do
                 configuration.graph.title = "outliers"
-                configuration.show_outliers = true
+                configuration.shape.show_outliers = true
                 render(data, configuration)
                 return test_svg("distribution.box.outliers.svg")
             end
@@ -137,8 +170,8 @@ nested_test("renderers") do
         nested_test("violin") do
             configuration = DistributionGraphConfiguration(;
                 graph = graph_configuration,
-                show_violin = true,
-                values_title = "violin",
+                shape = DistributionShapeConfiguration(; show_box = false, show_violin = true),
+                values_axis = AxisConfiguration(; title = "violin"),
             )
 
             nested_test("()") do
@@ -148,14 +181,14 @@ nested_test("renderers") do
 
             nested_test("horizontal") do
                 configuration.graph.title = "horizontal"
-                configuration.values_axis = HorizontalValues
+                configuration.orientation = HorizontalValues
                 render(data, configuration)
                 return test_svg("distribution.violin.horizontal.svg")
             end
 
             nested_test("outliers") do
                 configuration.graph.title = "outliers"
-                configuration.show_outliers = true
+                configuration.shape.show_outliers = true
                 render(data, configuration)
                 return test_svg("distribution.violin.outliers.svg")
             end
@@ -169,15 +202,18 @@ nested_test("renderers") do
 
             nested_test("box") do
                 configuration.graph.title = "box"
-                configuration.show_box = true
+                configuration.shape.show_box = true
                 render(data, configuration)
                 return test_svg("distribution.violin.box.svg")
             end
         end
 
         nested_test("curve") do
-            configuration =
-                DistributionGraphConfiguration(; graph = graph_configuration, show_curve = true, values_title = "curve")
+            configuration = DistributionGraphConfiguration(;
+                graph = graph_configuration,
+                shape = DistributionShapeConfiguration(; show_box = false, show_curve = true),
+                values_axis = AxisConfiguration(; title = "curve"),
+            )
 
             nested_test("()") do
                 render(data, configuration)
@@ -186,14 +222,14 @@ nested_test("renderers") do
 
             nested_test("horizontal") do
                 configuration.graph.title = "horizontal"
-                configuration.values_axis = HorizontalValues
+                configuration.orientation = HorizontalValues
                 render(data, configuration)
                 return test_svg("distribution.curve.horizontal.svg")
             end
 
             nested_test("outliers") do
                 configuration.graph.title = "outliers"
-                configuration.show_outliers = true
+                configuration.shape.show_outliers = true
                 render(data, configuration)
                 return test_svg("distribution.curve.outliers.svg")
             end
@@ -207,7 +243,7 @@ nested_test("renderers") do
 
             nested_test("box") do
                 configuration.graph.title = "box"
-                configuration.show_box = true
+                configuration.shape.show_box = true
                 render(data, configuration)
                 return test_svg("distribution.curve.box.svg")
             end

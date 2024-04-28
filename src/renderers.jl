@@ -8,11 +8,13 @@ a file.
 """
 module Renderers
 
+export AxisConfiguration
 export DistributionGraphConfiguration
 export DistributionGraphData
+export DistributionShapeConfiguration
 export GraphConfiguration
 export HorizontalValues
-export ValuesAxis
+export ValuesOrientation
 export VerticalValues
 export render
 
@@ -22,13 +24,13 @@ using Daf.GenericTypes
 using PlotlyJS
 
 """
-The axis of the values in a distribution or bar graph:
+The orientation of the values axis in a distribution or bar graph:
 
 `HorizontalValues` - The values are the X axis
 
 `VerticalValues` - The values are the Y axis (the default).
 """
-@enum ValuesAxis HorizontalValues VerticalValues
+@enum ValuesOrientation HorizontalValues VerticalValues
 
 """
     @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
@@ -40,82 +42,159 @@ The axis of the values in a distribution or bar graph:
 
 Generic configuration that applies to any graph.
 
-If `file` is specified, it is the path of a file (ending with `.png` or `.svg`).
+If `output_file` is specified, it is the path of a file to write the graph into (ending with `.png` or `.svg`). If
+`show_interactive` is set, then generate an interactive graph (in a Jupyter notebook). One of `output_file` and
+`show_interactive` must be specified.
 
 If specified, `graph_title` is used for the whole graph.
 
 The optional `graph_width` and `graph_height` are in pixels, that is, 1/96 of an inch.
 """
 @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
-    output::Maybe{AbstractString} = nothing
+    output_file::Maybe{AbstractString} = nothing
+    show_interactive::Bool = false
     title::AbstractString = ""
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
 end
 
+function Validations.validate_object(configuration::GraphConfiguration)::Maybe{AbstractString}
+    if configuration.output_file === nothing && !configuration.show_interactive
+        return "must specify at least one of: graph.output_file, graph.show_interactive"
+    end
+
+    width = configuration.width
+    if width !== nothing && width <= 0
+        return "non-positive graph width: $(width)"
+    end
+
+    height = configuration.height
+    if height !== nothing && height <= 0
+        return "non-positive graph height: $(height)"
+    end
+
+    return nothing
+end
+
+"""
+    @kwdef mutable struct AxisConfiguration <: ObjectWithValidation
+        title::AbstractString = ""
+        minimum::Maybe{Real} = nothing
+        maximum::Maybe{Real} = nothing
+    end
+
+Generic configuration for a graph axis. Everything is optional; by default, the `title` is empty and the `minimum` and
+`maximum` are computed automatically from the data.
+"""
+@kwdef mutable struct AxisConfiguration <: ObjectWithValidation
+    title::AbstractString = ""
+    minimum::Maybe{Real} = nothing
+    maximum::Maybe{Real} = nothing
+end
+
+function Validations.validate_object(name::AbstractString, configuration::AxisConfiguration)::Maybe{AbstractString}
+    minimum = configuration.minimum
+    maximum = configuration.maximum
+
+    if minimum !== nothing && maximum !== nothing && maximum <= minimum
+        return "$(name) axis maximum: $(maximum)\n" * "is not larger than minimum: $(minimum)"
+    end
+
+    return nothing
+end
+
+"""
+    @kwdef mutable struct DistributionShapeConfiguration <: ObjectWithValidation
+        show_box::Bool = true
+        show_violin::Bool = false
+        show_curve::Bool = false
+        show_outliers::Bool = false
+    end
+
+Configure the shape of a distribution graph.
+
+If `show_box`, show a box graph.
+
+If `show_violin`, show a violin graph.
+
+If `show_curve`, show a density curve.
+
+You can combine the above; however, a density curve is just the positive side of a violin graph, so you can't combine
+the two.
+
+In addition to the (combination) of the above, if `show_outliers`, also show the extreme (outlier) points.
+"""
+@kwdef mutable struct DistributionShapeConfiguration <: ObjectWithValidation
+    show_box::Bool = true
+    show_violin::Bool = false
+    show_curve::Bool = false
+    show_outliers::Bool = false
+end
+
+function Validations.validate_object(configuration::DistributionShapeConfiguration)::Maybe{AbstractString}
+    if !configuration.show_box && !configuration.show_violin && !configuration.show_curve
+        return "must specify at least one of: shape.show_box, shape.show_violin, shape.show_curve"
+    end
+
+    if configuration.show_violin && configuration.show_curve
+        return "can't specify both of: shape.show_violin, shape.show_curve"
+    end
+
+    return nothing
+end
+
 """
     @kwdef mutable struct DistributionGraphConfiguration <: ObjectWithValidation
         graph::GraphConfiguration = GraphConfiguration()
-        values_title::AbstractString = ""
-        values_axis::ValuesAxis = VerticalValues,
-        show_curve::Bool = false
-        show_violin::Bool = false
-        show_box::Bool = true
-        show_outliers::Bool = false
+        shape::DistributionShapeConfiguration = DistributionShapeConfiguration()
+        orientation::ValuesOrientation = VerticalValues
+        color::Maybe{AbstractString} = nothing
+        values_axis::AxisConfiguration = AxisConfiguration()
+        trace_title::Maybe{AbstractString} = nothing
     end
 
 Configure a graph for showing a distribution.
 
 The optional `color` will be chosen automatically if not specified.
-
-If specified, `values_title` is used for the values axis. The `values_axis` controls whether this would be the X or Y
-axis. The `trace_title` is given to the other axis.
-
-If `show_curve`, show a density curve (which is just the positive side of the violin plot, so you can't specify both
-`show_curve` and `show_violin`). If `show_violin`, show a violin plot. If `show_box`, show a box plot. Any other
-combination of these can be used as long as at least one of them is (explicitly) set.
-
-If `show_outliers`, also show the extreme (outlier) points.
 """
 @kwdef mutable struct DistributionGraphConfiguration <: ObjectWithValidation
     graph::GraphConfiguration = GraphConfiguration()
+    shape::DistributionShapeConfiguration = DistributionShapeConfiguration()
+    orientation::ValuesOrientation = VerticalValues
     color::Maybe{AbstractString} = nothing
-    trace_title::AbstractString = ""
-    values_title::AbstractString = ""
-    values_axis::ValuesAxis = VerticalValues
-    show_curve::Bool = false
-    show_violin::Bool = false
-    show_box::Bool = false
-    show_outliers::Bool = false
+    values_axis::AxisConfiguration = AxisConfiguration()
 end
 
 function Validations.validate_object(configuration::DistributionGraphConfiguration)::Maybe{AbstractString}
-    if !configuration.show_curve && !configuration.show_violin && !configuration.show_box
-        return "must specify at least one of: show_curve, show_violin, show_box"
-    elseif configuration.show_curve && configuration.show_violin
-        return "can't specify both of: show_curve, show_violin"
-    else
-        return nothing
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object(configuration.shape)
     end
+    if message === nothing
+        message = validate_object("values", configuration.values_axis)
+    end
+    return message
 end
 
 """
-    @kwdef struct DistributionGraphData
+    @kwdef mutable struct DistributionGraphData
         values::AbstractVector{<:Real}
+        title::Maybe{AbstractString} = nothing
     end
 
 The data for a distribution graph, which is simply a vector of values.
 """
 @kwdef mutable struct DistributionGraphData <: ObjectWithValidation
     values::AbstractVector{<:Real}
+    title::Maybe{AbstractString} = nothing
 end
 
 function Validations.validate_object(data::DistributionGraphData)::Maybe{AbstractString}
     if length(data.values) == 0
         return "empty values vector"
-    else
-        return nothing
     end
+
+    return nothing
 end
 
 const BOX = 1
@@ -137,27 +216,27 @@ function render(
     assert_valid_object(data)
     assert_valid_object(configuration)
 
-    kind = (
-        (configuration.show_box ? BOX : 0) |
-        (configuration.show_violin ? VIOLIN : 0) |
-        (configuration.show_curve ? CURVE : 0)
+    shape = (
+        (configuration.shape.show_box ? BOX : 0) |
+        (configuration.shape.show_violin ? VIOLIN : 0) |
+        (configuration.shape.show_curve ? CURVE : 0)
     )
-    points = configuration.show_outliers ? "outliers" : false
+    points = configuration.shape.show_outliers ? "outliers" : false
 
-    if kind == BOX
-        if configuration.values_axis == HorizontalValues
+    if shape == BOX
+        if configuration.orientation == HorizontalValues
             trace = box(; x = data.values, boxpoints = points, name = "", marker_color = configuration.color)
         else
             trace = box(; y = data.values, boxpoints = points, name = "", marker_color = configuration.color)
         end
-    elseif kind == VIOLIN
-        if configuration.values_axis == HorizontalValues
+    elseif shape == VIOLIN
+        if configuration.orientation == HorizontalValues
             trace = violin(; x = data.values, points = points, name = "", marker_color = configuration.color)
         else
             trace = violin(; y = data.values, points = points, name = "", marker_color = configuration.color)
         end
-    elseif kind == VIOLIN | BOX
-        if configuration.values_axis == HorizontalValues
+    elseif shape == VIOLIN | BOX
+        if configuration.orientation == HorizontalValues
             trace = violin(;
                 x = data.values,
                 box_visible = true,
@@ -174,8 +253,8 @@ function render(
                 marker_color = configuration.color,
             )
         end
-    elseif kind == CURVE
-        if configuration.values_axis == HorizontalValues
+    elseif shape == CURVE
+        if configuration.orientation == HorizontalValues
             trace = violin(;
                 x = data.values,
                 side = "positive",
@@ -192,8 +271,8 @@ function render(
                 marker_color = configuration.color,
             )
         end
-    elseif kind == CURVE | BOX
-        if configuration.values_axis == HorizontalValues
+    elseif shape == CURVE | BOX
+        if configuration.orientation == HorizontalValues
             trace = violin(;
                 x = data.values,
                 side = "positive",
@@ -216,25 +295,27 @@ function render(
         @assert false
     end
 
-    if configuration.values_axis == VerticalValues
-        xaxis_title = configuration.trace_title
-        yaxis_title = configuration.values_title
-    elseif configuration.values_axis == HorizontalValues
-        xaxis_title = configuration.values_title
-        yaxis_title = configuration.trace_title
+    if configuration.orientation == VerticalValues
+        xaxis_title = data.title
+        yaxis_title = configuration.values_axis.title
+    elseif configuration.orientation == HorizontalValues
+        xaxis_title = configuration.values_axis.title
+        yaxis_title = data.title
     else
         @assert false
     end
-    plt = plot(trace, Layout(; title = configuration.graph.title, xaxis_title = xaxis_title, yaxis_title = yaxis_title))  # NOJET
+    figure =  # NOJET
+        plot(trace, Layout(; title = configuration.graph.title, xaxis_title = xaxis_title, yaxis_title = yaxis_title))
 
-    write_graph(plt, configuration.graph)
+    write_graph(figure, configuration.graph)
 
     return nothing
 end
 
-function write_graph(plt, graph_configuration::GraphConfiguration)::Nothing
-    if graph_configuration.output !== nothing
-        savefig(plt, graph_configuration.output; height = graph_configuration.height, width = graph_configuration.width)  # NOJET
+function write_graph(figure, configuration::GraphConfiguration)::Nothing
+    output_file = configuration.output_file
+    if output_file !== nothing
+        savefig(figure, output_file; height = configuration.height, width = configuration.width)  # NOJET
     else
         @assert false
     end

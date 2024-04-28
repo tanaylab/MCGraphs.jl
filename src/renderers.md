@@ -4,14 +4,16 @@
 MCGraphs.Renderers
 MCGraphs.Renderers.render
 MCGraphs.Renderers.GraphConfiguration
-MCGraphs.Renderers.ValuesAxis
+MCGraphs.Renderers.AxisConfiguration
+MCGraphs.Renderers.ValuesOrientation
 ```
 
 ## Distribution
 
 ```@docs
-MCGraphs.Renderers.DistributionGraphData
 MCGraphs.Renderers.DistributionGraphConfiguration
+MCGraphs.Renderers.DistributionShapeConfiguration
+MCGraphs.Renderers.DistributionGraphData
 ```
 
 ## Index

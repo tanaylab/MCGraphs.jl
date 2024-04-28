@@ -202,12 +202,18 @@ end
 <p>Generic configuration that applies to any graph.
 </p>
 <p>If 
-<code>file
-</code> is specified, it is the path of a file (ending with 
+<code>output_file
+</code> is specified, it is the path of a file to write the graph into (ending with 
 <code>.png
 </code> or 
 <code>.svg
-</code>).
+</code>). If 
+<code>show_interactive
+</code> is set, then generate an interactive graph (in a Jupyter notebook). One of 
+<code>output_file
+</code> and 
+<code>show_interactive
+</code> must be specified.
 </p>
 <p>If specified, 
 <code>graph_title
@@ -226,8 +232,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.ValuesAxis" href="#MCGraphs.Renderers.ValuesAxis">
-<code>MCGraphs.Renderers.ValuesAxis
+<a class="docstring-binding" id="MCGraphs.Renderers.AxisConfiguration" href="#MCGraphs.Renderers.AxisConfiguration">
+<code>MCGraphs.Renderers.AxisConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -235,7 +241,39 @@ end
 </header>
 <section>
 <div>
-<p>The axis of the values in a distribution or bar graph:
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct AxisConfiguration &lt;: ObjectWithValidation
+    title::AbstractString = &quot;&quot;
+    minimum::Maybe{Real} = nothing
+    maximum::Maybe{Real} = nothing
+end
+</code>
+</pre>
+<p>Generic configuration for a graph axis. Everything is optional; by default, the 
+<code>title
+</code> is empty and the 
+<code>minimum
+</code> and 
+<code>maximum
+</code> are computed automatically from the data.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.ValuesOrientation" href="#MCGraphs.Renderers.ValuesOrientation">
+<code>MCGraphs.Renderers.ValuesOrientation
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>The orientation of the values axis in a distribution or bar graph:
 </p>
 <p>
 <code>HorizontalValues
@@ -260,30 +298,6 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphData" href="#MCGraphs.Renderers.DistributionGraphData">
-<code>MCGraphs.Renderers.DistributionGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef struct DistributionGraphData
-    values::AbstractVector{&lt;:Real}
-end
-</code>
-</pre>
-<p>The data for a distribution graph, which is simply a vector of values.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphConfiguration" href="#MCGraphs.Renderers.DistributionGraphConfiguration">
 <code>MCGraphs.Renderers.DistributionGraphConfiguration
 </code>
@@ -296,12 +310,11 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: ObjectWithValidation
     graph::GraphConfiguration = GraphConfiguration()
-    values_title::AbstractString = &quot;&quot;
-    values_axis::ValuesAxis = VerticalValues,
-    show_curve::Bool = false
-    show_violin::Bool = false
-    show_box::Bool = true
-    show_outliers::Bool = false
+    shape::DistributionShapeConfiguration = DistributionShapeConfiguration()
+    orientation::ValuesOrientation = VerticalValues
+    color::Maybe{AbstractString} = nothing
+    values_axis::AxisConfiguration = AxisConfiguration()
+    trace_title::Maybe{AbstractString} = nothing
 end
 </code>
 </pre>
@@ -311,29 +324,75 @@ end
 <code>color
 </code> will be chosen automatically if not specified.
 </p>
-<p>If specified, 
-<code>values_title
-</code> is used for the values axis. The 
-<code>values_axis
-</code> controls whether this would be the X or Y axis. The 
-<code>trace_title
-</code> is given to the other axis.
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionShapeConfiguration" href="#MCGraphs.Renderers.DistributionShapeConfiguration">
+<code>MCGraphs.Renderers.DistributionShapeConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct DistributionShapeConfiguration &lt;: ObjectWithValidation
+    show_box::Bool = true
+    show_violin::Bool = false
+    show_curve::Bool = false
+    show_outliers::Bool = false
+end
+</code>
+</pre>
+<p>Configure the shape of a distribution graph.
 </p>
 <p>If 
-<code>show_curve
-</code>, show a density curve (which is just the positive side of the violin plot, so you can&#39;t specify both 
-<code>show_curve
-</code> and 
-<code>show_violin
-</code>). If 
-<code>show_violin
-</code>, show a violin plot. If 
 <code>show_box
-</code>, show a box plot. Any other combination of these can be used as long as at least one of them is (explicitly) set.
+</code>, show a box graph.
 </p>
 <p>If 
+<code>show_violin
+</code>, show a violin graph.
+</p>
+<p>If 
+<code>show_curve
+</code>, show a density curve.
+</p>
+<p>You can combine the above; however, a density curve is just the positive side of a violin graph, so you can&#39;t combine the two.
+</p>
+<p>In addition to the (combination) of the above, if 
 <code>show_outliers
 </code>, also show the extreme (outlier) points.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphData" href="#MCGraphs.Renderers.DistributionGraphData">
+<code>MCGraphs.Renderers.DistributionGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct DistributionGraphData
+    values::AbstractVector{&lt;:Real}
+    title::Maybe{AbstractString} = nothing
+end
+</code>
+</pre>
+<p>The data for a distribution graph, which is simply a vector of values.
 </p>
 </div>
 </section>
@@ -354,6 +413,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.AxisConfiguration">
+<code>MCGraphs.Renderers.AxisConfiguration
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
 <code>MCGraphs.Renderers.DistributionGraphConfiguration
 </code>
@@ -366,14 +431,20 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.DistributionShapeConfiguration">
+<code>MCGraphs.Renderers.DistributionShapeConfiguration
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
 <code>MCGraphs.Renderers.GraphConfiguration
 </code>
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.ValuesAxis">
-<code>MCGraphs.Renderers.ValuesAxis
+<a href="renderers.html#MCGraphs.Renderers.ValuesOrientation">
+<code>MCGraphs.Renderers.ValuesOrientation
 </code>
 </a>
 </li>
