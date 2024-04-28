@@ -49,6 +49,10 @@ If `output_file` is specified, it is the path of a file to write the graph into 
 If specified, `graph_title` is used for the whole graph.
 
 The optional `graph_width` and `graph_height` are in pixels, that is, 1/96 of an inch.
+
+If set (the default), a `grid` is shown across the graph area.
+
+The default `template` is "simple_white" which is the cleanest.
 """
 @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
     output_file::Maybe{AbstractString} = nothing
@@ -56,6 +60,7 @@ The optional `graph_width` and `graph_height` are in pixels, that is, 1/96 of an
     title::AbstractString = ""
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
+    template::AbstractString = "simple_white"
 end
 
 function Validations.validate_object(configuration::GraphConfiguration)::Maybe{AbstractString}
@@ -305,7 +310,15 @@ function render(
         @assert false
     end
     figure =  # NOJET
-        plot(trace, Layout(; title = configuration.graph.title, xaxis_title = xaxis_title, yaxis_title = yaxis_title))
+        plot(
+            trace,
+            Layout(;
+                title = configuration.graph.title,
+                template = configuration.graph.template,
+                xaxis_title = xaxis_title,
+                yaxis_title = yaxis_title,
+            ),
+        )
 
     write_graph(figure, configuration.graph)
 
