@@ -193,7 +193,7 @@
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct GraphConfiguration &lt;: ObjectWithValidation
     file::Maybe{AbstractString} = nothing
-    title::AbstractString = &quot;&quot;
+    title::Maybe{AbstractString} = nothing
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
 end
@@ -231,7 +231,11 @@ end
 </p>
 <p>The default 
 <code>template
-</code> is &quot;simple_white&quot; which is the cleanest.
+</code> is &quot;simple
+<em>white&quot; which is the cleanest. The `show
+</em>grid
+<code>and
+</code>show_ticks` can be used to disable the grid and/or ticks for an even cleaner (but less informative) look.
 </p>
 </div>
 </section>
@@ -251,7 +255,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct AxisConfiguration &lt;: ObjectWithValidation
-    title::AbstractString = &quot;&quot;
+    title::Maybe{AbstractString} = nothing
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
 end
@@ -322,15 +326,28 @@ end
     orientation::ValuesOrientation = VerticalValues
     color::Maybe{AbstractString} = nothing
     values_axis::AxisConfiguration = AxisConfiguration()
-    trace_title::Maybe{AbstractString} = nothing
 end
 </code>
 </pre>
-<p>Configure a graph for showing a distribution.
+<p>Configure a graph for showing a distribution (with 
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
+<code>DistributionGraphData
+</code>
+</a>) or several distributions (with 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a>). Setting 
+<code>show_legend
+</code> will show an explicit legend as well.
 </p>
 <p>The optional 
 <code>color
-</code> will be chosen automatically if not specified.
+</code> will be chosen automatically if not specified. When showing multiple distributions, it is also possible to specify the color of each one in the 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a>.
 </p>
 </div>
 </section>
@@ -400,7 +417,39 @@ end
 end
 </code>
 </pre>
-<p>The data for a distribution graph, which is simply a vector of values.
+<p>The data for a distribution graph.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionsGraphData" href="#MCGraphs.Renderers.DistributionsGraphData">
+<code>MCGraphs.Renderers.DistributionsGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct DistributionsGraphData &lt;: ObjectWithValidation
+    values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
+    titles::Maybe{AbstractStringVector} = nothing
+    colors::Maybe{AbstractStringVector} = nothing
+end
+</code>
+</pre>
+<p>The data for a multiple distributions graph. If specified, the 
+<code>titles
+</code> and/or the 
+<code>colors
+</code> vectors must contain the same number of elements as the number of vectors in the 
+<code>values
+</code>.
 </p>
 </div>
 </section>
@@ -441,6 +490,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionShapeConfiguration">
 <code>MCGraphs.Renderers.DistributionShapeConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>MCGraphs.Renderers.DistributionsGraphData
 </code>
 </a>
 </li>

@@ -59,12 +59,7 @@
 <path class="xlines-above crisp" d="M0,0" style="fill: none;"/>
 <path class="ylines-above crisp" d="M0,0" style="fill: none;"/>
 <g class="overlines-above"/>
-<g class="xaxislayer-above">
-<g class="xtick">
-<text text-anchor="middle" x="0" y="463" transform="translate(350,0)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-</text>
-</g>
-</g>
+<g class="xaxislayer-above"/>
 <g class="yaxislayer-above">
 <g class="ytick">
 <text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,411.34)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">

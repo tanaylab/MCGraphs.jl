@@ -49,7 +49,7 @@
 <g class="plot" transform="translate(50,60)" clip-path="url('#id-2')">
 <g class="boxlayer mlayer">
 <g class="trace boxes" style="opacity: 1;">
-<path class="box" d="M153,262.25H447M153,321.29H447V242.57H153ZM300,321.29V370.5M300,242.57V19.5M226.5,370.5H373.5M226.5,19.5H373.5" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(255, 0, 0); stroke-opacity: 1; fill: rgb(255, 0, 0); fill-opacity: 0.5;"/>
+<path class="box" d="M153,262.25H447M153,321.29H447V242.57H153ZM300,321.29V370.5M300,242.57V19.5M226.5,370.5H373.5M226.5,19.5H373.5" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(31, 119, 180); stroke-opacity: 1; fill: rgb(31, 119, 180); fill-opacity: 0.5;"/>
 </g>
 </g>
 </g>
@@ -63,32 +63,7 @@
 trace</text>
 </g>
 </g>
-<g class="yaxislayer-above">
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,440.34)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-40</text>
-</g>
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,374.73)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-60</text>
-</g>
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,309.13)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-80</text>
-</g>
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,243.52)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-100</text>
-</g>
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,177.91)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-120</text>
-</g>
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,112.3)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-140</text>
-</g>
-</g>
+<g class="yaxislayer-above"/>
 <g class="overaxes-above"/>
 </g>
 </g>
@@ -113,8 +88,8 @@ trace</text>
 color</text>
 </g>
 <g class="g-xtitle"/>
-<g class="g-ytitle" transform="translate(2,0)">
-<text class="ytitle" transform="rotate(-90,12,255)" x="12" y="255" text-anchor="middle" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 14px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
+<g class="g-ytitle">
+<text class="ytitle" transform="rotate(-90,19,255)" x="19" y="255" text-anchor="middle" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 14px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
 box</text>
 </g>
 </g>

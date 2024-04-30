@@ -57,7 +57,7 @@
 <g class="xaxislayer-above">
 <g class="xtick">
 <text text-anchor="middle" x="0" y="155" transform="translate(96,0)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-</text>
+trace</text>
 </g>
 </g>
 <g class="yaxislayer-above">
@@ -97,10 +97,7 @@
 <text class="gtitle" x="96" y="30" text-anchor="middle" dy="0em" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 17px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
 size</text>
 </g>
-<g class="g-xtitle" transform="translate(0,-5)">
-<text class="xtitle" x="96" y="194" text-anchor="middle" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 14px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
-trace</text>
-</g>
+<g class="g-xtitle"/>
 <g class="g-ytitle" transform="translate(2,0)">
 <text class="ytitle" transform="rotate(-90,12,101)" x="12" y="101" text-anchor="middle" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 14px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
 box</text>

@@ -30,14 +30,7 @@
 </g>
 <g class="gridlayer">
 <g class="x"/>
-<g class="y">
-<path class="ygrid crisp" transform="translate(0,440.34)" d="M50,0h600" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="ygrid crisp" transform="translate(0,374.73)" d="M50,0h600" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="ygrid crisp" transform="translate(0,309.13)" d="M50,0h600" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="ygrid crisp" transform="translate(0,243.52)" d="M50,0h600" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="ygrid crisp" transform="translate(0,177.91)" d="M50,0h600" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="ygrid crisp" transform="translate(0,112.3)" d="M50,0h600" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-</g>
+<g class="y"/>
 </g>
 <g class="zerolinelayer"/>
 <path class="xlines-below"/>
@@ -49,7 +42,7 @@
 <g class="plot" transform="translate(50,60)" clip-path="url('#id-2')">
 <g class="boxlayer mlayer">
 <g class="trace boxes" style="opacity: 1;">
-<path class="box" d="M153,262.25H447M153,321.29H447V242.57H153ZM300,321.29V370.5M300,242.57V19.5M226.5,370.5H373.5M226.5,19.5H373.5" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(255, 0, 0); stroke-opacity: 1; fill: rgb(255, 0, 0); fill-opacity: 0.5;"/>
+<path class="box" d="M153,262.25H447M153,321.29H447V242.57H153ZM300,321.29V370.5M300,242.57V19.5M226.5,370.5H373.5M226.5,19.5H373.5" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(31, 119, 180); stroke-opacity: 1; fill: rgb(31, 119, 180); fill-opacity: 0.5;"/>
 </g>
 </g>
 </g>

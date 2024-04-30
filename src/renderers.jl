@@ -11,6 +11,7 @@ module Renderers
 export AxisConfiguration
 export DistributionGraphConfiguration
 export DistributionGraphData
+export DistributionsGraphData
 export DistributionShapeConfiguration
 export GraphConfiguration
 export HorizontalValues
@@ -35,7 +36,7 @@ The orientation of the values axis in a distribution or bar graph:
 """
     @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
         file::Maybe{AbstractString} = nothing
-        title::AbstractString = ""
+        title::Maybe{AbstractString} = nothing
         width::Maybe{Int} = nothing
         height::Maybe{Int} = nothing
     end
@@ -52,15 +53,18 @@ The optional `graph_width` and `graph_height` are in pixels, that is, 1/96 of an
 
 If set (the default), a `grid` is shown across the graph area.
 
-The default `template` is "simple_white" which is the cleanest.
+The default `template` is "simple_white" which is the cleanest. The `show_grid` and `show_ticks` can be used to disable
+the grid and/or ticks for an even cleaner (but less informative) look.
 """
 @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
     output_file::Maybe{AbstractString} = nothing
     show_interactive::Bool = false
-    title::AbstractString = ""
+    title::Maybe{AbstractString} = nothing
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
     template::AbstractString = "simple_white"
+    show_grid::Bool = true
+    show_ticks::Bool = true
 end
 
 function Validations.validate_object(configuration::GraphConfiguration)::Maybe{AbstractString}
@@ -83,7 +87,7 @@ end
 
 """
     @kwdef mutable struct AxisConfiguration <: ObjectWithValidation
-        title::AbstractString = ""
+        title::Maybe{AbstractString} = nothing
         minimum::Maybe{Real} = nothing
         maximum::Maybe{Real} = nothing
     end
@@ -92,7 +96,7 @@ Generic configuration for a graph axis. Everything is optional; by default, the 
 `maximum` are computed automatically from the data.
 """
 @kwdef mutable struct AxisConfiguration <: ObjectWithValidation
-    title::AbstractString = ""
+    title::Maybe{AbstractString} = nothing
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
 end
@@ -155,12 +159,13 @@ end
         orientation::ValuesOrientation = VerticalValues
         color::Maybe{AbstractString} = nothing
         values_axis::AxisConfiguration = AxisConfiguration()
-        trace_title::Maybe{AbstractString} = nothing
     end
 
-Configure a graph for showing a distribution.
+Configure a graph for showing a distribution (with [`DistributionGraphData`](@ref)) or several distributions (with
+[`DistributionsGraphData`](@ref)). Setting `show_legend` will show an explicit legend as well.
 
-The optional `color` will be chosen automatically if not specified.
+The optional `color` will be chosen automatically if not specified. When showing multiple distributions, it is also
+possible to specify the color of each one in the [`DistributionsGraphData`](@ref).
 """
 @kwdef mutable struct DistributionGraphConfiguration <: ObjectWithValidation
     graph::GraphConfiguration = GraphConfiguration()
@@ -168,6 +173,7 @@ The optional `color` will be chosen automatically if not specified.
     orientation::ValuesOrientation = VerticalValues
     color::Maybe{AbstractString} = nothing
     values_axis::AxisConfiguration = AxisConfiguration()
+    show_legend::Bool = false
 end
 
 function Validations.validate_object(configuration::DistributionGraphConfiguration)::Maybe{AbstractString}
@@ -187,7 +193,7 @@ end
         title::Maybe{AbstractString} = nothing
     end
 
-The data for a distribution graph, which is simply a vector of values.
+The data for a distribution graph.
 """
 @kwdef mutable struct DistributionGraphData <: ObjectWithValidation
     values::AbstractVector{<:Real}
@@ -197,6 +203,46 @@ end
 function Validations.validate_object(data::DistributionGraphData)::Maybe{AbstractString}
     if length(data.values) == 0
         return "empty values vector"
+    end
+
+    return nothing
+end
+
+"""
+    @kwdef mutable struct DistributionsGraphData <: ObjectWithValidation
+        values::AbstractVector{<:AbstractVector{<:Real}}
+        titles::Maybe{AbstractStringVector} = nothing
+        colors::Maybe{AbstractStringVector} = nothing
+    end
+
+The data for a multiple distributions graph. If specified, the `titles` and/or the `colors` vectors must contain the
+same number of elements as the number of vectors in the `values`.
+"""
+@kwdef mutable struct DistributionsGraphData <: ObjectWithValidation
+    values::AbstractVector{<:AbstractVector{<:Real}}
+    titles::Maybe{AbstractStringVector} = nothing
+    colors::Maybe{AbstractStringVector} = nothing
+end
+
+function Validations.validate_object(data::DistributionsGraphData)::Maybe{AbstractString}
+    if length(data.values) == 0
+        return "empty values vector"
+    end
+
+    for (index, values) in enumerate(data.values)
+        if length(values) == 0
+            return "empty values#$(index) vector"
+        end
+    end
+
+    if data.titles !== nothing && length(data.titles) != length(data.values)
+        return "number of titles: $(length(data.titles))\n" *
+               "is different from number of values: $(length(data.values))"
+    end
+
+    if data.colors !== nothing && length(data.colors) != length(data.values)
+        return "number of colors: $(length(data.colors))\n" *
+               "is different from number of values: $(length(data.values))"
     end
 
     return nothing
@@ -220,109 +266,113 @@ function render(
 )::Nothing
     assert_valid_object(data)
     assert_valid_object(configuration)
+    trace = distribution_trace(  # NOJET
+        data.values,
+        data.title === nothing ? "Trace" : data.title,
+        configuration.color,
+        configuration,
+    )
+    layout = distribution_layout(data.title !== nothing, configuration)
+    figure = plot(trace, layout)
+    write_graph(figure, configuration.graph)
+    return nothing
+end
 
+function render(
+    data::DistributionsGraphData,
+    configuration::DistributionGraphConfiguration = DistributionGraphConfiguration(),
+)::Nothing
+    assert_valid_object(data)
+    assert_valid_object(configuration)
+
+    n_values = length(data.values)
+    traces = [
+        distribution_trace(
+            data.values[index],
+            data.titles === nothing ? "Trace $(index)" : data.titles[index],
+            data.colors === nothing ? configuration.color : data.colors[index],
+            configuration,
+        ) for index in 1:n_values
+    ]
+    layout = distribution_layout(data.titles !== nothing, configuration)
+    figure = plot(traces, layout)
+    write_graph(figure, configuration.graph)
+    return nothing
+end
+
+function distribution_trace(
+    values::AbstractVector{<:Real},
+    name::AbstractString,
+    color::Maybe{AbstractString},
+    configuration::DistributionGraphConfiguration,
+)::GenericTrace
     shape = (
         (configuration.shape.show_box ? BOX : 0) |
         (configuration.shape.show_violin ? VIOLIN : 0) |
         (configuration.shape.show_curve ? CURVE : 0)
     )
-    points = configuration.shape.show_outliers ? "outliers" : false
-
-    if shape == BOX
-        if configuration.orientation == HorizontalValues
-            trace = box(; x = data.values, boxpoints = points, name = "", marker_color = configuration.color)
-        else
-            trace = box(; y = data.values, boxpoints = points, name = "", marker_color = configuration.color)
-        end
-    elseif shape == VIOLIN
-        if configuration.orientation == HorizontalValues
-            trace = violin(; x = data.values, points = points, name = "", marker_color = configuration.color)
-        else
-            trace = violin(; y = data.values, points = points, name = "", marker_color = configuration.color)
-        end
-    elseif shape == VIOLIN | BOX
-        if configuration.orientation == HorizontalValues
-            trace = violin(;
-                x = data.values,
-                box_visible = true,
-                points = points,
-                name = "",
-                marker_color = configuration.color,
-            )
-        else
-            trace = violin(;
-                y = data.values,
-                box_visible = true,
-                points = points,
-                name = "",
-                marker_color = configuration.color,
-            )
-        end
-    elseif shape == CURVE
-        if configuration.orientation == HorizontalValues
-            trace = violin(;
-                x = data.values,
-                side = "positive",
-                points = points,
-                name = "",
-                marker_color = configuration.color,
-            )
-        else
-            trace = violin(;
-                y = data.values,
-                side = "positive",
-                points = points,
-                name = "",
-                marker_color = configuration.color,
-            )
-        end
-    elseif shape == CURVE | BOX
-        if configuration.orientation == HorizontalValues
-            trace = violin(;
-                x = data.values,
-                side = "positive",
-                box_visible = true,
-                points = points,
-                name = "",
-                marker_color = configuration.color,
-            )
-        else
-            trace = violin(;
-                y = data.values,
-                side = "positive",
-                box_visible = true,
-                points = points,
-                name = "",
-                marker_color = configuration.color,
-            )
-        end
-    else
-        @assert false
-    end
 
     if configuration.orientation == VerticalValues
-        xaxis_title = data.title
-        yaxis_title = configuration.values_axis.title
+        y = values
+        x = nothing
     elseif configuration.orientation == HorizontalValues
-        xaxis_title = configuration.values_axis.title
-        yaxis_title = data.title
+        x = values
+        y = nothing
     else
         @assert false
     end
-    figure =  # NOJET
-        plot(
-            trace,
-            Layout(;
-                title = configuration.graph.title,
-                template = configuration.graph.template,
-                xaxis_title = xaxis_title,
-                yaxis_title = yaxis_title,
-            ),
-        )
 
-    write_graph(figure, configuration.graph)
+    points = configuration.shape.show_outliers ? "outliers" : false
+    tracer = shape == BOX ? box : violin
 
-    return nothing
+    return tracer(;
+        x = x,
+        y = y,
+        side = configuration.shape.show_curve ? "positive" : nothing,
+        box_visible = configuration.shape.show_box,
+        boxpoints = points,
+        points = points,
+        name = name,
+        marker_color = color,
+    )
+end
+
+function distribution_layout(has_tick_titles::Bool, configuration::DistributionGraphConfiguration)::Layout
+    if configuration.orientation == VerticalValues
+        xaxis_showticklabels = has_tick_titles
+        xaxis_showgrid = false
+        xaxis_title = nothing
+        xaxis_range = (nothing, nothing)
+        yaxis_showticklabels = configuration.graph.show_ticks
+        yaxis_showgrid = configuration.graph.show_grid
+        yaxis_title = configuration.values_axis.title
+        yaxis_range = (configuration.values_axis.minimum, configuration.values_axis.maximum)
+    elseif configuration.orientation == HorizontalValues
+        xaxis_showticklabels = configuration.graph.show_ticks
+        xaxis_showgrid = configuration.graph.show_grid
+        xaxis_title = configuration.values_axis.title
+        xaxis_range = (configuration.values_axis.minimum, configuration.values_axis.maximum)
+        yaxis_showticklabels = has_tick_titles
+        yaxis_showgrid = false
+        yaxis_title = nothing
+        yaxis_range = (nothing, nothing)
+    else
+        @assert false
+    end
+
+    return Layout(;  # NOJET
+        title = configuration.graph.title,
+        template = configuration.graph.template,
+        xaxis_showgrid = xaxis_showgrid,
+        xaxis_showticklabels = xaxis_showticklabels,
+        xaxis_title = xaxis_title,
+        xaxis_range = xaxis_range,
+        yaxis_showgrid = yaxis_showgrid,
+        yaxis_showticklabels = yaxis_showticklabels,
+        yaxis_title = yaxis_title,
+        yaxis_range = yaxis_range,
+        showlegend = configuration.show_legend,
+    )
 end
 
 function write_graph(figure, configuration::GraphConfiguration)::Nothing

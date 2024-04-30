@@ -14,6 +14,7 @@ MCGraphs.Renderers.ValuesOrientation
 MCGraphs.Renderers.DistributionGraphConfiguration
 MCGraphs.Renderers.DistributionShapeConfiguration
 MCGraphs.Renderers.DistributionGraphData
+MCGraphs.Renderers.DistributionsGraphData
 ```
 
 ## Index
