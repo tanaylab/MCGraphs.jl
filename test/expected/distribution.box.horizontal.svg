@@ -83,12 +83,7 @@
 140</text>
 </g>
 </g>
-<g class="yaxislayer-above">
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,255)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
-trace</text>
-</g>
-</g>
+<g class="yaxislayer-above"/>
 <g class="overaxes-above"/>
 </g>
 </g>
@@ -108,14 +103,8 @@ trace</text>
 <g class="shapelayer"/>
 </g>
 <g class="infolayer">
-<g class="g-gtitle">
-<text class="gtitle" x="350" y="30" text-anchor="middle" dy="0em" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 17px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
-horizontal</text>
-</g>
-<g class="g-xtitle" transform="translate(0,-5)">
-<text class="xtitle" x="350" y="502" text-anchor="middle" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 14px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
-box</text>
-</g>
+<g class="g-gtitle"/>
+<g class="g-xtitle"/>
 <g class="g-ytitle"/>
 </g>
 </svg>

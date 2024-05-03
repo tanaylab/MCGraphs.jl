@@ -1,16 +1,34 @@
 ID_REGEX = r"""id="([^"]*)"""
+TRACE_REGEX = r"""trace([-_a-zA-Z]*[0-9][-_a-zA-Z0-9]*)"""
+CLASS_REGEX = r"""class="([-_a-zA-Z]*[0-9][-_a-zA-Z0-9]*)"""
 
-function normalize_svg(svg::AbstractString)::AbstractString
+function normalize_ids(
+    svg::AbstractString,
+    replace_prefix::AbstractString,
+    capture_regex::Regex,
+    match_prefix::AbstractString,
+)::AbstractString
     seen = Dict{AbstractString, Int}()
-    for id in eachmatch(ID_REGEX, svg)
+    for id in eachmatch(capture_regex, svg)
         index = get(seen, id.captures[1], nothing)
         if index === nothing
             index = length(seen) + 1
             seen[id.captures[1]] = index
         end
     end
-    replacements = sort([id => "id-$(index)" for (id, index) in seen]; by = (pair) -> length(pair.first), rev = true)
-    svg = replace(svg, " style=\"\"" => "", ">" => ">\n", replacements...)
+    replacements = sort(
+        ["$(match_prefix)$(id)" => "$(replace_prefix)$(index)" for (id, index) in seen];
+        by = (pair) -> length(pair.first),
+        rev = true,
+    )
+    return replace(svg, replacements...)
+end
+
+function normalize_svg(svg::AbstractString)::AbstractString
+    svg = normalize_ids(svg, "id-", ID_REGEX, "")
+    svg = normalize_ids(svg, "class-", CLASS_REGEX, "")
+    svg = normalize_ids(svg, "trace-", TRACE_REGEX, "trace")
+    svg = replace(svg, " style=\"\"" => "", ">" => ">\n")
     return svg
 end
 
@@ -75,12 +93,12 @@ nested_test("renderers") do
         )
         graph_configuration = GraphConfiguration(; output_file = "actual.svg")
 
-        nested_test("!shape") do
+        nested_test("!style") do
             configuration = DistributionGraphConfiguration(;
                 graph = graph_configuration,
-                shape = DistributionShapeConfiguration(; show_box = false),
+                style = DistributionStyleConfiguration(; show_box = false),
             )
-            @test_throws "must specify at least one of: shape.show_box, shape.show_violin, shape.show_curve" render(
+            @test_throws "must specify at least one of: distribution style.show_box, style.show_violin, style.show_curve" render(
                 data,
                 configuration,
             )
@@ -104,8 +122,8 @@ nested_test("renderers") do
 
         nested_test("!range") do
             configuration = DistributionGraphConfiguration(; graph = graph_configuration)
-            configuration.values_axis.minimum = 1
-            configuration.values_axis.maximum = 0
+            configuration.value_axis.minimum = 1
+            configuration.value_axis.maximum = 0
             @test_throws dedent("""
                 values axis maximum: 0
                 is not larger than minimum: 1
@@ -115,9 +133,12 @@ nested_test("renderers") do
         nested_test("curve&violin") do
             configuration = DistributionGraphConfiguration(;
                 graph = graph_configuration,
-                shape = DistributionShapeConfiguration(; show_curve = true, show_violin = true),
+                style = DistributionStyleConfiguration(; show_curve = true, show_violin = true),
             )
-            @test_throws "can't specify both of: shape.show_violin, shape.show_curve" render(data, configuration)
+            @test_throws "can't specify both of: distribution style.show_violin, style.show_curve" render(
+                data,
+                configuration,
+            )
         end
 
         nested_test("!values") do
@@ -126,143 +147,141 @@ nested_test("renderers") do
         end
 
         nested_test("box") do
-            data.title = "trace"
-            configuration = DistributionGraphConfiguration(;
-                graph = graph_configuration,
-                values_axis = AxisConfiguration(; title = "box"),
-            )
+            configuration = DistributionGraphConfiguration(; graph = graph_configuration)
 
             nested_test("size") do
-                configuration.graph.title = "size"
                 configuration.graph.height = 96 * 2
                 configuration.graph.width = 96 * 2
                 render(data, configuration)
-                return test_svg("distribution.box.size.svg")
+                test_svg("distribution.box.size.svg")
+                return nothing
             end
 
             nested_test("range") do
-                configuration.graph.title = "range"
-                configuration.values_axis.minimum = 0
-                configuration.values_axis.maximum = 200
+                configuration.value_axis.minimum = 0
+                configuration.value_axis.maximum = 200
                 render(data, configuration)
-                return test_svg("distribution.box.range.svg")
+                test_svg("distribution.box.range.svg")
+                return nothing
             end
 
             nested_test("()") do
                 render(data, configuration)
-                return test_svg("distribution.box.svg")
+                test_svg("distribution.box.svg")
+                return nothing
             end
 
             nested_test("horizontal") do
-                configuration.graph.title = "horizontal"
-                configuration.orientation = HorizontalValues
+                configuration.style.orientation = HorizontalValues
                 render(data, configuration)
-                return test_svg("distribution.box.horizontal.svg")
+                test_svg("distribution.box.horizontal.svg")
+                return nothing
             end
 
             nested_test("outliers") do
-                configuration.graph.title = "outliers"
-                configuration.shape.show_outliers = true
+                configuration.style.show_outliers = true
                 render(data, configuration)
-                return test_svg("distribution.box.outliers.svg")
+                test_svg("distribution.box.outliers.svg")
+                return nothing
             end
 
             nested_test("color") do
-                configuration.graph.title = "color"
-                configuration.color = "red"
+                configuration.style.color = "red"
                 render(data, configuration)
-                return test_svg("distribution.box.color.svg")
+                test_svg("distribution.box.color.svg")
+                return nothing
             end
 
             nested_test("!grid") do
-                configuration.graph.title = "color"
                 configuration.graph.show_grid = false
                 render(data, configuration)
-                return test_svg("distribution.box.!grid.svg")
+                test_svg("distribution.box.!grid.svg")
+                return nothing
             end
 
             nested_test("!ticks") do
-                configuration.graph.title = "color"
                 configuration.graph.show_ticks = false
                 render(data, configuration)
-                return test_svg("distribution.box.!ticks.svg")
+                test_svg("distribution.box.!ticks.svg")
+                return nothing
             end
 
-            nested_test("!titles") do
-                configuration.graph.title = nothing
-                configuration.values_axis.title = nothing
-                configuration.graph.show_ticks = false
-                data.title = nothing
+            nested_test("titles") do
+                data.graph_title = "Graph"
+                data.value_axis_title = "Value"
+                data.trace_axis_title = "Trace"
+                data.name = "Name"
                 render(data, configuration)
-                return test_svg("distribution.box.!titles.svg")
+                test_svg("distribution.box.titles.svg")
+                return nothing
             end
         end
 
         nested_test("violin") do
             configuration = DistributionGraphConfiguration(;
                 graph = graph_configuration,
-                shape = DistributionShapeConfiguration(; show_box = false, show_violin = true),
-                values_axis = AxisConfiguration(; title = "violin"),
+                style = DistributionStyleConfiguration(; show_box = false, show_violin = true),
             )
 
             nested_test("()") do
                 render(data, configuration)
-                return test_svg("distribution.violin.svg")
+                test_svg("distribution.violin.svg")
+                return nothing
             end
 
             nested_test("horizontal") do
-                configuration.graph.title = "horizontal"
-                configuration.orientation = HorizontalValues
+                configuration.style.orientation = HorizontalValues
                 render(data, configuration)
-                return test_svg("distribution.violin.horizontal.svg")
+                test_svg("distribution.violin.horizontal.svg")
+                return nothing
             end
 
             nested_test("outliers") do
-                configuration.graph.title = "outliers"
-                configuration.shape.show_outliers = true
+                configuration.style.show_outliers = true
                 render(data, configuration)
-                return test_svg("distribution.violin.outliers.svg")
+                test_svg("distribution.violin.outliers.svg")
+                return nothing
             end
 
             nested_test("box") do
-                configuration.graph.title = "box"
-                configuration.shape.show_box = true
+                configuration.style.show_box = true
                 render(data, configuration)
-                return test_svg("distribution.violin.box.svg")
+                test_svg("distribution.violin.box.svg")
+                return nothing
             end
         end
 
         nested_test("curve") do
             configuration = DistributionGraphConfiguration(;
                 graph = graph_configuration,
-                shape = DistributionShapeConfiguration(; show_box = false, show_curve = true),
-                values_axis = AxisConfiguration(; title = "curve"),
+                style = DistributionStyleConfiguration(; show_box = false, show_curve = true),
             )
 
             nested_test("()") do
                 render(data, configuration)
-                return test_svg("distribution.curve.svg")
+                test_svg("distribution.curve.svg")
+                return nothing
             end
 
             nested_test("horizontal") do
-                configuration.graph.title = "horizontal"
-                configuration.orientation = HorizontalValues
+                configuration.style.orientation = HorizontalValues
                 render(data, configuration)
-                return test_svg("distribution.curve.horizontal.svg")
+                test_svg("distribution.curve.horizontal.svg")
+                return nothing
             end
 
             nested_test("outliers") do
-                configuration.graph.title = "outliers"
-                configuration.shape.show_outliers = true
+                configuration.style.show_outliers = true
                 render(data, configuration)
-                return test_svg("distribution.curve.outliers.svg")
+                test_svg("distribution.curve.outliers.svg")
+                return nothing
             end
 
             nested_test("box") do
-                configuration.graph.title = "box"
-                configuration.shape.show_box = true
+                configuration.style.show_box = true
                 render(data, configuration)
-                return test_svg("distribution.curve.box.svg")
+                test_svg("distribution.curve.box.svg")
+                return nothing
             end
         end
     end
@@ -287,15 +306,11 @@ nested_test("renderers") do
                 78, 84, 58, 83, 43, 60, 75, 81, 46, 90, 46, 74, 150,
             ] ./ 10.0 ],
             #! format: on
-            titles = ["Foo", "Bar"],
         )
 
         graph_configuration = GraphConfiguration(; output_file = "actual.svg")
 
-        configuration = DistributionGraphConfiguration(;
-            graph = graph_configuration,
-            values_axis = AxisConfiguration(; title = "boxes"),
-        )
+        configuration = DistributionGraphConfiguration(; graph = graph_configuration)
 
         nested_test("!values") do
             empty!(data.values)
@@ -307,51 +322,216 @@ nested_test("renderers") do
             @test_throws "empty values#1 vector" render(data, configuration)
         end
 
-        nested_test("~titles") do
-            push!(data.titles, "Baz")
+        nested_test("~names") do
+            data.names = ["Foo"]
             @test_throws dedent("""
-                number of titles: 3
-                is different from number of values: 2
+                the number of names: 1
+                is different from the number of values: 2
             """) render(data, configuration)
         end
 
         nested_test("~colors") do
             data.colors = ["Red"]
             @test_throws dedent("""
-                number of colors: 1
-                is different from number of values: 2
+                the number of colors: 1
+                is different from the number of values: 2
             """) render(data, configuration)
         end
 
         nested_test("box") do
             render(data, configuration)
-            return test_svg("distributions.box.svg")
-        end
-
-        nested_test("legend") do
-            configuration.show_legend = true
-            render(data, configuration)
-            return test_svg("distributions.box.legend.svg")
+            test_svg("distributions.box.svg")
+            return nothing
         end
 
         nested_test("colors") do
             data.colors = ["red", "green"]
             render(data, configuration)
-            return test_svg("distributions.box.colors.svg")
+            test_svg("distributions.box.colors.svg")
+            return nothing
         end
 
-        nested_test("!titles") do
-            data.titles = nothing
-            configuration.values_axis.title = nothing
+        nested_test("titles") do
+            data.names = ["Foo", "Bar"]
+            data.value_axis_title = "Value"
+            data.trace_axis_title = "Trace"
+            data.graph_title = "Graph"
             render(data, configuration)
-            return test_svg("distributions.box.!titles.svg")
+            test_svg("distributions.box.titles.svg")
+            return nothing
+        end
+
+        nested_test("legend") do
+            data.names = ["Foo", "Bar"]
+            configuration.graph.show_legend = true
+            render(data, configuration)
+            test_svg("distributions.box.legend.svg")
+            return nothing
         end
 
         nested_test("legend!titles") do
-            configuration.show_legend = true
-            data.titles = nothing
+            configuration.graph.show_legend = true
             render(data, configuration)
-            return test_svg("distributions.box.legend!titles.svg")
+            test_svg("distributions.box.legend!titles.svg")
+            return nothing
+        end
+    end
+
+    nested_test("points") do
+        data = PointsGraphData(; xs = [0.0, 1.0, 2.0], ys = [-0.2, 1.2, 1.8])
+        graph_configuration = GraphConfiguration(; output_file = "actual.svg")
+        configuration = PointsGraphConfiguration(; graph = graph_configuration)
+
+        nested_test("()") do
+            render(data, configuration)
+            test_svg("points.svg")
+            return nothing
+        end
+
+        nested_test("!size") do
+            configuration.style.size = 0
+            @test_throws "non-positive points style.size: 0" render(data, configuration)
+        end
+
+        nested_test("!same_band_offset") do
+            configuration.style.show_same_band_offset = -1
+            @test_throws "non-positive points style.show_same_band_offset: -1" render(data, configuration)
+        end
+
+        nested_test("~ys") do
+            push!(data.ys, 2.0)
+            @test_throws dedent("""
+                the number of xs: 3
+                is different from the number of ys: 4
+            """) render(data, configuration)
+        end
+
+        nested_test("~colors") do
+            data.colors = ["Red"]
+            @test_throws dedent("""
+                the number of colors: 1
+                is different from the number of points: 3
+            """) render(data, configuration)
+        end
+
+        nested_test("~sizes") do
+            data.sizes = [1.0, 2.0, 3.0, 4.0]
+            @test_throws dedent("""
+                the number of sizes: 4
+                is different from the number of points: 3
+            """) render(data, configuration)
+        end
+
+        nested_test("!sizes") do
+            data.sizes = [1.0, 0.0, 3.0]
+            @test_throws "non-positive size#2: 0.0" render(data, configuration)
+        end
+
+        nested_test("same") do
+            configuration.style.show_same_line = true
+            configuration.style.show_same_band_offset = 0.3
+            render(data, configuration)
+            test_svg("points.same.svg")
+            return nothing
+        end
+
+        nested_test("color") do
+            configuration.style.color = "red"
+            render(data, configuration)
+            test_svg("points.color.svg")
+            return nothing
+        end
+
+        nested_test("colors") do
+            data.colors = ["red", "green", "blue"]
+            render(data, configuration)
+            test_svg("points.colors.svg")
+            return nothing
+        end
+
+        nested_test("values!scale") do
+            data.colors = [0.0, 1.0, 2.0]
+            render(data, configuration)
+            test_svg("points.values!scale.svg")
+            return nothing
+        end
+
+        nested_test("values") do
+            data.colors = [0.0, 1.0, 2.0]
+            configuration.style.show_scale = true
+            render(data, configuration)
+            test_svg("points.values.svg")
+            return nothing
+        end
+
+        nested_test("reversed") do
+            data.colors = [0.0, 1.0, 2.0]
+            configuration.style.show_scale = true
+            configuration.style.reverse_scale = true
+            render(data, configuration)
+            test_svg("points.reversed.svg")
+            return nothing
+        end
+
+        nested_test("viridis") do
+            data.colors = [0.0, 1.0, 2.0]
+            configuration.style.show_scale = true
+            configuration.style.color_scale = "Viridis"
+            render(data, configuration)
+            test_svg("points.viridis.svg")
+            return nothing
+        end
+
+        nested_test("size") do
+            configuration.style.size = 10
+            render(data, configuration)
+            test_svg("points.size.svg")
+            return nothing
+        end
+
+        nested_test("sizes") do
+            data.sizes = [10.0, 15.0, 20.0]
+            render(data, configuration)
+            test_svg("points.sizes.svg")
+            return nothing
+        end
+
+        nested_test("legend") do
+            data.name = "Points"
+            configuration.graph.show_legend = true
+            render(data, configuration)
+            test_svg("points.legend.svg")
+            return nothing
+        end
+
+        nested_test("legend!titles") do
+            configuration.graph.show_legend = true
+            render(data, configuration)
+            test_svg("points.legend!titles.svg")
+            return nothing
+        end
+
+        nested_test("!grid") do
+            configuration.graph.show_grid = false
+            render(data, configuration)
+            test_svg("points.!grid.svg")
+            return nothing
+        end
+
+        nested_test("!titles") do
+            render(data, configuration)
+            test_svg("points.!titles.svg")
+            return nothing
+        end
+
+        nested_test("titles") do
+            data.x_axis_title = "X"
+            data.y_axis_title = "Y"
+            data.graph_title = "Graph"
+            data.name = "Points"
+            render(data, configuration)
+            test_svg("points.titles.svg")
+            return nothing
         end
     end
 end

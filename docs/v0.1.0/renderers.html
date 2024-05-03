@@ -67,6 +67,12 @@
 </a>
 </li>
 <li>
+<a class="tocitem" href="#Points">
+<span>Points
+</span>
+</a>
+</li>
+<li>
 <a class="tocitem" href="#Index">
 <span>Index
 </span>
@@ -192,10 +198,14 @@
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct GraphConfiguration &lt;: ObjectWithValidation
-    file::Maybe{AbstractString} = nothing
-    title::Maybe{AbstractString} = nothing
+    output_file::Maybe{AbstractString} = nothing
+    show_interactive::Bool = false
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
+    template::AbstractString = &quot;simple_white&quot;
+    show_grid::Bool = true
+    show_ticks::Bool = true
+    show_legend::Bool = false
 end
 </code>
 </pre>
@@ -215,19 +225,19 @@ end
 <code>show_interactive
 </code> must be specified.
 </p>
-<p>If specified, 
-<code>graph_title
-</code> is used for the whole graph.
-</p>
 <p>The optional 
-<code>graph_width
+<code>width
 </code> and 
-<code>graph_height
+<code>height
 </code> are in pixels, that is, 1/96 of an inch.
 </p>
-<p>If set (the default), a 
-<code>grid
-</code> is shown across the graph area.
+<p>By default, 
+<code>show_grid
+</code> and 
+<code>show_ticks
+</code> are set, but 
+<code>show_legend
+</code> is not.
 </p>
 <p>The default 
 <code>template
@@ -255,15 +265,12 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct AxisConfiguration &lt;: ObjectWithValidation
-    title::Maybe{AbstractString} = nothing
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
 end
 </code>
 </pre>
 <p>Generic configuration for a graph axis. Everything is optional; by default, the 
-<code>title
-</code> is empty and the 
 <code>minimum
 </code> and 
 <code>maximum
@@ -285,7 +292,7 @@ end
 </header>
 <section>
 <div>
-<p>The orientation of the values axis in a distribution or bar graph:
+<p>The orientation of the values axis in a distribution or a bars graph:
 </p>
 <p>
 <code>HorizontalValues
@@ -322,10 +329,8 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: ObjectWithValidation
     graph::GraphConfiguration = GraphConfiguration()
-    shape::DistributionShapeConfiguration = DistributionShapeConfiguration()
-    orientation::ValuesOrientation = VerticalValues
-    color::Maybe{AbstractString} = nothing
-    values_axis::AxisConfiguration = AxisConfiguration()
+    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
 end
 </code>
 </pre>
@@ -337,9 +342,7 @@ end
 <a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
 <code>DistributionsGraphData
 </code>
-</a>). Setting 
-<code>show_legend
-</code> will show an explicit legend as well.
+</a>).
 </p>
 <p>The optional 
 <code>color
@@ -356,8 +359,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.DistributionShapeConfiguration" href="#MCGraphs.Renderers.DistributionShapeConfiguration">
-<code>MCGraphs.Renderers.DistributionShapeConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionStyleConfiguration" href="#MCGraphs.Renderers.DistributionStyleConfiguration">
+<code>MCGraphs.Renderers.DistributionStyleConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -366,15 +369,16 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct DistributionShapeConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct DistributionStyleConfiguration &lt;: ObjectWithValidation
     show_box::Bool = true
     show_violin::Bool = false
     show_curve::Bool = false
     show_outliers::Bool = false
+    color::Maybe{AbstractString} = nothing
 end
 </code>
 </pre>
-<p>Configure the shape of a distribution graph.
+<p>Configure the style of a distribution graph.
 </p>
 <p>If 
 <code>show_box
@@ -394,6 +398,14 @@ end
 <code>show_outliers
 </code>, also show the extreme (outlier) points.
 </p>
+<p>The 
+<code>color
+</code> is chosen automatically by default. When showing multiple distributions, you can override it per each one in the 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a>.
+</p>
 </div>
 </section>
 </article>
@@ -412,12 +424,23 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    trace_axis_title::Maybe{AbstractString} = nothing
     values::AbstractVector{&lt;:Real}
-    title::Maybe{AbstractString} = nothing
+    name::Maybe{AbstractString} = nothing
 end
 </code>
 </pre>
-<p>The data for a distribution graph.
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code> and the 
+<code>trace_axis_title
+</code>. The optional 
+<code>name
+</code> is used as the tick value for the distribution.
 </p>
 </div>
 </section>
@@ -437,19 +460,171 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionsGraphData &lt;: ObjectWithValidation
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    trace_axis_title::Maybe{AbstractString} = nothing
     values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
-    titles::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractStringVector} = nothing
     colors::Maybe{AbstractStringVector} = nothing
 end
 </code>
 </pre>
-<p>The data for a multiple distributions graph. If specified, the 
-<code>titles
+<p>The data for a multiple distributions graph. By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code> and the 
+<code>trace_axis_title
+</code>. If specified, the 
+<code>names
 </code> and/or the 
 <code>colors
 </code> vectors must contain the same number of elements as the number of vectors in the 
 <code>values
 </code>.
+</p>
+</div>
+</section>
+</article>
+<h2 id="Points">
+<a class="docs-heading-anchor" href="#Points">Points
+</a>
+<a id="Points-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Points" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphConfiguration" href="#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>MCGraphs.Renderers.PointsGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct PointsGraphConfiguration &lt;: ObjectWithValidation
+    graph::GraphConfiguration = GraphConfiguration()
+    x_axis::AxisConfiguration = AxisConfiguration()
+    y_axis::AxisConfiguration = AxisConfiguration()
+    style::PointsStyleConfiguration = PointsConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph for showing a scatter graph of points.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsStyleConfiguration" href="#MCGraphs.Renderers.PointsStyleConfiguration">
+<code>MCGraphs.Renderers.PointsStyleConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct PointsStyleConfiguration &lt;: ObjectWithValidation
+    size::Maybe{Real} = nothing
+    color::Maybe{AbstractString} = nothing
+    color_scale::Maybe{AbstractString} = nothing
+    reverse_scale::Bool = false
+    show_same_line::Bool = false
+    show_same_band_offset::Maybe{Real} = nothing
+end
+</code>
+</pre>
+<p>Configure points in a graph. By default, the point 
+<code>size
+</code> and 
+<code>color
+</code> is chosen automatically. You can also override it by specifying colors in the 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a>. If the data contains numeric color values, then the 
+<code>color_scale
+</code> will be used instead; you can set 
+<code>reverse_scale
+</code> to reverse it. You need to explicitly set 
+<code>show_scale
+</code> to show its legend.
+</p>
+<p>If 
+<code>show_same_line
+</code> is set, a line (x = y) is shown. If 
+<code>show_same_band_offset
+</code> is set, dashed lines above and below the &quot;same&quot; line are shown at this offset.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphData" href="#MCGraphs.Renderers.PointsGraphData">
+<code>MCGraphs.Renderers.PointsGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct PointsGraphData &lt;: ObjectWithValidation
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{&lt;:Real}
+    ys::AbstractVector{&lt;:Real}
+    colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
+    sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
+    hovers::Maybe{AbstractStringVector} = nothing
+end
+</code>
+</pre>
+<p>The data for a scatter graph of points.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>x_axis_title
+</code> and 
+<code>y_axis_title
+</code> for the axes. The 
+<code>name
+</code> is only useful when 
+<code>show_legend
+</code> is set.
+</p>
+<p>The 
+<code>xs
+</code> and 
+<code>ys
+</code> vectors must be of the same size. If specified, the 
+<code>colors
+</code> 
+<code>sizes
+</code> and/or 
+<code>hovers
+</code> vectors must also be of the same size. The 
+<code>colors
+</code> can be either color names or a numeric value; if the latter, then the configuration&#39;s 
+<code>color_scale
+</code> is used. Sizes are the diameter in pixels (1/96th of an inch).
 </p>
 </div>
 </section>
@@ -488,8 +663,8 @@ end
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.DistributionShapeConfiguration">
-<code>MCGraphs.Renderers.DistributionShapeConfiguration
+<a href="renderers.html#MCGraphs.Renderers.DistributionStyleConfiguration">
+<code>MCGraphs.Renderers.DistributionStyleConfiguration
 </code>
 </a>
 </li>
@@ -502,6 +677,24 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
 <code>MCGraphs.Renderers.GraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>MCGraphs.Renderers.PointsGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>MCGraphs.Renderers.PointsGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.PointsStyleConfiguration">
+<code>MCGraphs.Renderers.PointsStyleConfiguration
 </code>
 </a>
 </li>

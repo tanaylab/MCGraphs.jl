@@ -12,9 +12,17 @@ MCGraphs.Renderers.ValuesOrientation
 
 ```@docs
 MCGraphs.Renderers.DistributionGraphConfiguration
-MCGraphs.Renderers.DistributionShapeConfiguration
+MCGraphs.Renderers.DistributionStyleConfiguration
 MCGraphs.Renderers.DistributionGraphData
 MCGraphs.Renderers.DistributionsGraphData
+```
+
+## Points
+
+```@docs
+MCGraphs.Renderers.PointsGraphConfiguration
+MCGraphs.Renderers.PointsStyleConfiguration
+MCGraphs.Renderers.PointsGraphData
 ```
 
 ## Index

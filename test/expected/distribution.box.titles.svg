@@ -57,8 +57,38 @@
 <path class="xlines-above crisp" d="M0,0" style="fill: none;"/>
 <path class="ylines-above crisp" d="M0,0" style="fill: none;"/>
 <g class="overlines-above"/>
-<g class="xaxislayer-above"/>
-<g class="yaxislayer-above"/>
+<g class="xaxislayer-above">
+<g class="xtick">
+<text text-anchor="middle" x="0" y="463" transform="translate(350,0)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+Name</text>
+</g>
+</g>
+<g class="yaxislayer-above">
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,440.34)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+40</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,374.73)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+60</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,309.13)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+80</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,243.52)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+100</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,177.91)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+120</text>
+</g>
+<g class="ytick">
+<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,112.3)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+140</text>
+</g>
+</g>
 <g class="overaxes-above"/>
 </g>
 </g>
@@ -78,8 +108,17 @@
 <g class="shapelayer"/>
 </g>
 <g class="infolayer">
-<g class="g-gtitle"/>
-<g class="g-xtitle"/>
-<g class="g-ytitle"/>
+<g class="g-gtitle">
+<text class="gtitle" x="350" y="30" text-anchor="middle" dy="0em" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 17px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
+Graph</text>
+</g>
+<g class="g-xtitle" transform="translate(0,-5)">
+<text class="xtitle" x="350" y="502" text-anchor="middle" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 14px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
+Trace</text>
+</g>
+<g class="g-ytitle" transform="translate(2,0)">
+<text class="ytitle" transform="rotate(-90,12,255)" x="12" y="255" text-anchor="middle" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 14px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
+Value</text>
+</g>
 </g>
 </svg>

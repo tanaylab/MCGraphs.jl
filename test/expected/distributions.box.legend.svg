@@ -152,9 +152,6 @@ Bar</text>
 </g>
 <g class="g-gtitle"/>
 <g class="g-xtitle"/>
-<g class="g-ytitle" transform="translate(2,0)">
-<text class="ytitle" transform="rotate(-90,12,255)" x="12" y="255" text-anchor="middle" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 14px; fill: rgb(68, 68, 68); opacity: 1; font-weight: normal; white-space: pre;">
-boxes</text>
-</g>
+<g class="g-ytitle"/>
 </g>
 </svg>
