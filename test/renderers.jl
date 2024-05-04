@@ -424,8 +424,8 @@ nested_test("renderers") do
         end
 
         nested_test("!same_band_offset") do
-            configuration.style.show_same_band_offset = -1
-            @test_throws "non-positive points style.show_same_band_offset: -1" render(data, configuration)
+            configuration.show_same_band_offset = -1
+            @test_throws "non-positive points show_same_band_offset: -1" render(data, configuration)
         end
 
         nested_test("~ys") do
@@ -444,6 +444,14 @@ nested_test("renderers") do
             """) render(data, configuration)
         end
 
+        nested_test("~border_colors") do
+            data.border_colors = ["Red"]
+            @test_throws dedent("""
+                the number of border_colors: 1
+                is different from the number of points: 3
+            """) render(data, configuration)
+        end
+
         nested_test("~sizes") do
             data.sizes = [1.0, 2.0, 3.0, 4.0]
             @test_throws dedent("""
@@ -452,9 +460,22 @@ nested_test("renderers") do
             """) render(data, configuration)
         end
 
+        nested_test("~border_sizes") do
+            data.border_sizes = [1.0, 2.0, 3.0, 4.0]
+            @test_throws dedent("""
+                the number of border_sizes: 4
+                is different from the number of points: 3
+            """) render(data, configuration)
+        end
+
         nested_test("!sizes") do
             data.sizes = [1.0, 0.0, 3.0]
             @test_throws "non-positive size#2: 0.0" render(data, configuration)
+        end
+
+        nested_test("!border_sizes") do
+            data.border_sizes = [1.0, 0.0, 3.0]
+            @test_throws "non-positive border_size#2: 0.0" render(data, configuration)
         end
 
         nested_test("~hovers") do
@@ -466,8 +487,8 @@ nested_test("renderers") do
         end
 
         nested_test("same") do
-            configuration.style.show_same_line = true
-            configuration.style.show_same_band_offset = 0.3
+            configuration.show_same_line = true
+            configuration.show_same_band_offset = 0.3
             render(data, configuration)
             test_svg("points.same.svg")
             return nothing
@@ -578,6 +599,60 @@ nested_test("renderers") do
             render(data, configuration)
             test_html("points.hovers.html")
             return nothing
+        end
+
+        nested_test("border") do
+            configuration.show_border = true
+
+            nested_test("()") do
+                render(data, configuration)
+                test_svg("points.border.svg")
+                return nothing
+            end
+
+            nested_test("size") do
+                configuration.style.size = 6
+                configuration.border_style.size = 8
+                render(data, configuration)
+                test_svg("points.border.size.svg")
+                return nothing
+            end
+
+            nested_test("colors") do
+                configuration.style.size = 6
+                configuration.border_style.size = 8
+                data.colors = [0.0, 1.0, 2.0]
+                data.border_colors = [20.0, 10.0, 0.0]
+                configuration.border_style.color_scale = "Viridis"
+                render(data, configuration)
+                test_svg("points.border.colors.svg")
+                return nothing
+            end
+
+            nested_test("colorscale") do
+                configuration.style.size = 6
+                configuration.border_style.size = 8
+                data.colors = [0.0, 1.0, 2.0]
+                data.border_colors = [20.0, 10.0, 0.0]
+                configuration.border_style.color_scale = "Viridis"
+                configuration.border_style.show_scale = true
+                render(data, configuration)
+                test_svg("points.border.show_scale.svg")
+                return nothing
+            end
+
+            nested_test("colorscales") do
+                configuration.style.size = 6
+                configuration.border_style.size = 8
+                data.colors = [0.0, 1.0, 2.0]
+                data.border_colors = [20.0, 10.0, 0.0]
+                configuration.border_style.color_scale = "Viridis"
+                configuration.style.show_scale = true
+                configuration.border_style.show_scale = true
+                render(data, configuration)
+                test_svg("points.border.show_scales.svg")
+                return nothing
+            end
         end
     end
 end

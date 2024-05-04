@@ -403,17 +403,13 @@ end
         color::Maybe{AbstractString} = nothing
         color_scale::Maybe{AbstractString} = nothing
         reverse_scale::Bool = false
-        show_same_line::Bool = false
-        show_same_band_offset::Maybe{Real} = nothing
+        show_scale::Bool = false
     end
 
 Configure points in a graph. By default, the point `size` and `color` is chosen automatically. You can also override it
 by specifying colors in the [`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale`
 will be used instead; you can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` to show its
 legend.
-
-If `show_same_line` is set, a line (x = y) is shown. If `show_same_band_offset` is set, dashed lines above and below the
-"same" line are shown at this offset.
 """
 @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
     size::Maybe{Real} = nothing
@@ -421,19 +417,12 @@ If `show_same_line` is set, a line (x = y) is shown. If `show_same_band_offset` 
     color_scale::Maybe{AbstractString} = nothing
     reverse_scale::Bool = false
     show_scale::Bool = false
-    show_same_line::Bool = false
-    show_same_band_offset::Maybe{Real} = nothing
 end
 
 function Validations.validate_object(configuration::PointsStyleConfiguration)::Maybe{AbstractString}
     size = configuration.size
     if size !== nothing && size <= 0
         return "non-positive points style.size: $(size)"
-    end
-
-    show_same_band_offset = configuration.show_same_band_offset
-    if show_same_band_offset !== nothing && show_same_band_offset <= 0
-        return "non-positive points style.show_same_band_offset: $(show_same_band_offset)"
     end
 
     return nothing
@@ -445,15 +434,30 @@ end
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
         style::PointsStyleConfiguration = PointsConfiguration()
+        border_style::PointsStyleConfiguration = PointsConfiguration()
+        show_border::Bool = false
+        show_same_line::Bool = false
+        show_same_band_offset::Maybe{Real} = nothing
     end
 
 Configure a graph for showing a scatter graph of points.
+
+If `show_same_line` is set, a line (x = y) is shown. If `show_same_band_offset` is set, dashed lines above and below the
+"same" line are shown at this offset.
+
+If `show_border` is set, a border will be shown around each point using the `border_style` (and, if specified in the
+[`PointsGraphData`](@ref), the `border_colors` and/or `border_sizes`). This allows displaying some additional data per
+point.
 """
 @kwdef mutable struct PointsGraphConfiguration <: ObjectWithValidation
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     style::PointsStyleConfiguration = PointsStyleConfiguration()
+    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    show_border::Bool = false
+    show_same_line::Bool = false
+    show_same_band_offset::Maybe{Real} = nothing
 end
 
 function Validations.validate_object(configuration::PointsGraphConfiguration)::Maybe{AbstractString}
@@ -468,6 +472,11 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
         message = validate_object(configuration.style)
     end
 
+    show_same_band_offset = configuration.show_same_band_offset
+    if show_same_band_offset !== nothing && show_same_band_offset <= 0
+        return "non-positive points show_same_band_offset: $(show_same_band_offset)"
+    end
+
     return message
 end
 
@@ -480,6 +489,8 @@ end
         ys::AbstractVector{<:Real}
         colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
         sizes::Maybe{AbstractVector{<:Real}} = nothing
+        border_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+        border_sizes::Maybe{AbstractVector{<:Real}} = nothing
         hovers::Maybe{AbstractStringVector} = nothing
     end
 
@@ -492,6 +503,9 @@ The `xs` and `ys` vectors must be of the same size. If specified, the `colors` `
 be of the same size. The `colors` can be either color names or a numeric value; if the latter, then the configuration's
 `color_scale` is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs
 (or when saving an HTML file).
+
+The `border_colors` and `border_sizes` are only used if showing borders around each point. These will use the
+`border_style`. The border size is in addition to the point size.
 """
 @kwdef mutable struct PointsGraphData <: ObjectWithValidation
     graph_title::Maybe{AbstractString} = nothing
@@ -502,6 +516,8 @@ be of the same size. The `colors` can be either color names or a numeric value; 
     ys::AbstractVector{<:Real}
     colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
     sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+    border_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+    border_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
     hovers::Maybe{AbstractStringVector} = nothing
 end
 
@@ -530,6 +546,26 @@ function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractStrin
         end
     end
 
+    border_colors = data.border_colors
+    if border_colors !== nothing && length(border_colors) != length(data.xs)
+        return "the number of border_colors: $(length(border_colors))\n" *
+               "is different from the number of points: $(length(data.xs))"
+    end
+
+    border_sizes = data.border_sizes
+    if border_sizes !== nothing
+        if length(border_sizes) != length(data.xs)
+            return "the number of border_sizes: $(length(border_sizes))\n" *
+                   "is different from the number of points: $(length(data.xs))"
+        end
+
+        for (index, border_size) in enumerate(border_sizes)
+            if border_size <= 0.0
+                return "non-positive border_size#$(index): $(border_size)"
+            end
+        end
+    end
+
     hovers = data.hovers
     if hovers !== nothing && length(hovers) != length(data.xs)
         return "the number of hovers: $(length(hovers))\n" *
@@ -544,6 +580,43 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
     assert_valid_object(configuration)
 
     traces = Vector{GenericTrace}()
+
+    if configuration.show_border
+        if data.border_sizes === nothing
+            marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
+            if data.sizes === nothing
+                marker_size += configuration.style.size !== nothing ? configuration.style.size : 4.0
+            else
+                marker_size = data.sizes .+ marker_size
+            end
+
+        else
+            if data.sizes === nothing
+                marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
+                marker_size = data.border_sizes .+ marker_size
+            else
+                marker_size = data.border_sizes .+ data.sizes
+            end
+        end
+
+        push!(
+            traces,
+            scatter(;
+                x = data.xs,
+                y = data.ys,
+                marker_size = marker_size,
+                marker_color = data.border_colors !== nothing ? data.border_colors : configuration.border_style.color,
+                marker_colorscale = configuration.border_style.color_scale,
+                marker_coloraxis = configuration.border_style.show_scale ? "coloraxis2" : nothing,
+                marker_showscale = configuration.border_style.show_scale,
+                marker_reversescale = configuration.border_style.reverse_scale,
+                name = data.name !== nothing ? data.name : "Trace",
+                text = data.hovers,
+                hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
+                mode = "markers",
+            ),
+        )
+    end
 
     push!(
         traces,
@@ -562,15 +635,15 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         ),
     )
 
-    show_same_band_offset = configuration.style.show_same_band_offset
-    if configuration.style.show_same_line || show_same_band_offset !== nothing
+    show_same_band_offset = configuration.show_same_band_offset
+    if configuration.show_same_line || show_same_band_offset !== nothing
         minimum_x = minimum(data.xs)
         minimum_y = minimum(data.ys)
         maximum_x = maximum(data.xs)
         maximum_y = maximum(data.ys)
         minimum_xy = min(minimum_x, minimum_y)
         maximum_xy = max(maximum_x, maximum_y)
-        if configuration.style.show_same_line
+        if configuration.show_same_line
             push!(
                 traces,
                 scatter(;
@@ -623,6 +696,12 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         yaxis_title = data.y_axis_title,
         yaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
         showlegend = configuration.graph.show_legend,
+        coloraxis2_colorbar_x = if (configuration.border_style.show_scale && configuration.style.show_scale)
+            1.2
+        else
+            nothing
+        end,
+        coloraxis2_colorscale = configuration.border_style.color_scale,
     )
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)

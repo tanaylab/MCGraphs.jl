@@ -513,10 +513,34 @@ end
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     style::PointsStyleConfiguration = PointsConfiguration()
+    border_style::PointsStyleConfiguration = PointsConfiguration()
+    show_border::Bool = false
+    show_same_line::Bool = false
+    show_same_band_offset::Maybe{Real} = nothing
 end
 </code>
 </pre>
 <p>Configure a graph for showing a scatter graph of points.
+</p>
+<p>If 
+<code>show_same_line
+</code> is set, a line (x = y) is shown. If 
+<code>show_same_band_offset
+</code> is set, dashed lines above and below the &quot;same&quot; line are shown at this offset.
+</p>
+<p>If 
+<code>show_border
+</code> is set, a border will be shown around each point using the 
+<code>border_style
+</code> (and, if specified in the 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a>, the 
+<code>border_colors
+</code> and/or 
+<code>border_sizes
+</code>). This allows displaying some additional data per point.
 </p>
 </div>
 </section>
@@ -540,8 +564,7 @@ end
     color::Maybe{AbstractString} = nothing
     color_scale::Maybe{AbstractString} = nothing
     reverse_scale::Bool = false
-    show_same_line::Bool = false
-    show_same_band_offset::Maybe{Real} = nothing
+    show_scale::Bool = false
 end
 </code>
 </pre>
@@ -560,12 +583,6 @@ end
 </code> to reverse it. You need to explicitly set 
 <code>show_scale
 </code> to show its legend.
-</p>
-<p>If 
-<code>show_same_line
-</code> is set, a line (x = y) is shown. If 
-<code>show_same_band_offset
-</code> is set, dashed lines above and below the &quot;same&quot; line are shown at this offset.
 </p>
 </div>
 </section>
@@ -592,6 +609,8 @@ end
     ys::AbstractVector{&lt;:Real}
     colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
     sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
+    border_colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
+    border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
     hovers::Maybe{AbstractStringVector} = nothing
 end
 </code>
@@ -625,6 +644,14 @@ end
 </code> can be either color names or a numeric value; if the latter, then the configuration&#39;s 
 <code>color_scale
 </code> is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs (or when saving an HTML file).
+</p>
+<p>The 
+<code>border_colors
+</code> and 
+<code>border_sizes
+</code> are only used if showing borders around each point. These will use the 
+<code>border_style
+</code>. The border size is in addition to the point size.
 </p>
 </div>
 </section>
