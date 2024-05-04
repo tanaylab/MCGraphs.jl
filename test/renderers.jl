@@ -1,15 +1,16 @@
-ID_REGEX = r"""id="([^"]*)"""
+CSS_ID_REGEX = r"""id="([^"]*)"""
 TRACE_REGEX = r"""trace([-_a-zA-Z]*[0-9][-_a-zA-Z0-9]*)"""
 CLASS_REGEX = r"""class="([-_a-zA-Z]*[0-9][-_a-zA-Z0-9]*)"""
+HTML_ID_REGEX = r"""id=([-_a-zA-Z0-9]+)"""
 
 function normalize_ids(
-    svg::AbstractString,
+    text::AbstractString,
     replace_prefix::AbstractString,
     capture_regex::Regex,
     match_prefix::AbstractString,
 )::AbstractString
     seen = Dict{AbstractString, Int}()
-    for id in eachmatch(capture_regex, svg)
+    for id in eachmatch(capture_regex, text)
         index = get(seen, id.captures[1], nothing)
         if index === nothing
             index = length(seen) + 1
@@ -21,15 +22,20 @@ function normalize_ids(
         by = (pair) -> length(pair.first),
         rev = true,
     )
-    return replace(svg, replacements...)
+    return replace(text, replacements...)
 end
 
 function normalize_svg(svg::AbstractString)::AbstractString
-    svg = normalize_ids(svg, "id-", ID_REGEX, "")
+    svg = normalize_ids(svg, "id-", CSS_ID_REGEX, "")
     svg = normalize_ids(svg, "class-", CLASS_REGEX, "")
     svg = normalize_ids(svg, "trace-", TRACE_REGEX, "trace")
     svg = replace(svg, " style=\"\"" => "", ">" => ">\n")
     return svg
+end
+
+function normalize_html(html::AbstractString)::AbstractString
+    html = normalize_ids(html, "id-", HTML_ID_REGEX, "")
+    return html
 end
 
 struct ResultFile
@@ -37,7 +43,7 @@ struct ResultFile
     content::AbstractString
 end
 
-function Base.show(io::IO, result_file::ResultFile)::Nothing
+function Base.show(io::IO, result_file::ResultFile)::Nothing  # untested
     print(io, result_file.path)
     return nothing
 end
@@ -65,6 +71,30 @@ function test_svg(path::AbstractString)::Nothing
         return read(file, String)
     end
     expected_result = ResultFile("test/" * expected_path, expected_svg)
+
+    @test actual_result == expected_result
+    return nothing
+end
+
+function test_html(path::AbstractString)::Nothing
+    actual_html = open("actual.html", "r") do file
+        return read(file, String)
+    end
+    rm("actual.html")
+    actual_html = normalize_html(actual_html)
+
+    actual_path = "actual/" * path
+    open(actual_path, "w") do file
+        write(file, actual_html)
+        return nothing
+    end
+    actual_result = ResultFile("test/" * actual_path, actual_html)
+
+    expected_path = "expected/" * path
+    expected_html = open(expected_path, "r") do file
+        return read(file, String)
+    end
+    expected_result = ResultFile("test/" * expected_path, expected_html)
 
     @test actual_result == expected_result
     return nothing
@@ -427,6 +457,14 @@ nested_test("renderers") do
             @test_throws "non-positive size#2: 0.0" render(data, configuration)
         end
 
+        nested_test("~hovers") do
+            data.hovers = ["Foo"]
+            @test_throws dedent("""
+                the number of hovers: 1
+                is different from the number of points: 3
+            """) render(data, configuration)
+        end
+
         nested_test("same") do
             configuration.style.show_same_line = true
             configuration.style.show_same_band_offset = 0.3
@@ -531,6 +569,14 @@ nested_test("renderers") do
             data.name = "Points"
             render(data, configuration)
             test_svg("points.titles.svg")
+            return nothing
+        end
+
+        nested_test("hovers") do
+            configuration.graph.output_file = "actual.html"
+            data.hovers = ["<b>Foo</b><br>Low", "<b>Bar</b><br>Middle", "<b>Baz</b><br>High"]
+            render(data, configuration)
+            test_html("points.hovers.html")
             return nothing
         end
     end

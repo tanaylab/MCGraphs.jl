@@ -490,7 +490,8 @@ By default, all the titles are empty. You can specify the overall `graph_title` 
 
 The `xs` and `ys` vectors must be of the same size. If specified, the `colors` `sizes` and/or `hovers` vectors must also
 be of the same size. The `colors` can be either color names or a numeric value; if the latter, then the configuration's
-`color_scale` is used. Sizes are the diameter in pixels (1/96th of an inch).
+`color_scale` is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs
+(or when saving an HTML file).
 """
 @kwdef mutable struct PointsGraphData <: ObjectWithValidation
     graph_title::Maybe{AbstractString} = nothing
@@ -529,6 +530,12 @@ function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractStrin
         end
     end
 
+    hovers = data.hovers
+    if hovers !== nothing && length(hovers) != length(data.xs)
+        return "the number of hovers: $(length(hovers))\n" *
+               "is different from the number of points: $(length(data.xs))"
+    end
+
     return nothing
 end
 
@@ -549,6 +556,8 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
             marker_showscale = configuration.style.show_scale,
             marker_reversescale = configuration.style.reverse_scale,
             name = data.name !== nothing ? data.name : "Trace",
+            text = data.hovers,
+            hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
             mode = "markers",
         ),
     )
