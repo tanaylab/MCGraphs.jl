@@ -93,14 +93,20 @@ end
     @kwdef mutable struct AxisConfiguration <: ObjectWithValidation
         minimum::Maybe{Real} = nothing
         maximum::Maybe{Real} = nothing
+        log_scale::Bool,
     end
 
 Generic configuration for a graph axis. Everything is optional; by default, the `minimum` and `maximum` are computed
 automatically from the data.
+
+If `log_scale` is set, the data must contain only positive values, and the axis is shown in log (base 10) scale. To help
+with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is "close enough" to 2x for intuitive
+reading of the ratios).
 """
 @kwdef mutable struct AxisConfiguration <: ObjectWithValidation
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
+    log_scale::Bool = false
 end
 
 function Validations.validate_object(name::AbstractString, configuration::AxisConfiguration)::Maybe{AbstractString}
@@ -109,6 +115,14 @@ function Validations.validate_object(name::AbstractString, configuration::AxisCo
 
     if minimum !== nothing && maximum !== nothing && maximum <= minimum
         return "$(name) axis maximum: $(maximum)\n" * "is not larger than minimum: $(minimum)"
+    end
+
+    if configuration.log_scale && minimum !== nothing && minimum <= 0
+        return "non-positive $(name) log axis minimum: $(minimum)"
+    end
+
+    if configuration.log_scale && maximum !== nothing && maximum <= 0
+        return "non-positive $(name) log axis maximum: $(maximum)"
     end
 
     return nothing
@@ -390,19 +404,23 @@ function distribution_layout(
         xaxis_showgrid = false
         xaxis_title = data.trace_axis_title
         xaxis_range = (nothing, nothing)
+        xaxis_type = nothing
         yaxis_showticklabels = configuration.graph.show_ticks
         yaxis_showgrid = configuration.graph.show_grid
         yaxis_title = data.value_axis_title
         yaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
+        yaxis_type = configuration.value_axis.log_scale ? "log" : nothing
     elseif configuration.style.orientation == HorizontalValues
         xaxis_showticklabels = configuration.graph.show_ticks
         xaxis_showgrid = configuration.graph.show_grid
         xaxis_title = data.value_axis_title
         xaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
+        xaxis_type = configuration.value_axis.log_scale ? "log" : nothing
         yaxis_showticklabels = has_tick_names
         yaxis_showgrid = false
         yaxis_title = data.trace_axis_title
         yaxis_range = (nothing, nothing)
+        yaxis_type = nothing
     else
         @assert false
     end
@@ -414,10 +432,12 @@ function distribution_layout(
         xaxis_showticklabels = xaxis_showticklabels,
         xaxis_title = xaxis_title,
         xaxis_range = xaxis_range,
+        xaxis_type = xaxis_type,
         yaxis_showgrid = yaxis_showgrid,
         yaxis_showticklabels = yaxis_showticklabels,
         yaxis_title = yaxis_title,
         yaxis_range = yaxis_range,
+        yaxis_type = yaxis_type,
         showlegend = show_legend,
     )
 end
@@ -649,6 +669,16 @@ end
 function render(data::PointsGraphData, configuration::PointsGraphConfiguration = PointsGraphConfiguration())::Nothing
     assert_valid_object(data)
     assert_valid_object(configuration)
+    if configuration.x_axis.log_scale
+        for (index, x) in enumerate(data.xs)
+            @assert x > 0 "non-positive log x#$(index): $(x)"
+        end
+    end
+    if configuration.y_axis.log_scale
+        for (index, y) in enumerate(data.ys)
+            @assert y > 0 "non-positive log y#$(index): $(y)"
+        end
+    end
 
     traces = Vector{GenericTrace}()
 
@@ -789,10 +819,12 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         xaxis_showticklabels = configuration.graph.show_ticks,
         xaxis_title = data.x_axis_title,
         xaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
+        xaxis_type = configuration.x_axis.log_scale ? "log" : nothing,
         yaxis_showgrid = configuration.graph.show_grid,
         yaxis_showticklabels = configuration.graph.show_ticks,
         yaxis_title = data.y_axis_title,
         yaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
+        yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
         showlegend = false,
         coloraxis2_colorbar_x = if (configuration.border_style.show_scale && configuration.style.show_scale)
             1.2

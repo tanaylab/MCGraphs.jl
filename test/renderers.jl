@@ -208,6 +208,13 @@ nested_test("renderers") do
                 return nothing
             end
 
+            nested_test("log") do
+                configuration.value_axis.log_scale = true
+                render(data, configuration)
+                test_svg("distribution.box.log.svg")
+                return nothing
+            end
+
             nested_test("outliers") do
                 configuration.style.show_outliers = true
                 render(data, configuration)
@@ -279,6 +286,13 @@ nested_test("renderers") do
                 test_svg("distribution.violin.box.svg")
                 return nothing
             end
+
+            nested_test("log") do
+                configuration.value_axis.log_scale = true
+                render(data, configuration)
+                test_svg("distribution.violin.log.svg")
+                return nothing
+            end
         end
 
         nested_test("curve") do
@@ -311,6 +325,13 @@ nested_test("renderers") do
                 configuration.style.show_box = true
                 render(data, configuration)
                 test_svg("distribution.curve.box.svg")
+                return nothing
+            end
+
+            nested_test("log") do
+                configuration.value_axis.log_scale = true
+                render(data, configuration)
+                test_svg("distribution.curve.log.svg")
                 return nothing
             end
         end
@@ -371,6 +392,13 @@ nested_test("renderers") do
         nested_test("box") do
             render(data, configuration)
             test_svg("distributions.box.svg")
+            return nothing
+        end
+
+        nested_test("log") do
+            configuration.value_axis.log_scale = true
+            render(data, configuration)
+            test_svg("distributions.log.svg")
             return nothing
         end
 
@@ -484,6 +512,42 @@ nested_test("renderers") do
                 the number of hovers: 1
                 is different from the number of points: 3
             """) render(data, configuration)
+        end
+
+        nested_test("log") do
+            nested_test("!minimum") do
+                configuration.x_axis.minimum = 0.0
+                configuration.x_axis.log_scale = true
+                @test_throws "non-positive x log axis minimum: 0.0" render(data, configuration)
+            end
+
+            nested_test("!maximum") do
+                configuration.y_axis.maximum = -1.0
+                configuration.y_axis.log_scale = true
+                @test_throws "non-positive y log axis maximum: -1.0" render(data, configuration)
+            end
+
+            nested_test("!xs") do
+                configuration.x_axis.log_scale = true
+                @test_throws "non-positive log x#1: 0.0" render(data, configuration)
+            end
+
+            nested_test("!ys") do
+                configuration.y_axis.log_scale = true
+                @test_throws "non-positive log y#1: -0.2" render(data, configuration)
+            end
+
+            nested_test("()") do
+                data.xs .*= 10
+                data.ys .*= 10
+                data.xs .+= 1
+                data.ys .+= 3
+                configuration.x_axis.log_scale = true
+                configuration.y_axis.log_scale = true
+                render(data, configuration)
+                test_svg("points.log.svg")
+                return nothing
+            end
         end
 
         nested_test("same") do

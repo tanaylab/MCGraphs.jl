@@ -90,58 +90,58 @@ This also serves as the main TODO list (including the Python and R wrappers).
 ### Graph types:
 
   - Distribution graph (Julia; TODO: Python, TODO: R).
-    
+
       + Box graph.
       + Violin graph.
       + Curve graph.
       + Violin + Box graph.
       + Curve + Box graph.
       + Horizontal graph.
-      + TODO: Log axis.
+      + Log axis.
 
   - Distributions graph (Julia; TODO: Python, TODO: R).
-    
+
       + Legend.
       + Separate.
       + TODO: Overlay.
   - Points graph (Julia; TODO: Python, TODO: R).
-    
+
       + Same line.
-    
+
       + Same band.
       + TODO: Horizontal line (& band?).
       + TODO: Vertical line (& band?).
       + Color scale.
-        
+
           * Named.
           * Reversed.
           * TODO: Categorical.
           * TODO: Manual.
       + Colorbar.
       + Borders.
-        
+
           * Colorbar.
       + Edges.
-      + TODO: Log axis.
+      + Log axis.
   - Line graph (used for CDF) (TODO: Julia; TODO: Python, TODO: R).
   - Lines graph (used for CDF) (TODO: Julia; TODO: Python, TODO: R).
-    
+
       + TODO: Legend.
       + TODO: Overlay.
       + TODO: Stacked.
   - Bar graph (TODO: Julia; TODO: Python, TODO: R).
-    
+
       + TODO: Annotations.
       + TODO: Annotations Legend.
   - Bars graph (TODO: Julia; TODO: Python, TODO: R).
-    
+
       + TODO: Legend.
       + TODO: Annotations.
       + TODO: Annotations Legend.
       + TODO: Grouped.
       + TODO: Stacked.
   - Heatmap graph (TODO: Julia; TODO: Python, TODO: R).
-    
+
       + TODO: Annotations.
       + TODO: Tree.
   - Flow (Sankey) graph (TODO: Julia; TODO: Python, TODO: R).
@@ -152,7 +152,7 @@ This also serves as the main TODO list (including the Python and R wrappers).
 
   - Distributions controller (TODO: Julia; TODO: Python, TODO: R).
   - Points controller (TODO: Julia; TODO: Python, TODO: R).
-    
+
       + TODO: With border (TODO: Julia; TODO: Python, TODO: R).
       + TODO: With edges (TODO: Julia; TODO: Python, TODO: R).
   - Line controller (TODO: Julia; TODO: Python, TODO: R).

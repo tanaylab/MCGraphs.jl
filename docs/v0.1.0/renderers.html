@@ -264,6 +264,7 @@ end
 <code class="language-julia hljs">@kwdef mutable struct AxisConfiguration &lt;: ObjectWithValidation
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
+    log_scale::Bool,
 end
 </code>
 </pre>
@@ -272,6 +273,10 @@ end
 </code> and 
 <code>maximum
 </code> are computed automatically from the data.
+</p>
+<p>If 
+<code>log_scale
+</code> is set, the data must contain only positive values, and the axis is shown in log (base 10) scale. To help with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is &quot;close enough&quot; to 2x for intuitive reading of the ratios).
 </p>
 </div>
 </section>
