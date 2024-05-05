@@ -486,13 +486,15 @@ end
         edges_style::PointsConfiguration = PointsConfiguration()
         show_border::Bool = false
         show_same_line::Bool = false
-        show_same_band_offset::Maybe{Real} = nothing
+        show_high_line::Maybe{Real} = nothing
+        show_low_line::Maybe{Real} = nothing
     end
 
 Configure a graph for showing a scatter graph of points.
 
-If `show_same_line` is set, a line (x = y) is shown. If `show_same_band_offset` is set, dashed lines above and below the
-"same" line are shown at this offset. If the axes are in `log_scale`, the log of the (offset + 1) is used.
+If `show_same_line` is set, a line (x = y) is shown. If `show_high_line` and/or `show_low_line` are set, dashed lines
+above and below the "same" line are shown at these offsets. If the axes are in `log_scale`, the log of the (offset + 1)
+is used.
 
 If `show_border` is set, a border will be shown around each point using the `border_style` (and, if specified in the
 [`PointsGraphData`](@ref), the `border_colors` and/or `border_sizes`). This allows displaying some additional data per
@@ -514,7 +516,8 @@ point.
     edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
     show_border::Bool = false
     show_same_line::Bool = false
-    show_same_band_offset::Maybe{Real} = nothing
+    show_high_line::Maybe{Real} = nothing
+    show_low_line::Maybe{Real} = nothing
 end
 
 function Validations.validate_object(configuration::PointsGraphConfiguration)::Maybe{AbstractString}
@@ -539,9 +542,14 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
         message = validate_object("points edges", configuration.edges_style)
     end
 
-    show_same_band_offset = configuration.show_same_band_offset
-    if show_same_band_offset !== nothing && show_same_band_offset <= 0
-        return "non-positive points show_same_band_offset: $(show_same_band_offset)"
+    show_high_line = configuration.show_high_line
+    if show_high_line !== nothing && show_high_line <= 0
+        return "non-positive points show_high_line: $(show_high_line)"
+    end
+
+    show_low_line = configuration.show_low_line
+    if show_low_line !== nothing && show_low_line <= 0
+        return "non-positive points show_low_line: $(show_low_line)"
     end
 
     return message
@@ -562,6 +570,12 @@ end
         edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
         edges_colors::Maybe{AbstractStringVector} = nothing
         edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+        x_line::Maybe{<:Real} = nothing
+        x_high_line::Maybe{<:Real} = nothing
+        x_low_line::Maybe{<:Real} = nothing
+        y_line::Maybe{<:Real} = nothing
+        y_high_line::Maybe{<:Real} = nothing
+        y_low_line::Maybe{<:Real} = nothing
     end
 
 The data for a scatter graph of points.
@@ -580,6 +594,10 @@ This will use the `border_style`. The border size is in addition to the point si
 It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
 [`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
 The `edges_colors` are restricted to explicit colors, not a color scale.
+
+If `x_line` is specified, a horizontal line is shown at this value; if `y_line` is specified, a vertical line is shown
+at this value. If `x_high_line` and/or `x_low_line` and/or `y_high_line` and/or `y_low_line` are specified, dashed lines
+are shown at these values.
 """
 @kwdef mutable struct PointsGraphData <: ObjectWithValidation
     graph_title::Maybe{AbstractString} = nothing
@@ -595,6 +613,12 @@ The `edges_colors` are restricted to explicit colors, not a color scale.
     edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
     edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
     edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+    x_line::Maybe{<:Real} = nothing
+    x_high_line::Maybe{<:Real} = nothing
+    x_low_line::Maybe{<:Real} = nothing
+    y_line::Maybe{<:Real} = nothing
+    y_high_line::Maybe{<:Real} = nothing
+    y_low_line::Maybe{<:Real} = nothing
 end
 
 function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractString}
@@ -763,64 +787,102 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         end
     end
 
-    show_same_band_offset = configuration.show_same_band_offset
-    if configuration.show_same_line || show_same_band_offset !== nothing
-        minimum_x = minimum(data.xs)
-        minimum_y = minimum(data.ys)
-        maximum_x = maximum(data.xs)
-        maximum_y = maximum(data.ys)
-        minimum_xy = min(minimum_x, minimum_y)
-        maximum_xy = max(maximum_x, maximum_y)
-        if configuration.show_same_line
+    minimum_x = minimum(data.xs)
+    minimum_y = minimum(data.ys)
+    maximum_x = maximum(data.xs)
+    maximum_y = maximum(data.ys)
+    minimum_xy = min(minimum_x, minimum_y)
+    maximum_xy = max(maximum_x, maximum_y)
+
+    if configuration.show_same_line
+        push!(
+            traces,
+            scatter(;
+                x = [minimum_xy, maximum_xy],
+                y = [minimum_xy, maximum_xy],
+                line_width = 1.0,
+                line_color = "black",
+                showlegend = false,
+                mode = "lines",
+            ),
+        )
+    end
+
+    show_high_line = configuration.show_high_line
+    if show_high_line !== nothing
+        push!(
+            traces,
+            scatter(;
+                x = [minimum_xy, if configuration.x_axis.log_scale
+                    maximum_xy / (1 + show_high_line)
+                else
+                    maximum_xy - show_high_line
+                end],
+                y = [if configuration.y_axis.log_scale
+                    minimum_xy * (1 + show_high_line)
+                else
+                    minimum_xy + show_high_line
+                end, maximum_xy],
+                line_width = 1.0,
+                line_color = "black",
+                line_dash = "dash",
+                showlegend = false,
+                mode = "lines",
+            ),
+        )
+    end
+
+    show_low_line = configuration.show_low_line
+    if show_low_line !== nothing
+        push!(
+            traces,
+            scatter(;
+                x = [if configuration.x_axis.log_scale
+                    minimum_xy * (1 + show_low_line)
+                else
+                    minimum_xy + show_low_line
+                end, maximum_xy],
+                y = [minimum_xy, if configuration.y_axis.log_scale
+                    maximum_xy / (1 + show_low_line)
+                else
+                    maximum_xy - show_low_line
+                end],
+                line_width = 1.0,
+                line_color = "black",
+                line_dash = "dash",
+                showlegend = false,
+                mode = "lines",
+            ),
+        )
+    end
+
+    for (x, dash) in ((data.x_line, nothing), (data.x_high_line, "dash"), (data.x_low_line, "dash"))
+        if x !== nothing
             push!(
                 traces,
                 scatter(;
-                    x = [minimum_xy, maximum_xy],
-                    y = [minimum_xy, maximum_xy],
+                    x = [x, x],
+                    y = [minimum_y, maximum_y],
                     line_width = 1.0,
                     line_color = "black",
+                    line_dash = dash,
                     showlegend = false,
                     mode = "lines",
                 ),
             )
         end
-        if show_same_band_offset !== nothing
+    end
+
+    for (y, dash) in ((data.y_line, nothing), (data.y_high_line, "dash"), (data.y_low_line, "dash"))
+        if y !== nothing
             push!(
                 traces,
                 scatter(;
-                    x = [if configuration.x_axis.log_scale
-                        minimum_xy * (1 + show_same_band_offset)
-                    else
-                        minimum_xy + show_same_band_offset
-                    end, maximum_xy],
-                    y = [minimum_xy, if configuration.y_axis.log_scale
-                        maximum_xy / (1 + show_same_band_offset)
-                    else
-                        maximum_xy - show_same_band_offset
-                    end],
+                    x = [minimum_x, maximum_x],
+                    y = [y, y],
                     line_width = 1.0,
                     line_color = "black",
-                    line_dash = "dash",
-                    showlegend = false,
-                    mode = "lines",
-                ),
-            )
-            push!(
-                traces,
-                scatter(;
-                    x = [minimum_xy, if configuration.x_axis.log_scale
-                        maximum_xy / (1 + show_same_band_offset)
-                    else
-                        maximum_xy - show_same_band_offset
-                    end],
-                    y = [if configuration.y_axis.log_scale
-                        minimum_xy * (1 + show_same_band_offset)
-                    else
-                        minimum_xy + show_same_band_offset
-                    end, maximum_xy],
-                    line_width = 1.0,
-                    line_color = "black",
-                    line_dash = "dash",
+                    line_dash = dash,
                     showlegend = false,
                     mode = "lines",
                 ),

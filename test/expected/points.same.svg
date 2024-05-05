@@ -78,7 +78,7 @@
 <g class="fills"/>
 <g class="errorbars"/>
 <g class="lines">
-<path class="js-line" d="M77.22,366.75L566.25,66.85" style="vector-effect: non-scaling-stroke; fill: none; stroke: rgb(0, 0, 0); stroke-opacity: 1; stroke-width: 1px; opacity: 1; stroke-dasharray: 9px, 9px;"/>
+<path class="js-line" d="M0,319.4L489.03,19.5" style="vector-effect: non-scaling-stroke; fill: none; stroke: rgb(0, 0, 0); stroke-opacity: 1; stroke-width: 1px; opacity: 1; stroke-dasharray: 9px, 9px;"/>
 </g>
 <g class="points"/>
 <g class="text"/>
@@ -87,7 +87,7 @@
 <g class="fills"/>
 <g class="errorbars"/>
 <g class="lines">
-<path class="js-line" d="M0,319.4L489.03,19.5" style="vector-effect: non-scaling-stroke; fill: none; stroke: rgb(0, 0, 0); stroke-opacity: 1; stroke-width: 1px; opacity: 1; stroke-dasharray: 9px, 9px;"/>
+<path class="js-line" d="M77.22,366.75L566.25,66.85" style="vector-effect: non-scaling-stroke; fill: none; stroke: rgb(0, 0, 0); stroke-opacity: 1; stroke-width: 1px; opacity: 1; stroke-dasharray: 9px, 9px;"/>
 </g>
 <g class="points"/>
 <g class="text"/>

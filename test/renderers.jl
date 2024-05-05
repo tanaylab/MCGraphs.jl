@@ -451,9 +451,14 @@ nested_test("renderers") do
             @test_throws "non-positive points style.size: 0" render(data, configuration)
         end
 
-        nested_test("!same_band_offset") do
-            configuration.show_same_band_offset = -1
-            @test_throws "non-positive points show_same_band_offset: -1" render(data, configuration)
+        nested_test("!high_line") do
+            configuration.show_high_line = -1
+            @test_throws "non-positive points show_high_line: -1" render(data, configuration)
+        end
+
+        nested_test("!low_line") do
+            configuration.show_low_line = -1
+            @test_throws "non-positive points show_low_line: -1" render(data, configuration)
         end
 
         nested_test("~ys") do
@@ -557,7 +562,8 @@ nested_test("renderers") do
                 configuration.x_axis.log_scale = true
                 configuration.y_axis.log_scale = true
                 configuration.show_same_line = true
-                configuration.show_same_band_offset = 1.0
+                configuration.show_high_line = 1.0
+                configuration.show_low_line = 1.0
                 render(data, configuration)
                 test_svg("points.log.same.svg")
                 return nothing
@@ -566,9 +572,28 @@ nested_test("renderers") do
 
         nested_test("same") do
             configuration.show_same_line = true
-            configuration.show_same_band_offset = 0.3
+            configuration.show_high_line = 0.3
+            configuration.show_low_line = 0.3
             render(data, configuration)
             test_svg("points.same.svg")
+            return nothing
+        end
+
+        nested_test("x_lines") do
+            data.x_line = 1.25
+            data.x_low_line = 0.75
+            data.x_high_line = 1.5
+            render(data, configuration)
+            test_svg("points.x_lines.svg")
+            return nothing
+        end
+
+        nested_test("y_lines") do
+            data.y_line = 1.25
+            data.y_low_line = 0.75
+            data.y_high_line = 1.5
+            render(data, configuration)
+            test_svg("points.y_lines.svg")
             return nothing
         end
 

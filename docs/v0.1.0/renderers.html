@@ -564,6 +564,12 @@ end
     edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
     edges_colors::Maybe{AbstractStringVector} = nothing
     edges_sizes::Maybe{&lt;:AbstractVector{&lt;:Real}} = nothing
+    x_line::Maybe{&lt;:Real} = nothing
+    x_high_line::Maybe{&lt;:Real} = nothing
+    x_low_line::Maybe{&lt;:Real} = nothing
+    y_line::Maybe{&lt;:Real} = nothing
+    y_high_line::Maybe{&lt;:Real} = nothing
+    y_low_line::Maybe{&lt;:Real} = nothing
 end
 </code>
 </pre>
@@ -623,6 +629,20 @@ end
 <code>edges_colors
 </code> are restricted to explicit colors, not a color scale.
 </p>
+<p>If 
+<code>x_line
+</code> is specified, a horizontal line is shown at this value; if 
+<code>y_line
+</code> is specified, a vertical line is shown at this value. If 
+<code>x_high_line
+</code> and/or 
+<code>x_low_line
+</code> and/or 
+<code>y_high_line
+</code> and/or 
+<code>y_low_line
+</code> are specified, dashed lines are shown at these values.
+</p>
 </div>
 </section>
 </article>
@@ -649,7 +669,8 @@ end
     edges_style::PointsConfiguration = PointsConfiguration()
     show_border::Bool = false
     show_same_line::Bool = false
-    show_same_band_offset::Maybe{Real} = nothing
+    show_high_line::Maybe{Real} = nothing
+    show_low_line::Maybe{Real} = nothing
 end
 </code>
 </pre>
@@ -658,8 +679,10 @@ end
 <p>If 
 <code>show_same_line
 </code> is set, a line (x = y) is shown. If 
-<code>show_same_band_offset
-</code> is set, dashed lines above and below the &quot;same&quot; line are shown at this offset. If the axes are in 
+<code>show_high_line
+</code> and/or 
+<code>show_low_line
+</code> are set, dashed lines above and below the &quot;same&quot; line are shown at these offsets. If the axes are in 
 <code>log_scale
 </code>, the log of the (offset + 1) is used.
 </p>

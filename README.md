@@ -106,11 +106,10 @@ This also serves as the main TODO list (including the Python and R wrappers).
       + TODO: Overlay.
   - Points graph (Julia; TODO: Python, TODO: R).
 
-      + Same line.
-
       + Same band.
-      + TODO: Horizontal line (& band?).
-      + TODO: Vertical line (& band?).
+
+      + Horizontal band.
+      + Vertical band.
       + Color scale.
 
           * Named.
