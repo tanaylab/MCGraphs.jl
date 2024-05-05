@@ -602,12 +602,28 @@ nested_test("renderers") do
                 return nothing
             end
 
+            nested_test("sizes") do
+                configuration.style.size = 6
+                data.border_sizes = [6, 8, 10]
+                render(data, configuration)
+                test_svg("points.border.sizes.svg")
+                return nothing
+            end
+
+            nested_test("color") do
+                configuration.style.size = 6
+                configuration.border_style.size = 8
+                configuration.border_style.color = "magenta"
+                render(data, configuration)
+                test_svg("points.border.color.svg")
+                return nothing
+            end
+
             nested_test("colors") do
                 configuration.style.size = 6
                 configuration.border_style.size = 8
                 data.colors = [0.0, 1.0, 2.0]
-                data.border_colors = [20.0, 10.0, 0.0]
-                configuration.border_style.color_scale = "Viridis"
+                data.border_colors = ["red", "green", "blue"]
                 render(data, configuration)
                 test_svg("points.border.colors.svg")
                 return nothing
@@ -661,6 +677,34 @@ nested_test("renderers") do
             nested_test("self") do
                 data.edges[1] = (1, 1)
                 @test_throws "edge#1 from point to itself: 1" render(data, configuration)
+            end
+
+            nested_test("size") do
+                configuration.edges_style.size = 8
+                render(data, configuration)
+                test_svg("points.edges.size.svg")
+                return nothing
+            end
+
+            nested_test("sizes") do
+                data.edges_sizes = [6, 10]
+                render(data, configuration)
+                test_svg("points.edges.sizes.svg")
+                return nothing
+            end
+
+            nested_test("color") do
+                configuration.edges_style.color = "magenta"
+                render(data, configuration)
+                test_svg("points.edges.color.svg")
+                return nothing
+            end
+
+            nested_test("colors") do
+                data.edges_colors = ["red", "green"]
+                render(data, configuration)
+                test_svg("points.edges.colors.svg")
+                return nothing
             end
         end
     end

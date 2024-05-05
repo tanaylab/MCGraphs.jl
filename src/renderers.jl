@@ -323,9 +323,9 @@ function render(
     data::DistributionsGraphData,
     configuration::DistributionsGraphConfiguration = DistributionsGraphConfiguration(),
 )::Nothing
+    @assert !configuration.overlay "not implemented: overlay"
     assert_valid_object(data)
     assert_valid_object(configuration)
-    @assert !configuration.overlay "not implemented: overlay"
 
     n_values = length(data.values)
     traces = [
@@ -444,10 +444,13 @@ can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` t
     show_scale::Bool = false
 end
 
-function Validations.validate_object(configuration::PointsStyleConfiguration)::Maybe{AbstractString}
+function Validations.validate_object(
+    of_what::AbstractString,
+    configuration::PointsStyleConfiguration,
+)::Maybe{AbstractString}
     size = configuration.size
     if size !== nothing && size <= 0
-        return "non-positive points style.size: $(size)"
+        return "non-positive $(of_what) style.size: $(size)"
     end
 
     return nothing
@@ -478,7 +481,9 @@ point.
 !!! note
 
     You can't set the `show_legend` of the [`GraphConfiguration`](@ref) of a points graph. Instead you probably want to
-    set the `show_scale` of the `style` (and/or of the `border_style` and/or `edges_style`).
+    set the `show_scale` of the `style` (and/or of the `border_style` and/or `edges_style`). In addition, the color
+    scale options of the `edges_style` must not be set as `edges_colors` of [`PointsGraphData`](@ref) is restricted to
+    explicit colors.
 """
 @kwdef mutable struct PointsGraphConfiguration <: ObjectWithValidation
     graph::GraphConfiguration = GraphConfiguration()
@@ -493,6 +498,10 @@ point.
 end
 
 function Validations.validate_object(configuration::PointsGraphConfiguration)::Maybe{AbstractString}
+    @assert configuration.edges_style.color_scale === nothing "not implemented: points edges_style color_scale"
+    @assert !configuration.edges_style.reverse_scale "not implemented: points edges_style reverse_scale"
+    @assert !configuration.edges_style.show_scale "not implemented: points edges_style show_scale"
+
     message = validate_object(configuration.graph)
     if message === nothing
         message = validate_object("x", configuration.x_axis)
@@ -501,7 +510,13 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
         message = validate_object("y", configuration.y_axis)
     end
     if message === nothing
-        message = validate_object(configuration.style)
+        message = validate_object("points", configuration.style)
+    end
+    if message === nothing
+        message = validate_object("points border", configuration.border_style)
+    end
+    if message === nothing
+        message = validate_object("points edges", configuration.edges_style)
     end
 
     show_same_band_offset = configuration.show_same_band_offset
@@ -525,9 +540,8 @@ end
         border_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
         border_sizes::Maybe{AbstractVector{<:Real}} = nothing
         edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
-        edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+        edges_colors::Maybe{AbstractStringVector} = nothing
         edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
-        edges_hovers::Maybe{AbstractStringVector} = nothing
     end
 
 The data for a scatter graph of points.
@@ -544,8 +558,8 @@ The `border_colors` and `border_sizes` are only used if the `show_border` of [`P
 This will use the `border_style`. The border size is in addition to the point size.
 
 It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
-[`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge. You
-can also specify `edges_hovers`.
+[`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
+The `edges_colors` are restricted to explicit colors, not a color scale.
 """
 @kwdef mutable struct PointsGraphData <: ObjectWithValidation
     graph_title::Maybe{AbstractString} = nothing
@@ -561,7 +575,6 @@ can also specify `edges_hovers`.
     edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
     edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
     edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
-    edges_hovers::Maybe{AbstractStringVector} = nothing
 end
 
 function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractString}
@@ -668,6 +681,7 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
                 marker_coloraxis = configuration.border_style.show_scale ? "coloraxis2" : nothing,
                 marker_showscale = configuration.border_style.show_scale,
                 marker_reversescale = configuration.border_style.reverse_scale,
+                name = "",
                 text = data.hovers,
                 hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
                 mode = "markers",
@@ -685,6 +699,7 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
             marker_colorscale = configuration.style.color_scale,
             marker_showscale = configuration.style.show_scale,
             marker_reversescale = configuration.style.reverse_scale,
+            name = "",
             text = data.hovers,
             hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
             mode = "markers",
@@ -711,12 +726,7 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
                     else
                         "darkgrey"
                     end,
-                    line_colorscale = configuration.edges_style.color_scale,
-                    line_coloraxis = configuration.edges_style.show_scale ? "coloraxis3" : nothing,
-                    line_showscale = configuration.edges_style.show_scale,
-                    line_reversescale = configuration.edges_style.reverse_scale,
-                    text = data.edges_hovers,
-                    hovertemplate = data.edges_hovers === nothing ? nothing : "%{text}<extra></extra>",
+                    name = "",
                     mode = "lines",
                 ),
             )
@@ -789,22 +799,7 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         else
             nothing
         end,
-        coloraxis3_colorbar_x = if (
-            configuration.edges_style.show_scale &&
-            configuration.style.show_scale &&
-            configuration.border_style.show_scale
-        )
-            1.4
-        elseif (
-            configuration.edges_style.show_scale &&
-            (configuration.style.show_scale || configuration.border_style.show_scale)
-        )
-            1.2
-        else
-            nothing
-        end,
         coloraxis2_colorscale = configuration.border_style.color_scale,
-        coloraxis3_colorscale = configuration.edges_style.color_scale,
     )
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)

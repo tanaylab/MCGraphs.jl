@@ -557,9 +557,8 @@ end
     border_colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
     border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
     edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
-    edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
+    edges_colors::Maybe{AbstractStringVector} = nothing
     edges_sizes::Maybe{&lt;:AbstractVector{&lt;:Real}} = nothing
-    edges_hovers::Maybe{AbstractStringVector} = nothing
 end
 </code>
 </pre>
@@ -615,9 +614,9 @@ end
 <code>edges_colors
 </code> and 
 <code>edges_sizes
-</code> will override it per edge. You can also specify 
-<code>edges_hovers
-</code>.
+</code> will override it per edge. The 
+<code>edges_colors
+</code> are restricted to explicit colors, not a color scale.
 </p>
 </div>
 </section>
@@ -689,7 +688,15 @@ end
 <code>border_style
 </code> and/or 
 <code>edges_style
-</code>).
+</code>). In addition, the color scale options of the 
+<code>edges_style
+</code> must not be set as 
+<code>edges_colors
+</code> of 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a> is restricted to explicit colors.
 </p>
 </div>
 </div>

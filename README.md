@@ -90,6 +90,7 @@ This also serves as the main TODO list (including the Python and R wrappers).
 ### Graph types:
 
   - Distribution graph (Julia; TODO: Python, TODO: R).
+    
       + Box graph.
       + Violin graph.
       + Curve graph.
@@ -97,44 +98,50 @@ This also serves as the main TODO list (including the Python and R wrappers).
       + Curve + Box graph.
       + Horizontal graph.
       + TODO: Log axis.
+
   - Distributions graph (Julia; TODO: Python, TODO: R).
+    
       + Legend.
       + Separate.
       + TODO: Overlay.
   - Points graph (Julia; TODO: Python, TODO: R).
+    
       + Same line.
+    
       + Same band.
       + TODO: Horizontal line (& band?).
       + TODO: Vertical line (& band?).
-      + Colorbar.
       + Color scale.
+        
           * Named.
           * Reversed.
           * TODO: Categorical.
           * TODO: Manual.
+      + Colorbar.
       + Borders.
+        
           * Colorbar.
-          * TODO: Legend.
-      + TODO: Edges.
-          * TODO: Colorbar.
-          * TODO: Color scale.
-          * TODO: Legend.
+      + Edges.
       + TODO: Log axis.
   - Line graph (used for CDF) (TODO: Julia; TODO: Python, TODO: R).
   - Lines graph (used for CDF) (TODO: Julia; TODO: Python, TODO: R).
+    
       + TODO: Legend.
       + TODO: Overlay.
       + TODO: Stacked.
   - Bar graph (TODO: Julia; TODO: Python, TODO: R).
+    
       + TODO: Annotations.
       + TODO: Annotations Legend.
   - Bars graph (TODO: Julia; TODO: Python, TODO: R).
+    
       + TODO: Legend.
       + TODO: Annotations.
       + TODO: Annotations Legend.
       + TODO: Grouped.
       + TODO: Stacked.
   - Heatmap graph (TODO: Julia; TODO: Python, TODO: R).
+    
       + TODO: Annotations.
       + TODO: Tree.
   - Flow (Sankey) graph (TODO: Julia; TODO: Python, TODO: R).
@@ -142,8 +149,10 @@ This also serves as the main TODO list (including the Python and R wrappers).
 ### Controllers:
 
   - Distribution controller (TODO: Julia; TODO: Python, TODO: R).
+
   - Distributions controller (TODO: Julia; TODO: Python, TODO: R).
   - Points controller (TODO: Julia; TODO: Python, TODO: R).
+    
       + TODO: With border (TODO: Julia; TODO: Python, TODO: R).
       + TODO: With edges (TODO: Julia; TODO: Python, TODO: R).
   - Line controller (TODO: Julia; TODO: Python, TODO: R).
@@ -178,10 +187,10 @@ This also serves as the main TODO list (including the Python and R wrappers).
 
 ### Dashboards
 
-  - Atlas Overview
-  - Metacells QC
-  - Projection QC
-  - Annotation QC
+  - Atlas Overview (TODO: Julia; TODO: Python, TODO: R).
+  - Metacells QC (TODO: Julia; TODO: Python, TODO: R).
+  - Projection QC (TODO: Julia; TODO: Python, TODO: R).
+  - Annotation QC (TODO: Julia; TODO: Python, TODO: R).
 
 ### Work flows
 
