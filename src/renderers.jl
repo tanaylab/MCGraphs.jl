@@ -492,7 +492,7 @@ end
 Configure a graph for showing a scatter graph of points.
 
 If `show_same_line` is set, a line (x = y) is shown. If `show_same_band_offset` is set, dashed lines above and below the
-"same" line are shown at this offset.
+"same" line are shown at this offset. If the axes are in `log_scale`, the log of the (offset + 1) is used.
 
 If `show_border` is set, a border will be shown around each point using the `border_style` (and, if specified in the
 [`PointsGraphData`](@ref), the `border_colors` and/or `border_sizes`). This allows displaying some additional data per
@@ -788,8 +788,16 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
             push!(
                 traces,
                 scatter(;
-                    x = [minimum_xy + show_same_band_offset, maximum_xy],
-                    y = [minimum_xy, maximum_xy - show_same_band_offset],
+                    x = [if configuration.x_axis.log_scale
+                        minimum_xy * (1 + show_same_band_offset)
+                    else
+                        minimum_xy + show_same_band_offset
+                    end, maximum_xy],
+                    y = [minimum_xy, if configuration.y_axis.log_scale
+                        maximum_xy / (1 + show_same_band_offset)
+                    else
+                        maximum_xy - show_same_band_offset
+                    end],
                     line_width = 1.0,
                     line_color = "black",
                     line_dash = "dash",
@@ -800,8 +808,16 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
             push!(
                 traces,
                 scatter(;
-                    x = [minimum_xy, maximum_xy - show_same_band_offset],
-                    y = [minimum_xy + show_same_band_offset, maximum_xy],
+                    x = [minimum_xy, if configuration.x_axis.log_scale
+                        maximum_xy / (1 + show_same_band_offset)
+                    else
+                        maximum_xy - show_same_band_offset
+                    end],
+                    y = [if configuration.y_axis.log_scale
+                        minimum_xy * (1 + show_same_band_offset)
+                    else
+                        minimum_xy + show_same_band_offset
+                    end, maximum_xy],
                     line_width = 1.0,
                     line_color = "black",
                     line_dash = "dash",

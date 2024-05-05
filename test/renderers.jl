@@ -548,6 +548,20 @@ nested_test("renderers") do
                 test_svg("points.log.svg")
                 return nothing
             end
+
+            nested_test("same") do
+                data.xs .*= 10
+                data.ys .*= 10
+                data.xs .+= 1
+                data.ys .+= 3
+                configuration.x_axis.log_scale = true
+                configuration.y_axis.log_scale = true
+                configuration.show_same_line = true
+                configuration.show_same_band_offset = 1.0
+                render(data, configuration)
+                test_svg("points.log.same.svg")
+                return nothing
+            end
         end
 
         nested_test("same") do
