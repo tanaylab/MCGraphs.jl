@@ -1,5 +1,5 @@
-CSS_ID_REGEX = r"""id="([^"]*)"""
-TRACE_REGEX = r"""trace([-_a-zA-Z]*[0-9][-_a-zA-Z0-9]*)"""
+CSS_ID_REGEX = r"""id="([^"]+)"""
+TRACE_REGEX = r"""trace([-_a-zA-Z0-9]+)"""
 CLASS_REGEX = r"""class="([-_a-zA-Z]*[0-9][-_a-zA-Z0-9]*)"""
 HTML_ID_REGEX = r"""id=([-_a-zA-Z0-9]+)"""
 
@@ -340,7 +340,7 @@ nested_test("renderers") do
 
         graph_configuration = GraphConfiguration(; output_file = "actual.svg")
 
-        configuration = DistributionGraphConfiguration(; graph = graph_configuration)
+        configuration = DistributionsGraphConfiguration(; graph = graph_configuration)
 
         nested_test("!values") do
             empty!(data.values)
@@ -393,14 +393,14 @@ nested_test("renderers") do
 
         nested_test("legend") do
             data.names = ["Foo", "Bar"]
-            configuration.graph.show_legend = true
+            configuration.show_legend = true
             render(data, configuration)
             test_svg("distributions.box.legend.svg")
             return nothing
         end
 
         nested_test("legend!titles") do
-            configuration.graph.show_legend = true
+            configuration.show_legend = true
             render(data, configuration)
             test_svg("distributions.box.legend!titles.svg")
             return nothing
@@ -555,21 +555,6 @@ nested_test("renderers") do
             return nothing
         end
 
-        nested_test("legend") do
-            data.name = "Points"
-            configuration.graph.show_legend = true
-            render(data, configuration)
-            test_svg("points.legend.svg")
-            return nothing
-        end
-
-        nested_test("legend!titles") do
-            configuration.graph.show_legend = true
-            render(data, configuration)
-            test_svg("points.legend!titles.svg")
-            return nothing
-        end
-
         nested_test("!grid") do
             configuration.graph.show_grid = false
             render(data, configuration)
@@ -587,7 +572,6 @@ nested_test("renderers") do
             data.x_axis_title = "X"
             data.y_axis_title = "Y"
             data.graph_title = "Graph"
-            data.name = "Points"
             render(data, configuration)
             test_svg("points.titles.svg")
             return nothing
@@ -652,6 +636,31 @@ nested_test("renderers") do
                 render(data, configuration)
                 test_svg("points.border.show_scales.svg")
                 return nothing
+            end
+        end
+
+        nested_test("edges") do
+            data.edges = [(1, 2), (1, 3)]
+
+            nested_test("()") do
+                render(data, configuration)
+                test_svg("points.edges.svg")
+                return nothing
+            end
+
+            nested_test("!from") do
+                data.edges[1] = (-1, 2)
+                @test_throws "edge#1 from invalid point: -1" render(data, configuration)
+            end
+
+            nested_test("!to") do
+                data.edges[1] = (1, 4)
+                @test_throws "edge#1 to invalid point: 4" render(data, configuration)
+            end
+
+            nested_test("self") do
+                data.edges[1] = (1, 1)
+                @test_throws "edge#1 from point to itself: 1" render(data, configuration)
             end
         end
     end

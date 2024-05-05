@@ -12,6 +12,7 @@ export AxisConfiguration
 export DistributionGraphConfiguration
 export DistributionGraphData
 export DistributionStyleConfiguration
+export DistributionsGraphConfiguration
 export DistributionsGraphData
 export GraphConfiguration
 export HorizontalValues
@@ -45,7 +46,6 @@ The orientation of the values axis in a distribution or a bars graph:
         template::AbstractString = "simple_white"
         show_grid::Bool = true
         show_ticks::Bool = true
-        show_legend::Bool = false
     end
 
 Generic configuration that applies to any graph.
@@ -56,7 +56,7 @@ If `output_file` is specified, it is the path of a file to write the graph into 
 
 The optional `width` and `height` are in pixels, that is, 1/96 of an inch.
 
-By default, `show_grid` and `show_ticks` are set, but `show_legend` is not.
+By default, `show_grid` and `show_ticks` are set.
 
 The default `template` is "simple_white" which is the cleanest. The `show_grid` and `show_ticks` can be used to disable
 the grid and/or ticks for an even cleaner (but less informative) look.
@@ -69,7 +69,6 @@ the grid and/or ticks for an even cleaner (but less informative) look.
     template::AbstractString = "simple_white"
     show_grid::Bool = true
     show_ticks::Bool = true
-    show_legend::Bool = false
 end
 
 function Validations.validate_object(configuration::GraphConfiguration)::Maybe{AbstractString}
@@ -180,7 +179,31 @@ possible to specify the color of each one in the [`DistributionsGraphData`](@ref
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 
-function Validations.validate_object(configuration::DistributionGraphConfiguration)::Maybe{AbstractString}
+"""
+    @kwdef mutable struct DistributionsGraphConfiguration <: ObjectWithValidation
+        graph::GraphConfiguration = GraphConfiguration()
+        style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+        value_axis::AxisConfiguration = AxisConfiguration()
+        show_legend::Bool = false
+        overlay::Bool = false
+    end
+
+Configure a graph for showing several distributions several distributions.
+
+This is identical to [`DistributionGraphConfiguration`](@ref) with the addition of `show_legend` to show a legend. This
+is not set by default as it makes little sense unless `overlay` is also set. TODO: Implement `overlay`.
+"""
+@kwdef mutable struct DistributionsGraphConfiguration <: ObjectWithValidation
+    graph::GraphConfiguration = GraphConfiguration()
+    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    show_legend::Bool = false
+    overlay::Bool = false
+end
+
+function Validations.validate_object(
+    configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration},
+)::Maybe{AbstractString}
     message = validate_object(configuration.graph)
     if message === nothing
         message = validate_object(configuration.style)
@@ -290,7 +313,7 @@ function render(
         configuration.style.color,
         configuration,
     )
-    layout = distribution_layout(data.name !== nothing, data, configuration)
+    layout = distribution_layout(data.name !== nothing, data, configuration, false)
     figure = plot(trace, layout)
     write_graph(figure, configuration.graph)
     return nothing
@@ -298,10 +321,11 @@ end
 
 function render(
     data::DistributionsGraphData,
-    configuration::DistributionGraphConfiguration = DistributionGraphConfiguration(),
+    configuration::DistributionsGraphConfiguration = DistributionsGraphConfiguration(),
 )::Nothing
     assert_valid_object(data)
     assert_valid_object(configuration)
+    @assert !configuration.overlay "not implemented: overlay"
 
     n_values = length(data.values)
     traces = [
@@ -312,7 +336,7 @@ function render(
             configuration,
         ) for index in 1:n_values
     ]
-    layout = distribution_layout(data.names !== nothing, data, configuration)
+    layout = distribution_layout(data.names !== nothing, data, configuration, configuration.show_legend)
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)
     return nothing
@@ -322,7 +346,7 @@ function distribution_trace(
     values::AbstractVector{<:Real},
     name::AbstractString,
     color::Maybe{AbstractString},
-    configuration::DistributionGraphConfiguration,
+    configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration},
 )::GenericTrace
     style = (
         (configuration.style.show_box ? BOX : 0) |
@@ -358,7 +382,8 @@ end
 function distribution_layout(
     has_tick_names::Bool,
     data::Union{DistributionGraphData, DistributionsGraphData},
-    configuration::DistributionGraphConfiguration,
+    configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration},
+    show_legend::Bool,
 )::Layout
     if configuration.style.orientation == VerticalValues
         xaxis_showticklabels = has_tick_names
@@ -393,7 +418,7 @@ function distribution_layout(
         yaxis_showticklabels = yaxis_showticklabels,
         yaxis_title = yaxis_title,
         yaxis_range = yaxis_range,
-        showlegend = configuration.graph.show_legend,
+        showlegend = show_legend,
     )
 end
 
@@ -406,10 +431,10 @@ end
         show_scale::Bool = false
     end
 
-Configure points in a graph. By default, the point `size` and `color` is chosen automatically. You can also override it
-by specifying colors in the [`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale`
-will be used instead; you can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` to show its
-legend.
+Configure points in a graph. By default, the point `size` and `color` is chosen automatically (when this is applied to
+edges, the `size` is the width of the line). You can also override this by specifying sizes and colors in the
+[`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale` will be used instead; you
+can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` to show its legend.
 """
 @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
     size::Maybe{Real} = nothing
@@ -435,6 +460,7 @@ end
         y_axis::AxisConfiguration = AxisConfiguration()
         style::PointsStyleConfiguration = PointsConfiguration()
         border_style::PointsStyleConfiguration = PointsConfiguration()
+        edges_style::PointsConfiguration = PointsConfiguration()
         show_border::Bool = false
         show_same_line::Bool = false
         show_same_band_offset::Maybe{Real} = nothing
@@ -448,6 +474,11 @@ If `show_same_line` is set, a line (x = y) is shown. If `show_same_band_offset` 
 If `show_border` is set, a border will be shown around each point using the `border_style` (and, if specified in the
 [`PointsGraphData`](@ref), the `border_colors` and/or `border_sizes`). This allows displaying some additional data per
 point.
+
+!!! note
+
+    You can't set the `show_legend` of the [`GraphConfiguration`](@ref) of a points graph. Instead you probably want to
+    set the `show_scale` of the `style` (and/or of the `border_style` and/or `edges_style`).
 """
 @kwdef mutable struct PointsGraphConfiguration <: ObjectWithValidation
     graph::GraphConfiguration = GraphConfiguration()
@@ -455,6 +486,7 @@ point.
     y_axis::AxisConfiguration = AxisConfiguration()
     style::PointsStyleConfiguration = PointsStyleConfiguration()
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
     show_border::Bool = false
     show_same_line::Bool = false
     show_same_band_offset::Maybe{Real} = nothing
@@ -489,36 +521,47 @@ end
         ys::AbstractVector{<:Real}
         colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
         sizes::Maybe{AbstractVector{<:Real}} = nothing
+        hovers::Maybe{AbstractStringVector} = nothing
         border_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
         border_sizes::Maybe{AbstractVector{<:Real}} = nothing
-        hovers::Maybe{AbstractStringVector} = nothing
+        edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
+        edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+        edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+        edges_hovers::Maybe{AbstractStringVector} = nothing
     end
 
 The data for a scatter graph of points.
 
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
-`y_axis_title` for the axes. The `name` is only useful when `show_legend` is set.
+`y_axis_title` for the axes.
 
 The `xs` and `ys` vectors must be of the same size. If specified, the `colors` `sizes` and/or `hovers` vectors must also
 be of the same size. The `colors` can be either color names or a numeric value; if the latter, then the configuration's
 `color_scale` is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs
 (or when saving an HTML file).
 
-The `border_colors` and `border_sizes` are only used if showing borders around each point. These will use the
-`border_style`. The border size is in addition to the point size.
+The `border_colors` and `border_sizes` are only used if the `show_border` of [`PointsGraphConfiguration`](@ref) is set.
+This will use the `border_style`. The border size is in addition to the point size.
+
+It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
+[`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge. You
+can also specify `edges_hovers`.
 """
 @kwdef mutable struct PointsGraphData <: ObjectWithValidation
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
-    name::Maybe{AbstractString} = nothing
     xs::AbstractVector{<:Real}
     ys::AbstractVector{<:Real}
     colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
     sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+    hovers::Maybe{AbstractStringVector} = nothing
     border_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
     border_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
-    hovers::Maybe{AbstractStringVector} = nothing
+    edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
+    edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+    edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+    edges_hovers::Maybe{AbstractStringVector} = nothing
 end
 
 function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractString}
@@ -572,6 +615,21 @@ function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractStrin
                "is different from the number of points: $(length(data.xs))"
     end
 
+    edges = data.edges
+    if edges !== nothing
+        for (index, (from_point, to_point)) in enumerate(edges)
+            if from_point < 1 || length(data.xs) < from_point
+                return "edge#$(index) from invalid point: $(from_point)"
+            end
+            if to_point < 1 || length(data.xs) < to_point
+                return "edge#$(index) to invalid point: $(to_point)"
+            end
+            if from_point == to_point
+                return "edge#$(index) from point to itself: $(from_point)"
+            end
+        end
+    end
+
     return nothing
 end
 
@@ -610,7 +668,6 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
                 marker_coloraxis = configuration.border_style.show_scale ? "coloraxis2" : nothing,
                 marker_showscale = configuration.border_style.show_scale,
                 marker_reversescale = configuration.border_style.reverse_scale,
-                name = data.name !== nothing ? data.name : "Trace",
                 text = data.hovers,
                 hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
                 mode = "markers",
@@ -628,12 +685,43 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
             marker_colorscale = configuration.style.color_scale,
             marker_showscale = configuration.style.show_scale,
             marker_reversescale = configuration.style.reverse_scale,
-            name = data.name !== nothing ? data.name : "Trace",
             text = data.hovers,
             hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
             mode = "markers",
         ),
     )
+
+    edges = data.edges
+    if edges !== nothing
+        for (index, (from_point, to_point)) in enumerate(edges)
+            push!(
+                traces,
+                scatter(;
+                    x = [data.xs[from_point], data.xs[to_point]],
+                    y = [data.ys[from_point], data.ys[to_point]],
+                    line_width = if data.edges_sizes !== nothing
+                        data.edges_sizes[index]
+                    else
+                        configuration.edges_style.size
+                    end,
+                    line_color = if data.edges_colors !== nothing
+                        data.edges_colors[index]
+                    elseif configuration.edges_style.color !== nothing
+                        configuration.edges_style.color
+                    else
+                        "darkgrey"
+                    end,
+                    line_colorscale = configuration.edges_style.color_scale,
+                    line_coloraxis = configuration.edges_style.show_scale ? "coloraxis3" : nothing,
+                    line_showscale = configuration.edges_style.show_scale,
+                    line_reversescale = configuration.edges_style.reverse_scale,
+                    text = data.edges_hovers,
+                    hovertemplate = data.edges_hovers === nothing ? nothing : "%{text}<extra></extra>",
+                    mode = "lines",
+                ),
+            )
+        end
+    end
 
     show_same_band_offset = configuration.show_same_band_offset
     if configuration.show_same_line || show_same_band_offset !== nothing
@@ -695,13 +783,28 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         yaxis_showticklabels = configuration.graph.show_ticks,
         yaxis_title = data.y_axis_title,
         yaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
-        showlegend = configuration.graph.show_legend,
+        showlegend = false,
         coloraxis2_colorbar_x = if (configuration.border_style.show_scale && configuration.style.show_scale)
             1.2
         else
             nothing
         end,
+        coloraxis3_colorbar_x = if (
+            configuration.edges_style.show_scale &&
+            configuration.style.show_scale &&
+            configuration.border_style.show_scale
+        )
+            1.4
+        elseif (
+            configuration.edges_style.show_scale &&
+            (configuration.style.show_scale || configuration.border_style.show_scale)
+        )
+            1.2
+        else
+            nothing
+        end,
         coloraxis2_colorscale = configuration.border_style.color_scale,
+        coloraxis3_colorscale = configuration.edges_style.color_scale,
     )
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)

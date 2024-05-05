@@ -75,6 +75,119 @@ TODO: To install the Python wrappers...
 
 TODO: To install the R wrappers...
 
+## Features list:
+
+This also serves as the main TODO list (including the Python and R wrappers).
+
+### Environment:
+
+  - Static file Plotly graphs (Julia; TODO: Python, TODO: R).
+  - Static file Heatmap graphs (TODO: Julia; TODO: Python, TODO: R).
+  - Interactive Plotly graphs (TODO: Julia; TODO: Python, TODO: R).
+  - Interactive Heatmap graphs (TODO: Julia; TODO: Python, TODO: R).
+  - TODO: Jupyter notebook vs. Jupyter lab vs. REPL.
+
+### Graph types:
+
+  - Distribution graph (Julia; TODO: Python, TODO: R).
+      + Box graph.
+      + Violin graph.
+      + Curve graph.
+      + Violin + Box graph.
+      + Curve + Box graph.
+      + Horizontal graph.
+      + TODO: Log axis.
+  - Distributions graph (Julia; TODO: Python, TODO: R).
+      + Legend.
+      + Separate.
+      + TODO: Overlay.
+  - Points graph (Julia; TODO: Python, TODO: R).
+      + Same line.
+      + Same band.
+      + TODO: Horizontal line (& band?).
+      + TODO: Vertical line (& band?).
+      + Colorbar.
+      + Color scale.
+          * Named.
+          * Reversed.
+          * TODO: Categorical.
+          * TODO: Manual.
+      + Borders.
+          * Colorbar.
+          * TODO: Legend.
+      + TODO: Edges.
+          * TODO: Colorbar.
+          * TODO: Color scale.
+          * TODO: Legend.
+      + TODO: Log axis.
+  - Line graph (used for CDF) (TODO: Julia; TODO: Python, TODO: R).
+  - Lines graph (used for CDF) (TODO: Julia; TODO: Python, TODO: R).
+      + TODO: Legend.
+      + TODO: Overlay.
+      + TODO: Stacked.
+  - Bar graph (TODO: Julia; TODO: Python, TODO: R).
+      + TODO: Annotations.
+      + TODO: Annotations Legend.
+  - Bars graph (TODO: Julia; TODO: Python, TODO: R).
+      + TODO: Legend.
+      + TODO: Annotations.
+      + TODO: Annotations Legend.
+      + TODO: Grouped.
+      + TODO: Stacked.
+  - Heatmap graph (TODO: Julia; TODO: Python, TODO: R).
+      + TODO: Annotations.
+      + TODO: Tree.
+  - Flow (Sankey) graph (TODO: Julia; TODO: Python, TODO: R).
+
+### Controllers:
+
+  - Distribution controller (TODO: Julia; TODO: Python, TODO: R).
+  - Distributions controller (TODO: Julia; TODO: Python, TODO: R).
+  - Points controller (TODO: Julia; TODO: Python, TODO: R).
+      + TODO: With border (TODO: Julia; TODO: Python, TODO: R).
+      + TODO: With edges (TODO: Julia; TODO: Python, TODO: R).
+  - Line controller (TODO: Julia; TODO: Python, TODO: R).
+  - Lines controller (TODO: Julia; TODO: Python, TODO: R).
+  - Bar controller (TODO: Julia; TODO: Python, TODO: R).
+  - Bars controller (TODO: Julia; TODO: Python, TODO: R).
+  - Heatmap controller (TODO: Julia; TODO: Python, TODO: R).
+
+### Widgets & Extractors & Plotters
+
+  - UMIs/metacell distribution (TODO: Julia; TODO: Python, TODO: R).
+  - Cells/metacell distribution (TODO: Julia; TODO: Python, TODO: R).
+  - Max-inner-fold/metacell distribution (TODO: Julia; TODO: Python, TODO: R).
+  - Max-inner-stdev/metacell distribution (TODO: Julia; TODO: Python, TODO: R).
+  - Max-zero-fold/metacell distribution (TODO: Julia; TODO: Python, TODO: R).
+  - Gene expression/cell type distributions (TODO: Julia; TODO: Python, TODO: R).
+  - Projection correlation/metacells distribution (TODO: Julia; TODO: Python, TODO: R).
+  - Gene/gene expression points (TODO: Julia; TODO: Python, TODO: R).
+  - Genes significant inner-fold/expression points (TODO: Julia; TODO: Python, TODO: R).
+  - Genes zero cells/expected points (TODO: Julia; TODO: Python, TODO: R).
+  - Manifold points & edges (TODO: Julia; TODO: Python, TODO: R).
+  - Differential expression points (TODO: Julia; TODO: Python, TODO: R).
+  - Gene observed/projected points (TODO: Julia; TODO: Python, TODO: R).
+  - Gene projection correction/expression points (TODO: Julia; TODO: Python, TODO: R).
+  - Markers heatmap (TODO: Julia; TODO: Python, TODO: R).
+  - Gene modules heatmap (TODO: Julia; TODO: Python, TODO: R).
+  - Inner-fold heatmap (TODO: Julia; TODO: Python, TODO: R).
+  - Stdev-fold heatmap (TODO: Julia; TODO: Python, TODO: R).
+  - Projected-fold heatmap (TODO: Julia; TODO: Python, TODO: R).
+  - Projection types stacked bars (TODO: Julia; TODO: Python, TODO: R).
+  - Projection types fitted genes (TODO: Julia; TODO: Python, TODO: R).
+
+### Dashboards
+
+  - Atlas Overview
+  - Metacells QC
+  - Projection QC
+  - Annotation QC
+
+### Work flows
+
+  - Compute metacells (TODO: Julia; TODO: Python, TODO: R).
+  - Manual type annotations (TODO: Julia; TODO: Python, TODO: R).
+
 ## License (MIT)
 
 Copyright © 2024 Weizmann Institute of Science

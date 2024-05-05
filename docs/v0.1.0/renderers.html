@@ -205,7 +205,6 @@
     template::AbstractString = &quot;simple_white&quot;
     show_grid::Bool = true
     show_ticks::Bool = true
-    show_legend::Bool = false
 end
 </code>
 </pre>
@@ -235,9 +234,7 @@ end
 <code>show_grid
 </code> and 
 <code>show_ticks
-</code> are set, but 
-<code>show_legend
-</code> is not.
+</code> are set.
 </p>
 <p>The default 
 <code>template
@@ -317,102 +314,6 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphConfiguration" href="#MCGraphs.Renderers.DistributionGraphConfiguration">
-<code>MCGraphs.Renderers.DistributionGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: ObjectWithValidation
-    graph::GraphConfiguration = GraphConfiguration()
-    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
-    value_axis::AxisConfiguration = AxisConfiguration()
-end
-</code>
-</pre>
-<p>Configure a graph for showing a distribution (with 
-<a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
-<code>DistributionGraphData
-</code>
-</a>) or several distributions (with 
-<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
-<code>DistributionsGraphData
-</code>
-</a>).
-</p>
-<p>The optional 
-<code>color
-</code> will be chosen automatically if not specified. When showing multiple distributions, it is also possible to specify the color of each one in the 
-<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
-<code>DistributionsGraphData
-</code>
-</a>.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.DistributionStyleConfiguration" href="#MCGraphs.Renderers.DistributionStyleConfiguration">
-<code>MCGraphs.Renderers.DistributionStyleConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct DistributionStyleConfiguration &lt;: ObjectWithValidation
-    show_box::Bool = true
-    show_violin::Bool = false
-    show_curve::Bool = false
-    show_outliers::Bool = false
-    color::Maybe{AbstractString} = nothing
-end
-</code>
-</pre>
-<p>Configure the style of a distribution graph.
-</p>
-<p>If 
-<code>show_box
-</code>, show a box graph.
-</p>
-<p>If 
-<code>show_violin
-</code>, show a violin graph.
-</p>
-<p>If 
-<code>show_curve
-</code>, show a density curve.
-</p>
-<p>You can combine the above; however, a density curve is just the positive side of a violin graph, so you can&#39;t combine the two.
-</p>
-<p>In addition to the (combination) of the above, if 
-<code>show_outliers
-</code>, also show the extreme (outlier) points.
-</p>
-<p>The 
-<code>color
-</code> is chosen automatically by default. When showing multiple distributions, you can override it per each one in the 
-<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
-<code>DistributionsGraphData
-</code>
-</a>.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphData" href="#MCGraphs.Renderers.DistributionGraphData">
 <code>MCGraphs.Renderers.DistributionGraphData
 </code>
@@ -486,6 +387,142 @@ end
 </div>
 </section>
 </article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphConfiguration" href="#MCGraphs.Renderers.DistributionGraphConfiguration">
+<code>MCGraphs.Renderers.DistributionGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: ObjectWithValidation
+    graph::GraphConfiguration = GraphConfiguration()
+    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph for showing a distribution (with 
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
+<code>DistributionGraphData
+</code>
+</a>) or several distributions (with 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a>).
+</p>
+<p>The optional 
+<code>color
+</code> will be chosen automatically if not specified. When showing multiple distributions, it is also possible to specify the color of each one in the 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionsGraphConfiguration" href="#MCGraphs.Renderers.DistributionsGraphConfiguration">
+<code>MCGraphs.Renderers.DistributionsGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct DistributionsGraphConfiguration &lt;: ObjectWithValidation
+    graph::GraphConfiguration = GraphConfiguration()
+    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    show_legend::Bool = false
+    overlay::Bool = false
+end
+</code>
+</pre>
+<p>Configure a graph for showing several distributions several distributions.
+</p>
+<p>This is identical to 
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
+<code>DistributionGraphConfiguration
+</code>
+</a> with the addition of 
+<code>show_legend
+</code> to show a legend. This is not set by default as it makes little sense unless 
+<code>overlay
+</code> is also set. TODO: Implement 
+<code>overlay
+</code>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionStyleConfiguration" href="#MCGraphs.Renderers.DistributionStyleConfiguration">
+<code>MCGraphs.Renderers.DistributionStyleConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct DistributionStyleConfiguration &lt;: ObjectWithValidation
+    show_box::Bool = true
+    show_violin::Bool = false
+    show_curve::Bool = false
+    show_outliers::Bool = false
+    color::Maybe{AbstractString} = nothing
+end
+</code>
+</pre>
+<p>Configure the style of a distribution graph.
+</p>
+<p>If 
+<code>show_box
+</code>, show a box graph.
+</p>
+<p>If 
+<code>show_violin
+</code>, show a violin graph.
+</p>
+<p>If 
+<code>show_curve
+</code>, show a density curve.
+</p>
+<p>You can combine the above; however, a density curve is just the positive side of a violin graph, so you can&#39;t combine the two.
+</p>
+<p>In addition to the (combination) of the above, if 
+<code>show_outliers
+</code>, also show the extreme (outlier) points.
+</p>
+<p>The 
+<code>color
+</code> is chosen automatically by default. When showing multiple distributions, you can override it per each one in the 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
 <h2 id="Points">
 <a class="docs-heading-anchor" href="#Points">Points
 </a>
@@ -494,6 +531,97 @@ end
 <a class="docs-heading-anchor-permalink" href="#Points" title="Permalink">
 </a>
 </h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphData" href="#MCGraphs.Renderers.PointsGraphData">
+<code>MCGraphs.Renderers.PointsGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct PointsGraphData &lt;: ObjectWithValidation
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{&lt;:Real}
+    ys::AbstractVector{&lt;:Real}
+    colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
+    sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
+    hovers::Maybe{AbstractStringVector} = nothing
+    border_colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
+    border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
+    edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
+    edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
+    edges_sizes::Maybe{&lt;:AbstractVector{&lt;:Real}} = nothing
+    edges_hovers::Maybe{AbstractStringVector} = nothing
+end
+</code>
+</pre>
+<p>The data for a scatter graph of points.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>x_axis_title
+</code> and 
+<code>y_axis_title
+</code> for the axes.
+</p>
+<p>The 
+<code>xs
+</code> and 
+<code>ys
+</code> vectors must be of the same size. If specified, the 
+<code>colors
+</code> 
+<code>sizes
+</code> and/or 
+<code>hovers
+</code> vectors must also be of the same size. The 
+<code>colors
+</code> can be either color names or a numeric value; if the latter, then the configuration&#39;s 
+<code>color_scale
+</code> is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs (or when saving an HTML file).
+</p>
+<p>The 
+<code>border_colors
+</code> and 
+<code>border_sizes
+</code> are only used if the 
+<code>show_border
+</code> of 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>PointsGraphConfiguration
+</code>
+</a> is set. This will use the 
+<code>border_style
+</code>. The border size is in addition to the point size.
+</p>
+<p>It is possible to draw straight 
+<code>edges
+</code> between specific point pairs. In this case the 
+<code>edges_style
+</code> of the 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>PointsGraphConfiguration
+</code>
+</a> will be used, and the 
+<code>edges_colors
+</code> and 
+<code>edges_sizes
+</code> will override it per edge. You can also specify 
+<code>edges_hovers
+</code>.
+</p>
+</div>
+</section>
+</article>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
@@ -514,6 +642,7 @@ end
     y_axis::AxisConfiguration = AxisConfiguration()
     style::PointsStyleConfiguration = PointsConfiguration()
     border_style::PointsStyleConfiguration = PointsConfiguration()
+    edges_style::PointsConfiguration = PointsConfiguration()
     show_border::Bool = false
     show_same_line::Bool = false
     show_same_band_offset::Maybe{Real} = nothing
@@ -542,6 +671,28 @@ end
 <code>border_sizes
 </code>). This allows displaying some additional data per point.
 </p>
+<div class="admonition is-info">
+<header class="admonition-header">Note
+</header>
+<div class="admonition-body">
+<p>You can&#39;t set the 
+<code>show_legend
+</code> of the 
+<a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
+<code>GraphConfiguration
+</code>
+</a> of a points graph. Instead you probably want to set the 
+<code>show_scale
+</code> of the 
+<code>style
+</code> (and/or of the 
+<code>border_style
+</code> and/or 
+<code>edges_style
+</code>).
+</p>
+</div>
+</div>
 </div>
 </section>
 </article>
@@ -572,7 +723,9 @@ end
 <code>size
 </code> and 
 <code>color
-</code> is chosen automatically. You can also override it by specifying colors in the 
+</code> is chosen automatically (when this is applied to edges, the 
+<code>size
+</code> is the width of the line). You can also override this by specifying sizes and colors in the 
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
 <code>PointsGraphData
 </code>
@@ -583,75 +736,6 @@ end
 </code> to reverse it. You need to explicitly set 
 <code>show_scale
 </code> to show its legend.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphData" href="#MCGraphs.Renderers.PointsGraphData">
-<code>MCGraphs.Renderers.PointsGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct PointsGraphData &lt;: ObjectWithValidation
-    graph_title::Maybe{AbstractString} = nothing
-    x_axis_title::Maybe{AbstractString} = nothing
-    y_axis_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{&lt;:Real}
-    ys::AbstractVector{&lt;:Real}
-    colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
-    sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
-    border_colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
-    border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
-    hovers::Maybe{AbstractStringVector} = nothing
-end
-</code>
-</pre>
-<p>The data for a scatter graph of points.
-</p>
-<p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
-</code> as well as the 
-<code>x_axis_title
-</code> and 
-<code>y_axis_title
-</code> for the axes. The 
-<code>name
-</code> is only useful when 
-<code>show_legend
-</code> is set.
-</p>
-<p>The 
-<code>xs
-</code> and 
-<code>ys
-</code> vectors must be of the same size. If specified, the 
-<code>colors
-</code> 
-<code>sizes
-</code> and/or 
-<code>hovers
-</code> vectors must also be of the same size. The 
-<code>colors
-</code> can be either color names or a numeric value; if the latter, then the configuration&#39;s 
-<code>color_scale
-</code> is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs (or when saving an HTML file).
-</p>
-<p>The 
-<code>border_colors
-</code> and 
-<code>border_sizes
-</code> are only used if showing borders around each point. These will use the 
-<code>border_style
-</code>. The border size is in addition to the point size.
 </p>
 </div>
 </section>
@@ -692,6 +776,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionStyleConfiguration">
 <code>MCGraphs.Renderers.DistributionStyleConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphConfiguration">
+<code>MCGraphs.Renderers.DistributionsGraphConfiguration
 </code>
 </a>
 </li>
