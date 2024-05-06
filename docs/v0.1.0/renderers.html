@@ -564,12 +564,6 @@ end
     edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
     edges_colors::Maybe{AbstractStringVector} = nothing
     edges_sizes::Maybe{&lt;:AbstractVector{&lt;:Real}} = nothing
-    x_line::Maybe{&lt;:Real} = nothing
-    x_high_line::Maybe{&lt;:Real} = nothing
-    x_low_line::Maybe{&lt;:Real} = nothing
-    y_line::Maybe{&lt;:Real} = nothing
-    y_high_line::Maybe{&lt;:Real} = nothing
-    y_low_line::Maybe{&lt;:Real} = nothing
 end
 </code>
 </pre>
@@ -629,20 +623,6 @@ end
 <code>edges_colors
 </code> are restricted to explicit colors, not a color scale.
 </p>
-<p>If 
-<code>x_line
-</code> is specified, a horizontal line is shown at this value; if 
-<code>y_line
-</code> is specified, a vertical line is shown at this value. If 
-<code>x_high_line
-</code> and/or 
-<code>x_low_line
-</code> and/or 
-<code>y_high_line
-</code> and/or 
-<code>y_low_line
-</code> are specified, dashed lines are shown at these values.
-</p>
 </div>
 </section>
 </article>
@@ -664,27 +644,35 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    style::PointsStyleConfiguration = PointsConfiguration()
-    border_style::PointsStyleConfiguration = PointsConfiguration()
-    edges_style::PointsConfiguration = PointsConfiguration()
+    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    edges_style::PointsConfiguration = PointsStyleConfiguration()
     show_border::Bool = false
-    show_same_line::Bool = false
-    show_high_line::Maybe{Real} = nothing
-    show_low_line::Maybe{Real} = nothing
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
+    diagonal_bands::BandsConfiguration = BandsConfiguration()
 end
 </code>
 </pre>
 <p>Configure a graph for showing a scatter graph of points.
 </p>
-<p>If 
-<code>show_same_line
-</code> is set, a line (x = y) is shown. If 
-<code>show_high_line
+<p>Using the 
+<code>vertical_bands
+</code>, 
+<code>horizontal_bands
 </code> and/or 
-<code>show_low_line
-</code> are set, dashed lines above and below the &quot;same&quot; line are shown at these offsets. If the axes are in 
+<code>diagonal_bands
+</code> you can partition the graph into regions. The 
+<code>diagonal_bands
+</code> can only be used if both axes are linear or both axes are in 
 <code>log_scale
-</code>, the log of the (offset + 1) is used.
+</code>; they also unify the ranges of the X and Y axes. If the axes are in 
+<code>log_scale
+</code>, the 
+<code>line_offset
+</code> of the 
+<code>diagonal_bands
+</code> are multiplicative instead of additive, and must be positive.
 </p>
 <p>If 
 <code>show_border
@@ -777,6 +765,73 @@ end
 </div>
 </section>
 </article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BandsConfiguration" href="#MCGraphs.Renderers.BandsConfiguration">
+<code>MCGraphs.Renderers.BandsConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BandsConfiguration &lt;: ObjectWithValidation
+    low::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
+    middle::BandRegionConfiguration = BandRegionConfiguration()
+    high::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
+end
+</code>
+</pre>
+<p>Configure the partition of the graph up to three band regions. The 
+<code>low
+</code> and 
+<code>high
+</code> are the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
+<code>middle
+</code> is the &quot;inner&quot; region between them (so its line is inside it, solid by default).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BandRegionConfiguration" href="#MCGraphs.Renderers.BandRegionConfiguration">
+<code>MCGraphs.Renderers.BandRegionConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BandRegionConfiguration &lt;: ObjectWithValidation
+    line_color::Maybe{AbstractString} = &quot;black&quot;
+    line_width::Real = 1.0
+    line_is_dashed::Bool = false
+    fill_color::Maybe{AbstractString} = nothing
+end
+</code>
+</pre>
+<p>Configure a region of the graph defined by some band of values. The region only exists if 
+<code>line_offset
+</code> is set. To actually show the region, either the 
+<code>line_color
+</code> and/or the 
+<code>fill_color
+</code> must be set; by default, just the line is shown. The 
+<code>line_width
+</code> is in pixels (1/96th of an inch).
+</p>
+</div>
+</section>
+</article>
 <h2 id="Index">
 <a class="docs-heading-anchor" href="#Index">Index
 </a>
@@ -795,6 +850,18 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.AxisConfiguration">
 <code>MCGraphs.Renderers.AxisConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.BandRegionConfiguration">
+<code>MCGraphs.Renderers.BandRegionConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.BandsConfiguration">
+<code>MCGraphs.Renderers.BandsConfiguration
 </code>
 </a>
 </li>

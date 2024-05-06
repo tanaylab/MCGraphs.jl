@@ -477,24 +477,117 @@ function Validations.validate_object(
 end
 
 """
+    @kwdef mutable struct BandRegionConfiguration <: ObjectWithValidation
+        line_color::Maybe{AbstractString} = "black"
+        line_width::Real = 1.0
+        line_is_dashed::Bool = false
+        fill_color::Maybe{AbstractString} = nothing
+    end
+
+Configure a region of the graph defined by some band of values. The region only exists if `line_offset` is set. To
+actually show the region, either the `line_color` and/or the `fill_color` must be set; by default, just the line is
+shown. The `line_width` is in pixels (1/96th of an inch).
+"""
+@kwdef mutable struct BandRegionConfiguration <: ObjectWithValidation
+    line_offset::Maybe{Real} = nothing
+    line_color::Maybe{AbstractString} = "black"
+    line_width::Real = 1.0
+    line_is_dashed::Bool = false
+    fill_color::Maybe{AbstractString} = nothing
+end
+
+function Validations.validate_object(
+    of_what::AbstractString,
+    of_which::AbstractString,
+    configuration::BandRegionConfiguration,
+    log_scale::Bool,
+)::Maybe{AbstractString}
+    if configuration.line_width <= 0
+        return "non-positive $(of_what) $(of_which) line_width: $(configuration.line_width)"
+    end
+    if log_scale && configuration.line_offset !== nothing && configuration.line_offset <= 0
+        return "non-positive log_scale $(of_what) $(of_which) line_offset: $(configuration.line_offset)"
+    end
+    return nothing
+end
+
+"""
+    @kwdef mutable struct BandsConfiguration <: ObjectWithValidation
+        low::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
+        middle::BandRegionConfiguration = BandRegionConfiguration()
+        high::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
+    end
+
+Configure the partition of the graph up to three band regions. The `low` and `high` are the "outer" regions (so their
+lines are at their border, dashed by default) and the `middle` is the "inner" region between them (so its line is inside
+it, solid by default).
+"""
+@kwdef mutable struct BandsConfiguration <: ObjectWithValidation
+    low::BandRegionConfiguration = BandRegionConfiguration(; line_is_dashed = true)
+    middle::BandRegionConfiguration = BandRegionConfiguration()
+    high::BandRegionConfiguration = BandRegionConfiguration(; line_is_dashed = true)
+end
+
+function Validations.validate_object(
+    of_what::AbstractString,
+    configuration::BandsConfiguration,
+    log_scale::Bool,
+)::Maybe{AbstractString}
+    message = validate_object(of_what, "low", configuration.low, log_scale)
+    if message === nothing
+        message = validate_object(of_what, "middle", configuration.middle, log_scale)
+    end
+    if message === nothing
+        message = validate_object(of_what, "high", configuration.high, log_scale)
+    end
+    if message !== nothing
+        return message
+    end
+
+    if configuration.low.line_offset !== nothing &&
+       configuration.middle.line_offset !== nothing &&
+       configuration.low.line_offset >= configuration.middle.line_offset
+        return "$(of_what) low line_offset: $(configuration.low.line_offset)\n" *
+               "is not less than middle line_offset: $(configuration.low.line_offset)"
+    end
+
+    if configuration.middle.line_offset !== nothing &&
+       configuration.high.line_offset !== nothing &&
+       configuration.middle.line_offset >= configuration.high.line_offset
+        return "$(of_what) high line_offset: $(configuration.high.line_offset)\n" *
+               "is not greater than middle line_offset: $(configuration.middle.line_offset)"
+    end
+
+    if configuration.low.line_offset !== nothing &&
+       configuration.high.line_offset !== nothing &&
+       configuration.low.line_offset >= configuration.high.line_offset
+        return "$(of_what) low line_offset: $(configuration.low.line_offset)\n" *
+               "is not less than high line_offset: $(configuration.high.line_offset)"
+    end
+
+    return nothing
+end
+
+"""
     @kwdef mutable struct PointsGraphConfiguration <: ObjectWithValidation
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
-        style::PointsStyleConfiguration = PointsConfiguration()
-        border_style::PointsStyleConfiguration = PointsConfiguration()
-        edges_style::PointsConfiguration = PointsConfiguration()
+        style::PointsStyleConfiguration = PointsStyleConfiguration()
+        border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+        edges_style::PointsConfiguration = PointsStyleConfiguration()
         show_border::Bool = false
-        show_same_line::Bool = false
-        show_high_line::Maybe{Real} = nothing
-        show_low_line::Maybe{Real} = nothing
+        vertical_bands::BandsConfiguration = BandsConfiguration()
+        horizontal_bands::BandsConfiguration = BandsConfiguration()
+        diagonal_bands::BandsConfiguration = BandsConfiguration()
     end
 
 Configure a graph for showing a scatter graph of points.
 
-If `show_same_line` is set, a line (x = y) is shown. If `show_high_line` and/or `show_low_line` are set, dashed lines
-above and below the "same" line are shown at these offsets. If the axes are in `log_scale`, the log of the (offset + 1)
-is used.
+Using the `vertical_bands`, `horizontal_bands` and/or `diagonal_bands` you can partition the graph into regions. The
+`diagonal_bands` can only be used if both axes are linear or both axes are in `log_scale`; they also unify the ranges of
+the X and Y axes. If the axes are in `log_scale`, the `line_offset` of the `diagonal_bands` are multiplicative instead
+of additive, and must be positive.
 
 If `show_border` is set, a border will be shown around each point using the `border_style` (and, if specified in the
 [`PointsGraphData`](@ref), the `border_colors` and/or `border_sizes`). This allows displaying some additional data per
@@ -515,9 +608,9 @@ point.
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
     edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
     show_border::Bool = false
-    show_same_line::Bool = false
-    show_high_line::Maybe{Real} = nothing
-    show_low_line::Maybe{Real} = nothing
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
+    diagonal_bands::BandsConfiguration = BandsConfiguration()
 end
 
 function Validations.validate_object(configuration::PointsGraphConfiguration)::Maybe{AbstractString}
@@ -541,17 +634,24 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
     if message === nothing
         message = validate_object("points edges", configuration.edges_style)
     end
-
-    show_high_line = configuration.show_high_line
-    if show_high_line !== nothing && show_high_line <= 0
-        return "non-positive points show_high_line: $(show_high_line)"
+    if message === nothing
+        message = validate_object("vertical_bands", configuration.vertical_bands, false)
     end
-
-    show_low_line = configuration.show_low_line
-    if show_low_line !== nothing && show_low_line <= 0
-        return "non-positive points show_low_line: $(show_low_line)"
+    if message === nothing
+        message = validate_object("horizontal_bands", configuration.horizontal_bands, false)
     end
-
+    if message === nothing &&
+       configuration.x_axis.log_scale != configuration.y_axis.log_scale &&
+       (
+           configuration.diagonal_bands.low.line_offset !== nothing ||
+           configuration.diagonal_bands.middle.line_offset !== nothing ||
+           configuration.diagonal_bands.high.line_offset !== nothing
+       )
+        message = "diagonal_bands specified for a combination of linear and log scale axes"
+    end
+    if message === nothing
+        message = validate_object("diagonal_bands", configuration.diagonal_bands, configuration.x_axis.log_scale)
+    end
     return message
 end
 
@@ -570,12 +670,6 @@ end
         edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
         edges_colors::Maybe{AbstractStringVector} = nothing
         edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
-        x_line::Maybe{<:Real} = nothing
-        x_high_line::Maybe{<:Real} = nothing
-        x_low_line::Maybe{<:Real} = nothing
-        y_line::Maybe{<:Real} = nothing
-        y_high_line::Maybe{<:Real} = nothing
-        y_low_line::Maybe{<:Real} = nothing
     end
 
 The data for a scatter graph of points.
@@ -594,10 +688,6 @@ This will use the `border_style`. The border size is in addition to the point si
 It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
 [`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
 The `edges_colors` are restricted to explicit colors, not a color scale.
-
-If `x_line` is specified, a horizontal line is shown at this value; if `y_line` is specified, a vertical line is shown
-at this value. If `x_high_line` and/or `x_low_line` and/or `y_high_line` and/or `y_low_line` are specified, dashed lines
-are shown at these values.
 """
 @kwdef mutable struct PointsGraphData <: ObjectWithValidation
     graph_title::Maybe{AbstractString} = nothing
@@ -613,12 +703,6 @@ are shown at these values.
     edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
     edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
     edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
-    x_line::Maybe{<:Real} = nothing
-    x_high_line::Maybe{<:Real} = nothing
-    x_low_line::Maybe{<:Real} = nothing
-    y_line::Maybe{<:Real} = nothing
-    y_high_line::Maybe{<:Real} = nothing
-    y_low_line::Maybe{<:Real} = nothing
 end
 
 function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractString}
@@ -706,191 +790,471 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
 
     traces = Vector{GenericTrace}()
 
-    if configuration.show_border
-        if data.border_sizes === nothing
-            marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
-            if data.sizes === nothing
-                marker_size += configuration.style.size !== nothing ? configuration.style.size : 4.0
-            else
-                marker_size = data.sizes .+ marker_size
-            end
+    minimum_x = minimum(data.xs)
+    minimum_y = minimum(data.ys)
+    maximum_x = maximum(data.xs)
+    maximum_y = maximum(data.ys)
 
-        else
-            if data.sizes === nothing
-                marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
-                marker_size = data.border_sizes .+ marker_size
-            else
-                marker_size = data.border_sizes .+ data.sizes
-            end
-        end
-
-        push!(
+    if configuration.vertical_bands.low.line_offset !== nothing &&
+       configuration.vertical_bands.low.fill_color !== nothing
+        push!(  # NOJET
             traces,
-            scatter(;
-                x = data.xs,
-                y = data.ys,
-                marker_size = marker_size,
-                marker_color = data.border_colors !== nothing ? data.border_colors : configuration.border_style.color,
-                marker_colorscale = configuration.border_style.color_scale,
-                marker_coloraxis = configuration.border_style.show_scale ? "coloraxis2" : nothing,
-                marker_showscale = configuration.border_style.show_scale,
-                marker_reversescale = configuration.border_style.reverse_scale,
-                name = "",
-                text = data.hovers,
-                hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
-                mode = "markers",
+            fill_trace(
+                configuration.vertical_bands.low.fill_color,
+                [
+                    minimum_x,
+                    configuration.vertical_bands.low.line_offset,
+                    configuration.vertical_bands.low.line_offset,
+                    minimum_x,
+                ],
+                [minimum_y, minimum_y, maximum_y, maximum_y],
             ),
         )
     end
 
+    if configuration.vertical_bands.high.line_offset !== nothing &&
+       configuration.vertical_bands.high.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.vertical_bands.high.fill_color,
+                [
+                    maximum_x,
+                    configuration.vertical_bands.high.line_offset,
+                    configuration.vertical_bands.high.line_offset,
+                    maximum_x,
+                ],
+                [minimum_y, minimum_y, maximum_y, maximum_y],
+            ),
+        )
+    end
+
+    if configuration.vertical_bands.high.line_offset !== nothing &&
+       configuration.vertical_bands.low.line_offset !== nothing &&
+       configuration.vertical_bands.middle.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.vertical_bands.middle.fill_color,
+                [
+                    configuration.vertical_bands.low.line_offset,
+                    configuration.vertical_bands.high.line_offset,
+                    configuration.vertical_bands.high.line_offset,
+                    configuration.vertical_bands.low.line_offset,
+                ],
+                [minimum_y, minimum_y, maximum_y, maximum_y],
+            ),
+        )
+    end
+
+    if configuration.horizontal_bands.low.line_offset !== nothing &&
+       configuration.horizontal_bands.low.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.horizontal_bands.low.fill_color,
+                [minimum_x, minimum_x, maximum_x, maximum_x],
+                [
+                    minimum_y,
+                    configuration.horizontal_bands.low.line_offset,
+                    configuration.horizontal_bands.low.line_offset,
+                    minimum_y,
+                ],
+            ),
+        )
+    end
+
+    if configuration.horizontal_bands.high.line_offset !== nothing &&
+       configuration.horizontal_bands.high.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.horizontal_bands.high.fill_color,
+                [minimum_x, minimum_x, maximum_x, maximum_x],
+                [
+                    maximum_y,
+                    configuration.horizontal_bands.high.line_offset,
+                    configuration.horizontal_bands.high.line_offset,
+                    maximum_y,
+                ],
+            ),
+        )
+    end
+
+    if configuration.horizontal_bands.high.line_offset !== nothing &&
+       configuration.horizontal_bands.low.line_offset !== nothing &&
+       configuration.horizontal_bands.middle.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.horizontal_bands.middle.fill_color,
+                [minimum_x, minimum_x, maximum_x, maximum_x],
+                [
+                    configuration.horizontal_bands.low.line_offset,
+                    configuration.horizontal_bands.high.line_offset,
+                    configuration.horizontal_bands.high.line_offset,
+                    configuration.horizontal_bands.low.line_offset,
+                ],
+            ),
+        )
+    end
+
+    log_scale = configuration.x_axis.log_scale
+    if configuration.diagonal_bands.low.line_offset !== nothing &&
+       configuration.diagonal_bands.low.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            low_diagonal_trace(
+                configuration.diagonal_bands.low.fill_color,
+                log_scale,
+                configuration.diagonal_bands.low.line_offset,
+                minimum_x,
+                minimum_y,
+                maximum_x,
+                maximum_y,
+            ),
+        )
+    end
+
+    if configuration.diagonal_bands.high.line_offset !== nothing &&
+       configuration.diagonal_bands.high.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            high_diagonal_trace(
+                configuration.diagonal_bands.high.fill_color,
+                log_scale,
+                configuration.diagonal_bands.high.line_offset,
+                minimum_x,
+                minimum_y,
+                maximum_x,
+                maximum_y,
+            ),
+        )
+    end
+
+    if configuration.diagonal_bands.high.line_offset !== nothing &&
+       configuration.diagonal_bands.low.line_offset !== nothing &&
+       configuration.diagonal_bands.middle.fill_color !== nothing
+        push!(
+            traces,
+            middle_diagonal_trace(
+                configuration.diagonal_bands.middle.fill_color,
+                log_scale,
+                configuration.diagonal_bands.low.line_offset,
+                configuration.diagonal_bands.high.line_offset,
+                minimum_x,
+                minimum_y,
+                maximum_x,
+                maximum_y,
+            ),
+        )
+    end
+
+    if configuration.show_border
+        marker_size = border_marker_size(data, configuration)
+        push!(traces, points_trace(data, data.border_colors, marker_size, "coloraxis2", configuration.border_style))
+    end
+
     push!(
         traces,
-        scatter(;
-            x = data.xs,
-            y = data.ys,
-            marker_size = data.sizes !== nothing ? data.sizes : configuration.style.size,
-            marker_color = data.colors !== nothing ? data.colors : configuration.style.color,
-            marker_colorscale = configuration.style.color_scale,
-            marker_showscale = configuration.style.show_scale,
-            marker_reversescale = configuration.style.reverse_scale,
-            name = "",
-            text = data.hovers,
-            hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
-            mode = "markers",
+        points_trace(
+            data,
+            data.colors,
+            data.sizes !== nothing ? data.sizes : configuration.style.size,
+            nothing,
+            configuration.style,
         ),
     )
 
     edges = data.edges
     if edges !== nothing
-        for (index, (from_point, to_point)) in enumerate(edges)
+        for index in 1:length(edges)
+            push!(traces, edge_trace(data, index, configuration.edges_style))
+        end
+    end
+
+    for band in
+        (configuration.vertical_bands.low, configuration.vertical_bands.middle, configuration.vertical_bands.high)
+        if band.line_offset !== nothing && band.line_color !== nothing
+            push!(traces, vertical_line_trace(band, minimum_y, maximum_y))
+        end
+    end
+
+    for band in
+        (configuration.horizontal_bands.low, configuration.horizontal_bands.middle, configuration.horizontal_bands.high)
+        if band.line_offset !== nothing && band.line_color !== nothing
+            push!(traces, horizontal_line_trace(band, minimum_x, maximum_x))
+        end
+    end
+
+    for band in
+        (configuration.diagonal_bands.low, configuration.diagonal_bands.middle, configuration.diagonal_bands.high)
+        if band.line_offset !== nothing && band.line_color !== nothing
             push!(
                 traces,
-                scatter(;
-                    x = [data.xs[from_point], data.xs[to_point]],
-                    y = [data.ys[from_point], data.ys[to_point]],
-                    line_width = if data.edges_sizes !== nothing
-                        data.edges_sizes[index]
-                    else
-                        configuration.edges_style.size
-                    end,
-                    line_color = if data.edges_colors !== nothing
-                        data.edges_colors[index]
-                    elseif configuration.edges_style.color !== nothing
-                        configuration.edges_style.color
-                    else
-                        "darkgrey"
-                    end,
-                    name = "",
-                    mode = "lines",
-                ),
+                diagonal_line_trace(band, configuration.x_axis.log_scale, minimum_x, minimum_y, maximum_x, maximum_y),
             )
         end
     end
 
-    minimum_x = minimum(data.xs)
-    minimum_y = minimum(data.ys)
-    maximum_x = maximum(data.xs)
-    maximum_y = maximum(data.ys)
+    layout = points_layout(data, configuration)
+    figure = plot(traces, layout)
+    write_graph(figure, configuration.graph)
+
+    return nothing
+end
+
+function low_diagonal_trace(
+    color::AbstractString,
+    log_scale::Bool,
+    offset::Real,
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real,
+)::GenericTrace
+    minimum_xy = min(minimum_x, minimum_y)
+    maximum_xy = max(maximum_x, maximum_y)
+    threshold, increase, decrease = band_operations(log_scale)
+    if offset < threshold
+        return fill_trace(
+            color,
+            [decrease(minimum_xy, offset), maximum_xy, maximum_xy],
+            [minimum_xy, increase(maximum_xy, offset), minimum_xy],
+        )
+    else
+        return fill_trace(
+            color,
+            [minimum_xy, maximum_xy, maximum_xy, decrease(maximum_xy, offset), minimum_xy],
+            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, increase(minimum_xy, offset)],
+        )
+    end
+end
+
+function high_diagonal_trace(
+    color::AbstractString,
+    log_scale::Bool,
+    offset::Real,
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real,
+)::GenericTrace
+    minimum_xy = min(minimum_x, minimum_y)
+    maximum_xy = max(maximum_x, maximum_y)
+    threshold, increase, decrease = band_operations(log_scale)
+    if offset < threshold
+        return fill_trace(
+            color,
+            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, decrease(minimum_xy, offset)],
+            [minimum_xy, maximum_xy, maximum_xy, increase(maximum_xy, offset), minimum_xy],
+        )
+    else
+        return fill_trace(
+            color,
+            [minimum_xy, decrease(maximum_xy, offset), minimum_xy],
+            [increase(minimum_xy, offset), maximum_xy, maximum_xy],
+        )
+    end
+end
+
+function middle_diagonal_trace(
+    color::AbstractString,
+    log_scale::Bool,
+    low_offset::Real,
+    high_offset::Real,
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real,
+)::GenericTrace
+    minimum_xy = min(minimum_x, minimum_y)
+    maximum_xy = max(maximum_x, maximum_y)
+    threshold, increase, decrease = band_operations(log_scale)
+    if high_offset < threshold
+        return fill_trace(
+            color,
+            [decrease(minimum_xy, high_offset), decrease(minimum_xy, low_offset), maximum_xy, maximum_xy],
+            [minimum_xy, minimum_xy, increase(maximum_xy, low_offset), increase(maximum_xy, high_offset)],
+        )
+    elseif low_offset > threshold
+        return fill_trace(
+            color,
+            [minimum_xy, minimum_xy, decrease(maximum_xy, high_offset), decrease(maximum_xy, low_offset)],
+            [increase(minimum_xy, low_offset), increase(minimum_xy, high_offset), maximum_xy, maximum_xy],
+        )
+    else
+        return fill_trace(
+            color,
+            [
+                minimum_xy,
+                decrease(minimum_xy, low_offset),
+                maximum_xy,
+                maximum_xy,
+                decrease(maximum_xy, high_offset),
+                minimum_xy,
+            ],
+            [
+                minimum_xy,
+                minimum_xy,
+                increase(maximum_xy, low_offset),
+                maximum_xy,
+                maximum_xy,
+                increase(minimum_xy, high_offset),
+            ],
+        )
+    end
+end
+
+function fill_trace(color::AbstractString, xs::AbstractVector{<:Real}, ys::AbstractVector{<:Real})::GenericTrace
+    return scatter(; x = xs, y = ys, fill = "toself", fillcolor = color, name = "", mode = "none")
+end
+
+function border_marker_size(data::PointsGraphData, configuration::PointsGraphConfiguration)::Union{Real, Vector{<:Real}}
+    if data.border_sizes === nothing
+        border_marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
+        if data.sizes === nothing
+            points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
+            return points_marker_size + 2 * border_marker_size
+        else
+            return data.sizes .+ 2 * border_marker_size  # untested
+        end
+    else
+        if data.sizes === nothing
+            points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
+            return 2 .* data.border_sizes .+ points_marker_size
+        else
+            return 2 .* data.border_sizes .+ data.sizes  # untested
+        end
+    end
+end
+
+function points_trace(
+    data::PointsGraphData,
+    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}},
+    marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
+    coloraxis::Maybe{AbstractString},
+    points_style::PointsStyleConfiguration,
+)::GenericTrace
+    return scatter(;
+        x = data.xs,
+        y = data.ys,
+        marker_size = marker_size,
+        marker_color = colors !== nothing ? colors : points_style.color,
+        marker_colorscale = points_style.color_scale,
+        marker_coloraxis = points_style.show_scale ? coloraxis : nothing,
+        marker_showscale = points_style.show_scale,
+        marker_reversescale = points_style.reverse_scale,
+        name = "",
+        text = data.hovers,
+        hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
+        mode = "markers",
+    )
+end
+
+function edge_trace(data::PointsGraphData, index::Int, edges_style::PointsStyleConfiguration)::GenericTrace
+    from_point, to_point = data.edges[index]
+    return scatter(;
+        x = [data.xs[from_point], data.xs[to_point]],
+        y = [data.ys[from_point], data.ys[to_point]],
+        line_width = if data.edges_sizes !== nothing
+            data.edges_sizes[index]
+        else
+            edges_style.size
+        end,
+        line_color = if data.edges_colors !== nothing
+            data.edges_colors[index]
+        elseif edges_style.color !== nothing
+            edges_style.color
+        else
+            "darkgrey"
+        end,
+        name = "",
+        mode = "lines",
+    )
+end
+
+function vertical_line_trace(
+    band_region_configuration::BandRegionConfiguration,
+    minimum_y::Real,
+    maximum_y::Real,
+)::GenericTrace
+    @assert band_region_configuration.line_offset !== nothing
+    @assert band_region_configuration.line_color !== nothing
+    return scatter(;
+        x = [band_region_configuration.line_offset, band_region_configuration.line_offset],
+        y = [minimum_y, maximum_y],
+        line_width = band_region_configuration.line_width,
+        line_color = band_region_configuration.line_color,
+        line_dash = band_region_configuration.line_is_dashed ? "dash" : nothing,
+        showlegend = false,
+        mode = "lines",
+    )
+end
+
+function horizontal_line_trace(
+    band_region_configuration::BandRegionConfiguration,
+    minimum_x::Real,
+    maximum_x::Real,
+)::GenericTrace
+    @assert band_region_configuration.line_offset !== nothing
+    @assert band_region_configuration.line_color !== nothing
+    return scatter(;
+        x = [minimum_x, maximum_x],
+        y = [band_region_configuration.line_offset, band_region_configuration.line_offset],
+        line_width = band_region_configuration.line_width,
+        line_color = band_region_configuration.line_color,
+        line_dash = band_region_configuration.line_is_dashed ? "dash" : nothing,
+        showlegend = false,
+        mode = "lines",
+    )
+end
+
+function diagonal_line_trace(
+    band_region_configuration::BandRegionConfiguration,
+    log_scale::Bool,
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real,
+)::GenericTrace
+    @assert band_region_configuration.line_offset !== nothing
+    @assert band_region_configuration.line_color !== nothing
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
 
-    if configuration.show_same_line
-        push!(
-            traces,
-            scatter(;
-                x = [minimum_xy, maximum_xy],
-                y = [minimum_xy, maximum_xy],
-                line_width = 1.0,
-                line_color = "black",
-                showlegend = false,
-                mode = "lines",
-            ),
-        )
+    offset = band_region_configuration.line_offset
+    threshold, increase, decrease = band_operations(log_scale)
+
+    if offset < threshold
+        x = [decrease(minimum_xy, offset), maximum_xy]
+        y = [minimum_xy, increase(maximum_xy, offset)]
+    else
+        x = [minimum_xy, decrease(maximum_xy, offset)]
+        y = [increase(minimum_xy, offset), maximum_xy]
     end
 
-    show_high_line = configuration.show_high_line
-    if show_high_line !== nothing
-        push!(
-            traces,
-            scatter(;
-                x = [minimum_xy, if configuration.x_axis.log_scale
-                    maximum_xy / (1 + show_high_line)
-                else
-                    maximum_xy - show_high_line
-                end],
-                y = [if configuration.y_axis.log_scale
-                    minimum_xy * (1 + show_high_line)
-                else
-                    minimum_xy + show_high_line
-                end, maximum_xy],
-                line_width = 1.0,
-                line_color = "black",
-                line_dash = "dash",
-                showlegend = false,
-                mode = "lines",
-            ),
-        )
-    end
+    return scatter(;
+        x = x,
+        y = y,
+        line_width = band_region_configuration.line_width,
+        line_color = band_region_configuration.line_color,
+        line_dash = band_region_configuration.line_is_dashed ? "dash" : nothing,
+        showlegend = false,
+        mode = "lines",
+    )
+end
 
-    show_low_line = configuration.show_low_line
-    if show_low_line !== nothing
-        push!(
-            traces,
-            scatter(;
-                x = [if configuration.x_axis.log_scale
-                    minimum_xy * (1 + show_low_line)
-                else
-                    minimum_xy + show_low_line
-                end, maximum_xy],
-                y = [minimum_xy, if configuration.y_axis.log_scale
-                    maximum_xy / (1 + show_low_line)
-                else
-                    maximum_xy - show_low_line
-                end],
-                line_width = 1.0,
-                line_color = "black",
-                line_dash = "dash",
-                showlegend = false,
-                mode = "lines",
-            ),
-        )
+function band_operations(log_scale::Bool)::Tuple{Real, Function, Function}
+    if log_scale
+        return (1, *, /)
+    else
+        return (0, +, -)
     end
+end
 
-    for (x, dash) in ((data.x_line, nothing), (data.x_high_line, "dash"), (data.x_low_line, "dash"))
-        if x !== nothing
-            push!(
-                traces,
-                scatter(;
-                    x = [x, x],
-                    y = [minimum_y, maximum_y],
-                    line_width = 1.0,
-                    line_color = "black",
-                    line_dash = dash,
-                    showlegend = false,
-                    mode = "lines",
-                ),
-            )
-        end
-    end
-
-    for (y, dash) in ((data.y_line, nothing), (data.y_high_line, "dash"), (data.y_low_line, "dash"))
-        if y !== nothing
-            push!(
-                traces,
-                scatter(;
-                    x = [minimum_x, maximum_x],
-                    y = [y, y],
-                    line_width = 1.0,
-                    line_color = "black",
-                    line_dash = dash,
-                    showlegend = false,
-                    mode = "lines",
-                ),
-            )
-        end
-    end
-
-    layout = Layout(;  # NOJET
+function points_layout(data::PointsGraphData, configuration::PointsGraphConfiguration)::Layout
+    return Layout(;  # NOJET
         title = data.graph_title,
         template = configuration.graph.template,
         xaxis_showgrid = configuration.graph.show_grid,
@@ -911,10 +1275,6 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         end,
         coloraxis2_colorscale = configuration.border_style.color_scale,
     )
-    figure = plot(traces, layout)
-    write_graph(figure, configuration.graph)
-
-    return nothing
 end
 
 function write_graph(figure, configuration::GraphConfiguration)::Nothing

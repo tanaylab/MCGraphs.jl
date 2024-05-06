@@ -121,7 +121,7 @@ nested_test("renderers") do
                 #! format: on
             ],
         )
-        graph_configuration = GraphConfiguration(; output_file = "actual.svg")
+        graph_configuration = GraphConfiguration(; output_file = "actual.html")
 
         nested_test("!style") do
             configuration = DistributionGraphConfiguration(;
@@ -182,6 +182,7 @@ nested_test("renderers") do
             nested_test("size") do
                 configuration.graph.height = 96 * 2
                 configuration.graph.width = 96 * 2
+                configuration.graph.output_file = "actual.svg"
                 render(data, configuration)
                 test_svg("distribution.box.size.svg")
                 return nothing
@@ -191,55 +192,55 @@ nested_test("renderers") do
                 configuration.value_axis.minimum = 0
                 configuration.value_axis.maximum = 200
                 render(data, configuration)
-                test_svg("distribution.box.range.svg")
+                test_html("distribution.box.range.html")
                 return nothing
             end
 
             nested_test("()") do
                 render(data, configuration)
-                test_svg("distribution.box.svg")
+                test_html("distribution.box.html")
                 return nothing
             end
 
             nested_test("horizontal") do
                 configuration.style.orientation = HorizontalValues
                 render(data, configuration)
-                test_svg("distribution.box.horizontal.svg")
+                test_html("distribution.box.horizontal.html")
                 return nothing
             end
 
             nested_test("log") do
                 configuration.value_axis.log_scale = true
                 render(data, configuration)
-                test_svg("distribution.box.log.svg")
+                test_html("distribution.box.log.html")
                 return nothing
             end
 
             nested_test("outliers") do
                 configuration.style.show_outliers = true
                 render(data, configuration)
-                test_svg("distribution.box.outliers.svg")
+                test_html("distribution.box.outliers.html")
                 return nothing
             end
 
             nested_test("color") do
                 configuration.style.color = "red"
                 render(data, configuration)
-                test_svg("distribution.box.color.svg")
+                test_html("distribution.box.color.html")
                 return nothing
             end
 
             nested_test("!grid") do
                 configuration.graph.show_grid = false
                 render(data, configuration)
-                test_svg("distribution.box.!grid.svg")
+                test_html("distribution.box.!grid.html")
                 return nothing
             end
 
             nested_test("!ticks") do
                 configuration.graph.show_ticks = false
                 render(data, configuration)
-                test_svg("distribution.box.!ticks.svg")
+                test_html("distribution.box.!ticks.html")
                 return nothing
             end
 
@@ -249,7 +250,7 @@ nested_test("renderers") do
                 data.trace_axis_title = "Trace"
                 data.name = "Name"
                 render(data, configuration)
-                test_svg("distribution.box.titles.svg")
+                test_html("distribution.box.titles.html")
                 return nothing
             end
         end
@@ -262,35 +263,35 @@ nested_test("renderers") do
 
             nested_test("()") do
                 render(data, configuration)
-                test_svg("distribution.violin.svg")
+                test_html("distribution.violin.html")
                 return nothing
             end
 
             nested_test("horizontal") do
                 configuration.style.orientation = HorizontalValues
                 render(data, configuration)
-                test_svg("distribution.violin.horizontal.svg")
+                test_html("distribution.violin.horizontal.html")
                 return nothing
             end
 
             nested_test("outliers") do
                 configuration.style.show_outliers = true
                 render(data, configuration)
-                test_svg("distribution.violin.outliers.svg")
+                test_html("distribution.violin.outliers.html")
                 return nothing
             end
 
             nested_test("box") do
                 configuration.style.show_box = true
                 render(data, configuration)
-                test_svg("distribution.violin.box.svg")
+                test_html("distribution.violin.box.html")
                 return nothing
             end
 
             nested_test("log") do
                 configuration.value_axis.log_scale = true
                 render(data, configuration)
-                test_svg("distribution.violin.log.svg")
+                test_html("distribution.violin.log.html")
                 return nothing
             end
         end
@@ -303,35 +304,35 @@ nested_test("renderers") do
 
             nested_test("()") do
                 render(data, configuration)
-                test_svg("distribution.curve.svg")
+                test_html("distribution.curve.html")
                 return nothing
             end
 
             nested_test("horizontal") do
                 configuration.style.orientation = HorizontalValues
                 render(data, configuration)
-                test_svg("distribution.curve.horizontal.svg")
+                test_html("distribution.curve.horizontal.html")
                 return nothing
             end
 
             nested_test("outliers") do
                 configuration.style.show_outliers = true
                 render(data, configuration)
-                test_svg("distribution.curve.outliers.svg")
+                test_html("distribution.curve.outliers.html")
                 return nothing
             end
 
             nested_test("box") do
                 configuration.style.show_box = true
                 render(data, configuration)
-                test_svg("distribution.curve.box.svg")
+                test_html("distribution.curve.box.html")
                 return nothing
             end
 
             nested_test("log") do
                 configuration.value_axis.log_scale = true
                 render(data, configuration)
-                test_svg("distribution.curve.log.svg")
+                test_html("distribution.curve.log.html")
                 return nothing
             end
         end
@@ -359,7 +360,7 @@ nested_test("renderers") do
             #! format: on
         )
 
-        graph_configuration = GraphConfiguration(; output_file = "actual.svg")
+        graph_configuration = GraphConfiguration(; output_file = "actual.html")
 
         configuration = DistributionsGraphConfiguration(; graph = graph_configuration)
 
@@ -391,21 +392,21 @@ nested_test("renderers") do
 
         nested_test("box") do
             render(data, configuration)
-            test_svg("distributions.box.svg")
+            test_html("distributions.box.html")
             return nothing
         end
 
         nested_test("log") do
             configuration.value_axis.log_scale = true
             render(data, configuration)
-            test_svg("distributions.log.svg")
+            test_html("distributions.log.html")
             return nothing
         end
 
         nested_test("colors") do
             data.colors = ["red", "green"]
             render(data, configuration)
-            test_svg("distributions.box.colors.svg")
+            test_html("distributions.box.colors.html")
             return nothing
         end
 
@@ -415,7 +416,7 @@ nested_test("renderers") do
             data.trace_axis_title = "Trace"
             data.graph_title = "Graph"
             render(data, configuration)
-            test_svg("distributions.box.titles.svg")
+            test_html("distributions.box.titles.html")
             return nothing
         end
 
@@ -423,26 +424,26 @@ nested_test("renderers") do
             data.names = ["Foo", "Bar"]
             configuration.show_legend = true
             render(data, configuration)
-            test_svg("distributions.box.legend.svg")
+            test_html("distributions.box.legend.html")
             return nothing
         end
 
         nested_test("legend!titles") do
             configuration.show_legend = true
             render(data, configuration)
-            test_svg("distributions.box.legend!titles.svg")
+            test_html("distributions.box.legend!titles.html")
             return nothing
         end
     end
 
     nested_test("points") do
         data = PointsGraphData(; xs = [0.0, 1.0, 2.0], ys = [-0.2, 1.2, 1.8])
-        graph_configuration = GraphConfiguration(; output_file = "actual.svg")
+        graph_configuration = GraphConfiguration(; output_file = "actual.html")
         configuration = PointsGraphConfiguration(; graph = graph_configuration)
 
         nested_test("()") do
             render(data, configuration)
-            test_svg("points.svg")
+            test_html("points.html")
             return nothing
         end
 
@@ -451,14 +452,9 @@ nested_test("renderers") do
             @test_throws "non-positive points style.size: 0" render(data, configuration)
         end
 
-        nested_test("!high_line") do
-            configuration.show_high_line = -1
-            @test_throws "non-positive points show_high_line: -1" render(data, configuration)
-        end
-
-        nested_test("!low_line") do
-            configuration.show_low_line = -1
-            @test_throws "non-positive points show_low_line: -1" render(data, configuration)
+        nested_test("!line-width") do
+            configuration.diagonal_bands.middle.line_width = 0
+            @test_throws "non-positive diagonal_bands middle line_width: 0" render(data, configuration)
         end
 
         nested_test("~ys") do
@@ -520,101 +516,263 @@ nested_test("renderers") do
         end
 
         nested_test("log") do
+            data.xs .*= 10
+            data.ys .*= 10
+            data.xs .+= 1
+            data.ys .+= 3
+            configuration.x_axis.log_scale = true
+            configuration.y_axis.log_scale = true
+
             nested_test("!minimum") do
                 configuration.x_axis.minimum = 0.0
-                configuration.x_axis.log_scale = true
                 @test_throws "non-positive x log axis minimum: 0.0" render(data, configuration)
             end
 
             nested_test("!maximum") do
                 configuration.y_axis.maximum = -1.0
-                configuration.y_axis.log_scale = true
                 @test_throws "non-positive y log axis maximum: -1.0" render(data, configuration)
             end
 
             nested_test("!xs") do
-                configuration.x_axis.log_scale = true
+                data.xs[1] = 0
                 @test_throws "non-positive log x#1: 0.0" render(data, configuration)
             end
 
             nested_test("!ys") do
+                data.ys[1] = -0.2
                 configuration.y_axis.log_scale = true
                 @test_throws "non-positive log y#1: -0.2" render(data, configuration)
             end
 
             nested_test("()") do
-                data.xs .*= 10
-                data.ys .*= 10
-                data.xs .+= 1
-                data.ys .+= 3
-                configuration.x_axis.log_scale = true
-                configuration.y_axis.log_scale = true
                 render(data, configuration)
-                test_svg("points.log.svg")
+                test_html("points.log.html")
                 return nothing
             end
 
-            nested_test("same") do
-                data.xs .*= 10
-                data.ys .*= 10
-                data.xs .+= 1
-                data.ys .+= 3
+            nested_test("!line_offset") do
                 configuration.x_axis.log_scale = true
                 configuration.y_axis.log_scale = true
-                configuration.show_same_line = true
-                configuration.show_high_line = 1.0
-                configuration.show_low_line = 1.0
+                configuration.diagonal_bands.low.line_offset = -1
+                @test_throws "non-positive log_scale diagonal_bands low line_offset: -1" render(data, configuration)
+            end
+
+            nested_test("diagonal") do
+                nested_test("()") do
+                    configuration.x_axis.log_scale = true
+                    configuration.y_axis.log_scale = true
+                    configuration.diagonal_bands.middle.line_offset = 1
+                    configuration.diagonal_bands.low.line_offset = 0.5
+                    configuration.diagonal_bands.high.line_offset = 2
+                    render(data, configuration)
+                    test_html("points.log.diagonal.html")
+                    return nothing
+                end
+
+                nested_test("!log") do
+                    configuration.y_axis.log_scale = false
+                    configuration.diagonal_bands.middle.line_offset = 1
+                    @test_throws "diagonal_bands specified for a combination of linear and log scale axes" render(
+                        data,
+                        configuration,
+                    )
+                    return nothing
+                end
+
+                nested_test("low_fills") do
+                    configuration.diagonal_bands.middle.line_color = nothing
+                    configuration.diagonal_bands.low.line_color = nothing
+                    configuration.diagonal_bands.high.line_color = nothing
+                    configuration.diagonal_bands.middle.fill_color = "#00ff0080"
+                    configuration.diagonal_bands.low.fill_color = "#0000ff80"
+                    configuration.diagonal_bands.high.fill_color = "ff000080"
+                    configuration.diagonal_bands.low.line_offset = 0.25
+                    configuration.diagonal_bands.high.line_offset = 0.75
+                    render(data, configuration)
+                    test_html("points.log.diagonal.low_fills.html")
+                    return nothing
+                end
+
+                nested_test("high_fills") do
+                    configuration.diagonal_bands.middle.line_color = nothing
+                    configuration.diagonal_bands.low.line_color = nothing
+                    configuration.diagonal_bands.high.line_color = nothing
+                    configuration.diagonal_bands.middle.fill_color = "#00ff0080"
+                    configuration.diagonal_bands.low.fill_color = "#0000ff80"
+                    configuration.diagonal_bands.high.fill_color = "ff000080"
+                    configuration.diagonal_bands.low.line_offset = 1.25
+                    configuration.diagonal_bands.high.line_offset = 1.75
+                    render(data, configuration)
+                    test_html("points.log.diagonal.high_fills.html")
+                    return nothing
+                end
+
+                nested_test("middle_fills") do
+                    configuration.diagonal_bands.middle.line_color = nothing
+                    configuration.diagonal_bands.low.line_color = nothing
+                    configuration.diagonal_bands.high.line_color = nothing
+                    configuration.diagonal_bands.middle.fill_color = "#00ff0080"
+                    configuration.diagonal_bands.low.fill_color = "#0000ff80"
+                    configuration.diagonal_bands.high.fill_color = "ff000080"
+                    configuration.diagonal_bands.low.line_offset = 0.75
+                    configuration.diagonal_bands.high.line_offset = 1.25
+                    render(data, configuration)
+                    test_html("points.log.diagonal.middle_fills.html")
+                    return nothing
+                end
+            end
+        end
+
+        nested_test("!low") do
+            configuration.diagonal_bands.middle.line_offset = 0
+            configuration.diagonal_bands.low.line_offset = 0.1
+            configuration.diagonal_bands.high.line_offset = 0.3
+            @test_throws dedent("""
+                diagonal_bands low line_offset: 0.1
+                is not less than middle line_offset: 0
+            """) render(data, configuration)
+            return nothing
+        end
+
+        nested_test("!high") do
+            configuration.diagonal_bands.middle.line_offset = 0
+            configuration.diagonal_bands.low.line_offset = -0.3
+            configuration.diagonal_bands.high.line_offset = -0.1
+            @test_throws dedent("""
+                diagonal_bands high line_offset: -0.1
+                is not greater than middle line_offset: 0
+            """) render(data, configuration)
+            return nothing
+        end
+
+        nested_test("!middle") do
+            configuration.diagonal_bands.low.line_offset = 0.3
+            configuration.diagonal_bands.high.line_offset = -0.3
+            @test_throws dedent("""
+                diagonal_bands low line_offset: 0.3
+                is not less than high line_offset: -0.3
+            """) render(data, configuration)
+            return nothing
+        end
+
+        nested_test("diagonal") do
+            nested_test("()") do
+                configuration.diagonal_bands.middle.line_offset = 0
+                configuration.diagonal_bands.middle.line_width = 8
+                configuration.diagonal_bands.low.line_offset = -0.3
+                configuration.diagonal_bands.high.line_offset = 0.3
                 render(data, configuration)
-                test_svg("points.log.same.svg")
+                test_html("points.diagonal.html")
+                return nothing
+            end
+
+            nested_test("low_fills") do
+                configuration.diagonal_bands.middle.line_color = nothing
+                configuration.diagonal_bands.low.line_color = nothing
+                configuration.diagonal_bands.high.line_color = nothing
+                configuration.diagonal_bands.middle.fill_color = "#00ff0080"
+                configuration.diagonal_bands.low.fill_color = "#0000ff80"
+                configuration.diagonal_bands.high.fill_color = "ff000080"
+                configuration.diagonal_bands.low.line_offset = -0.6
+                configuration.diagonal_bands.high.line_offset = -0.3
+                render(data, configuration)
+                test_html("points.diagonal.low_fills.html")
+                return nothing
+            end
+
+            nested_test("high_fills") do
+                configuration.diagonal_bands.middle.line_color = nothing
+                configuration.diagonal_bands.low.line_color = nothing
+                configuration.diagonal_bands.high.line_color = nothing
+                configuration.diagonal_bands.middle.fill_color = "#00ff0080"
+                configuration.diagonal_bands.low.fill_color = "#0000ff80"
+                configuration.diagonal_bands.high.fill_color = "ff000080"
+                configuration.diagonal_bands.low.line_offset = 0.3
+                configuration.diagonal_bands.high.line_offset = 0.6
+                render(data, configuration)
+                test_html("points.diagonal.high_fills.html")
+                return nothing
+            end
+
+            nested_test("middle_fills") do
+                configuration.diagonal_bands.middle.line_color = nothing
+                configuration.diagonal_bands.low.line_color = nothing
+                configuration.diagonal_bands.high.line_color = nothing
+                configuration.diagonal_bands.middle.fill_color = "#00ff0080"
+                configuration.diagonal_bands.low.fill_color = "#0000ff80"
+                configuration.diagonal_bands.high.fill_color = "ff000080"
+                configuration.diagonal_bands.low.line_offset = -0.3
+                configuration.diagonal_bands.high.line_offset = 0.6
+                render(data, configuration)
+                test_html("points.diagonal.middle_fills.html")
                 return nothing
             end
         end
 
-        nested_test("same") do
-            configuration.show_same_line = true
-            configuration.show_high_line = 0.3
-            configuration.show_low_line = 0.3
+        nested_test("vertical_lines") do
+            configuration.vertical_bands.middle.line_offset = 1.25
+            configuration.vertical_bands.low.line_offset = 0.75
+            configuration.vertical_bands.high.line_offset = 1.5
             render(data, configuration)
-            test_svg("points.same.svg")
+            test_html("points.vertical_lines.html")
             return nothing
         end
 
-        nested_test("x_lines") do
-            data.x_line = 1.25
-            data.x_low_line = 0.75
-            data.x_high_line = 1.5
+        nested_test("vertical_fills") do
+            configuration.vertical_bands.middle.line_color = nothing
+            configuration.vertical_bands.low.line_color = nothing
+            configuration.vertical_bands.high.line_color = nothing
+            configuration.vertical_bands.middle.fill_color = "#00ff0080"
+            configuration.vertical_bands.low.fill_color = "#0000ff80"
+            configuration.vertical_bands.high.fill_color = "ff000080"
+            configuration.vertical_bands.low.line_offset = 0.75
+            configuration.vertical_bands.high.line_offset = 1.5
             render(data, configuration)
-            test_svg("points.x_lines.svg")
+            test_html("points.vertical_fills.html")
             return nothing
         end
 
-        nested_test("y_lines") do
-            data.y_line = 1.25
-            data.y_low_line = 0.75
-            data.y_high_line = 1.5
+        nested_test("horizontal_lines") do
+            configuration.horizontal_bands.middle.line_offset = 1.25
+            configuration.horizontal_bands.low.line_offset = 0.75
+            configuration.horizontal_bands.high.line_offset = 1.5
             render(data, configuration)
-            test_svg("points.y_lines.svg")
+            test_html("points.horizontal_lines.html")
+            return nothing
+        end
+
+        nested_test("horizontal_fills") do
+            configuration.horizontal_bands.middle.line_color = nothing
+            configuration.horizontal_bands.low.line_color = nothing
+            configuration.horizontal_bands.high.line_color = nothing
+            configuration.horizontal_bands.middle.fill_color = "#00ff0080"
+            configuration.horizontal_bands.low.fill_color = "#0000ff80"
+            configuration.horizontal_bands.high.fill_color = "ff000080"
+            configuration.horizontal_bands.low.line_offset = 0.75
+            configuration.horizontal_bands.high.line_offset = 1.5
+            render(data, configuration)
+            test_html("points.horizontal_fills.html")
             return nothing
         end
 
         nested_test("color") do
             configuration.style.color = "red"
             render(data, configuration)
-            test_svg("points.color.svg")
+            test_html("points.color.html")
             return nothing
         end
 
         nested_test("colors") do
             data.colors = ["red", "green", "blue"]
             render(data, configuration)
-            test_svg("points.colors.svg")
+            test_html("points.colors.html")
             return nothing
         end
 
         nested_test("values!scale") do
             data.colors = [0.0, 1.0, 2.0]
             render(data, configuration)
-            test_svg("points.values!scale.svg")
+            test_html("points.values!scale.html")
             return nothing
         end
 
@@ -622,7 +780,7 @@ nested_test("renderers") do
             data.colors = [0.0, 1.0, 2.0]
             configuration.style.show_scale = true
             render(data, configuration)
-            test_svg("points.values.svg")
+            test_html("points.values.html")
             return nothing
         end
 
@@ -631,7 +789,7 @@ nested_test("renderers") do
             configuration.style.show_scale = true
             configuration.style.reverse_scale = true
             render(data, configuration)
-            test_svg("points.reversed.svg")
+            test_html("points.reversed.html")
             return nothing
         end
 
@@ -640,34 +798,34 @@ nested_test("renderers") do
             configuration.style.show_scale = true
             configuration.style.color_scale = "Viridis"
             render(data, configuration)
-            test_svg("points.viridis.svg")
+            test_html("points.viridis.html")
             return nothing
         end
 
         nested_test("size") do
             configuration.style.size = 10
             render(data, configuration)
-            test_svg("points.size.svg")
+            test_html("points.size.html")
             return nothing
         end
 
         nested_test("sizes") do
             data.sizes = [10.0, 15.0, 20.0]
             render(data, configuration)
-            test_svg("points.sizes.svg")
+            test_html("points.sizes.html")
             return nothing
         end
 
         nested_test("!grid") do
             configuration.graph.show_grid = false
             render(data, configuration)
-            test_svg("points.!grid.svg")
+            test_html("points.!grid.html")
             return nothing
         end
 
         nested_test("!titles") do
             render(data, configuration)
-            test_svg("points.!titles.svg")
+            test_html("points.!titles.html")
             return nothing
         end
 
@@ -676,12 +834,11 @@ nested_test("renderers") do
             data.y_axis_title = "Y"
             data.graph_title = "Graph"
             render(data, configuration)
-            test_svg("points.titles.svg")
+            test_html("points.titles.html")
             return nothing
         end
 
         nested_test("hovers") do
-            configuration.graph.output_file = "actual.html"
             data.hovers = ["<b>Foo</b><br>Low", "<b>Bar</b><br>Middle", "<b>Baz</b><br>High"]
             render(data, configuration)
             test_html("points.hovers.html")
@@ -693,15 +850,15 @@ nested_test("renderers") do
 
             nested_test("()") do
                 render(data, configuration)
-                test_svg("points.border.svg")
+                test_html("points.border.html")
                 return nothing
             end
 
             nested_test("size") do
                 configuration.style.size = 6
-                configuration.border_style.size = 8
+                configuration.border_style.size = 6
                 render(data, configuration)
-                test_svg("points.border.size.svg")
+                test_html("points.border.size.html")
                 return nothing
             end
 
@@ -709,51 +866,51 @@ nested_test("renderers") do
                 configuration.style.size = 6
                 data.border_sizes = [6, 8, 10]
                 render(data, configuration)
-                test_svg("points.border.sizes.svg")
+                test_html("points.border.sizes.html")
                 return nothing
             end
 
             nested_test("color") do
                 configuration.style.size = 6
-                configuration.border_style.size = 8
+                configuration.border_style.size = 6
                 configuration.border_style.color = "magenta"
                 render(data, configuration)
-                test_svg("points.border.color.svg")
+                test_html("points.border.color.html")
                 return nothing
             end
 
             nested_test("colors") do
                 configuration.style.size = 6
-                configuration.border_style.size = 8
+                configuration.border_style.size = 6
                 data.colors = [0.0, 1.0, 2.0]
                 data.border_colors = ["red", "green", "blue"]
                 render(data, configuration)
-                test_svg("points.border.colors.svg")
+                test_html("points.border.colors.html")
                 return nothing
             end
 
             nested_test("colorscale") do
                 configuration.style.size = 6
-                configuration.border_style.size = 8
+                configuration.border_style.size = 6
                 data.colors = [0.0, 1.0, 2.0]
                 data.border_colors = [20.0, 10.0, 0.0]
                 configuration.border_style.color_scale = "Viridis"
                 configuration.border_style.show_scale = true
                 render(data, configuration)
-                test_svg("points.border.show_scale.svg")
+                test_html("points.border.show_scale.html")
                 return nothing
             end
 
             nested_test("colorscales") do
                 configuration.style.size = 6
-                configuration.border_style.size = 8
+                configuration.border_style.size = 6
                 data.colors = [0.0, 1.0, 2.0]
                 data.border_colors = [20.0, 10.0, 0.0]
                 configuration.border_style.color_scale = "Viridis"
                 configuration.style.show_scale = true
                 configuration.border_style.show_scale = true
                 render(data, configuration)
-                test_svg("points.border.show_scales.svg")
+                test_html("points.border.show_scales.html")
                 return nothing
             end
         end
@@ -763,7 +920,7 @@ nested_test("renderers") do
 
             nested_test("()") do
                 render(data, configuration)
-                test_svg("points.edges.svg")
+                test_html("points.edges.html")
                 return nothing
             end
 
@@ -785,28 +942,28 @@ nested_test("renderers") do
             nested_test("size") do
                 configuration.edges_style.size = 8
                 render(data, configuration)
-                test_svg("points.edges.size.svg")
+                test_html("points.edges.size.html")
                 return nothing
             end
 
             nested_test("sizes") do
                 data.edges_sizes = [6, 10]
                 render(data, configuration)
-                test_svg("points.edges.sizes.svg")
+                test_html("points.edges.sizes.html")
                 return nothing
             end
 
             nested_test("color") do
                 configuration.edges_style.color = "magenta"
                 render(data, configuration)
-                test_svg("points.edges.color.svg")
+                test_html("points.edges.color.html")
                 return nothing
             end
 
             nested_test("colors") do
                 data.edges_colors = ["red", "green"]
                 render(data, configuration)
-                test_svg("points.edges.colors.svg")
+                test_html("points.edges.colors.html")
                 return nothing
             end
         end

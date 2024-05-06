@@ -24,6 +24,8 @@ MCGraphs.Renderers.DistributionStyleConfiguration
 MCGraphs.Renderers.PointsGraphData
 MCGraphs.Renderers.PointsGraphConfiguration
 MCGraphs.Renderers.PointsStyleConfiguration
+MCGraphs.Renderers.BandsConfiguration
+MCGraphs.Renderers.BandRegionConfiguration
 ```
 
 ## Index
