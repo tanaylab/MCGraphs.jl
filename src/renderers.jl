@@ -446,7 +446,7 @@ end
     @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
         size::Maybe{Real} = nothing
         color::Maybe{AbstractString} = nothing
-        color_scale::Maybe{AbstractString} = nothing
+        color_scale::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:Real, <:AbstractString}}}} = nothing
         reverse_scale::Bool = false
         show_scale::Bool = false
     end
@@ -459,7 +459,7 @@ can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` t
 @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
     size::Maybe{Real} = nothing
     color::Maybe{AbstractString} = nothing
-    color_scale::Maybe{AbstractString} = nothing
+    color_scale::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:Real, <:AbstractString}}}} = nothing
     reverse_scale::Bool = false
     show_scale::Bool = false
 end
@@ -472,7 +472,17 @@ function Validations.validate_object(
     if size !== nothing && size <= 0
         return "non-positive $(of_what) style.size: $(size)"
     end
-
+    color_scale = configuration.color_scale
+    if color_scale isa AbstractVector{<:Tuple{<:Real, <:AbstractString}}
+        if length(color_scale) == 0
+            return "empty $(of_what) style.color_scale"
+        end
+        cmin = minimum([value for (value, _) in color_scale])
+        cmax = maximum([value for (value, _) in color_scale])
+        if cmin == cmax
+            return "single $(of_what) style.color_scale value: $(cmax)"
+        end
+    end
     return nothing
 end
 
@@ -961,7 +971,7 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
             data,
             data.colors,
             data.sizes !== nothing ? data.sizes : configuration.style.size,
-            nothing,
+            "coloraxis",
             configuration.style,
         ),
     )
@@ -1133,7 +1143,7 @@ function points_trace(
     data::PointsGraphData,
     colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}},
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
-    coloraxis::Maybe{AbstractString},
+    coloraxis::AbstractString,
     points_style::PointsStyleConfiguration,
 )::GenericTrace
     return scatter(;
@@ -1141,8 +1151,8 @@ function points_trace(
         y = data.ys,
         marker_size = marker_size,
         marker_color = colors !== nothing ? colors : points_style.color,
-        marker_colorscale = points_style.color_scale,
-        marker_coloraxis = points_style.show_scale ? coloraxis : nothing,
+        marker_colorscale = points_style.color_scale isa Vector ? nothing : points_style.color_scale,
+        marker_coloraxis = coloraxis,
         marker_showscale = points_style.show_scale,
         marker_reversescale = points_style.reverse_scale,
         name = "",
@@ -1273,8 +1283,45 @@ function points_layout(data::PointsGraphData, configuration::PointsGraphConfigur
         else
             nothing
         end,
-        coloraxis2_colorscale = configuration.border_style.color_scale,
+        coloraxis_showscale = configuration.style.show_scale,
+        coloraxis_reversescale = configuration.style.reverse_scale,
+        coloraxis_colorscale = normalized_color_scale(configuration.style.color_scale),
+        coloraxis_cmin = lowest_color_scale(configuration.style.color_scale),
+        coloraxis_cmax = highest_color_scale(configuration.style.color_scale),
+        coloraxis2_showscale = configuration.border_style.show_scale,
+        coloraxis2_reversescale = configuration.border_style.reverse_scale,
+        coloraxis2_colorscale = normalized_color_scale(configuration.border_style.color_scale),
+        coloraxis2_cmin = lowest_color_scale(configuration.border_style.color_scale),
+        coloraxis2_cmax = highest_color_scale(configuration.border_style.color_scale),
     )
+end
+
+function normalized_color_scale(color_scale::Maybe{AbstractString})::Maybe{AbstractString}
+    return color_scale
+end
+
+function normalized_color_scale(
+    color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+)::AbstractVector{<:Tuple{<:Real, <:AbstractString}}
+    cmin = lowest_color_scale(color_scale)
+    cmax = highest_color_scale(color_scale)
+    return [((value - cmin) / (cmax - cmin), color) for (value, color) in color_scale]
+end
+
+function lowest_color_scale(::Maybe{AbstractString})::Nothing
+    return nothing
+end
+
+function lowest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}})::Real
+    return minimum([value for (value, _) in color_scale])
+end
+
+function highest_color_scale(::Maybe{AbstractString})::Nothing
+    return nothing
+end
+
+function highest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}})::Real
+    return maximum([value for (value, _) in color_scale])
 end
 
 function write_graph(figure, configuration::GraphConfiguration)::Nothing

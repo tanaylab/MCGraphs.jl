@@ -738,7 +738,7 @@ end
 <code class="language-julia hljs">@kwdef mutable struct PointsStyleConfiguration &lt;: ObjectWithValidation
     size::Maybe{Real} = nothing
     color::Maybe{AbstractString} = nothing
-    color_scale::Maybe{AbstractString} = nothing
+    color_scale::Maybe{Union{AbstractString, AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}}}} = nothing
     reverse_scale::Bool = false
     show_scale::Bool = false
 end

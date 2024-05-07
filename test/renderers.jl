@@ -784,6 +784,29 @@ nested_test("renderers") do
             return nothing
         end
 
+        nested_test("!colorscale") do
+            data.colors = [0.0, 1.0, 2.0]
+            configuration.style.color_scale = Vector{Tuple{Real, String}}()
+            @test_throws "empty points style.color_scale" render(data, configuration)
+            return nothing
+        end
+
+        nested_test("~colorscale") do
+            data.colors = [0.0, 1.0, 2.0]
+            configuration.style.color_scale = [(-1.0, "blue"), (-1.0, "red")]
+            @test_throws "single points style.color_scale value: -1.0" render(data, configuration)
+            return nothing
+        end
+
+        nested_test("colorscale") do
+            data.colors = [0.0, 1.0, 2.0]
+            configuration.style.color_scale = [(-1.0, "blue"), (3.0, "red")]
+            configuration.style.show_scale = true
+            render(data, configuration)
+            test_html("points.colorscale.html")
+            return nothing
+        end
+
         nested_test("reversed") do
             data.colors = [0.0, 1.0, 2.0]
             configuration.style.show_scale = true
