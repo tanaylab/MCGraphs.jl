@@ -597,15 +597,7 @@ end
 <code>border_colors
 </code> and 
 <code>border_sizes
-</code> are only used if the 
-<code>show_border
-</code> of 
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
-<code>PointsGraphConfiguration
-</code>
-</a> is set. This will use the 
-<code>border_style
-</code>. The border size is in addition to the point size.
+</code> can be used to display additional data per point. The border size is in addition to the point size.
 </p>
 <p>It is possible to draw straight 
 <code>edges
@@ -647,7 +639,6 @@ end
     style::PointsStyleConfiguration = PointsStyleConfiguration()
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
     edges_style::PointsConfiguration = PointsStyleConfiguration()
-    show_border::Bool = false
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     diagonal_bands::BandsConfiguration = BandsConfiguration()
@@ -674,19 +665,17 @@ end
 <code>diagonal_bands
 </code> are multiplicative instead of additive, and must be positive.
 </p>
-<p>If 
-<code>show_border
-</code> is set, a border will be shown around each point using the 
+<p>The 
 <code>border_style
-</code> (and, if specified in the 
+</code> is used if the 
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
 <code>PointsGraphData
 </code>
-</a>, the 
+</a> contains either the 
 <code>border_colors
 </code> and/or 
 <code>border_sizes
-</code>). This allows displaying some additional data per point.
+</code>. This allows displaying some additional data per point.
 </p>
 <div class="admonition is-info">
 <header class="admonition-header">Note
@@ -738,7 +727,11 @@ end
 <code class="language-julia hljs">@kwdef mutable struct PointsStyleConfiguration &lt;: ObjectWithValidation
     size::Maybe{Real} = nothing
     color::Maybe{AbstractString} = nothing
-    color_scale::Maybe{Union{AbstractString, AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}}}} = nothing
+    color_scale::Maybe{Union{
+        AbstractString,
+        AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}},
+        AbstractVector{&lt;:Tuple{&lt;:AbstractString, &lt;:AbstractString}}
+    }} = nothing
     reverse_scale::Bool = false
     show_scale::Bool = false
 end
@@ -761,6 +754,10 @@ end
 </code> to reverse it. You need to explicitly set 
 <code>show_scale
 </code> to show its legend.
+</p>
+<p>The 
+<code>color_scale
+</code> can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the values are numbers, the scale is continuous; if they are strings, this is a categorical scale.
 </p>
 </div>
 </section>

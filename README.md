@@ -115,7 +115,7 @@ This also serves as the main TODO list (including the Python and R wrappers).
           * Named.
           * Reversed.
           * Manual.
-          * TODO: Categorical.
+          * Categorical.
       + Colorbar.
       + Borders.
 

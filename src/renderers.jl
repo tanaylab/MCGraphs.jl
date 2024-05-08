@@ -446,7 +446,11 @@ end
     @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
         size::Maybe{Real} = nothing
         color::Maybe{AbstractString} = nothing
-        color_scale::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:Real, <:AbstractString}}}} = nothing
+        color_scale::Maybe{Union{
+            AbstractString,
+            AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+            AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        }} = nothing
         reverse_scale::Bool = false
         show_scale::Bool = false
     end
@@ -455,11 +459,20 @@ Configure points in a graph. By default, the point `size` and `color` is chosen 
 edges, the `size` is the width of the line). You can also override this by specifying sizes and colors in the
 [`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale` will be used instead; you
 can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` to show its legend.
+
+The `color_scale` can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the
+values are numbers, the scale is continuous; if they are strings, this is a categorical scale.
 """
 @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
     size::Maybe{Real} = nothing
     color::Maybe{AbstractString} = nothing
-    color_scale::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:Real, <:AbstractString}}}} = nothing
+    color_scale::Maybe{
+        Union{
+            AbstractString,
+            AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+            AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        },
+    } = nothing
     reverse_scale::Bool = false
     show_scale::Bool = false
 end
@@ -473,14 +486,16 @@ function Validations.validate_object(
         return "non-positive $(of_what) style.size: $(size)"
     end
     color_scale = configuration.color_scale
-    if color_scale isa AbstractVector{<:Tuple{<:Real, <:AbstractString}}
+    if color_scale isa AbstractVector
         if length(color_scale) == 0
             return "empty $(of_what) style.color_scale"
         end
-        cmin = minimum([value for (value, _) in color_scale])
-        cmax = maximum([value for (value, _) in color_scale])
-        if cmin == cmax
-            return "single $(of_what) style.color_scale value: $(cmax)"
+        if eltype(color_scale) <: Tuple{<:Real, <:AbstractString}
+            cmin = minimum([value for (value, _) in color_scale])
+            cmax = maximum([value for (value, _) in color_scale])
+            if cmin == cmax
+                return "single $(of_what) style.color_scale value: $(cmax)"
+            end
         end
     end
     return nothing
@@ -586,7 +601,6 @@ end
         style::PointsStyleConfiguration = PointsStyleConfiguration()
         border_style::PointsStyleConfiguration = PointsStyleConfiguration()
         edges_style::PointsConfiguration = PointsStyleConfiguration()
-        show_border::Bool = false
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
         diagonal_bands::BandsConfiguration = BandsConfiguration()
@@ -599,9 +613,8 @@ Using the `vertical_bands`, `horizontal_bands` and/or `diagonal_bands` you can p
 the X and Y axes. If the axes are in `log_scale`, the `line_offset` of the `diagonal_bands` are multiplicative instead
 of additive, and must be positive.
 
-If `show_border` is set, a border will be shown around each point using the `border_style` (and, if specified in the
-[`PointsGraphData`](@ref), the `border_colors` and/or `border_sizes`). This allows displaying some additional data per
-point.
+The `border_style` is used if the [`PointsGraphData`](@ref) contains either the `border_colors` and/or `border_sizes`.
+This allows displaying some additional data per point.
 
 !!! note
 
@@ -617,7 +630,6 @@ point.
     style::PointsStyleConfiguration = PointsStyleConfiguration()
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
     edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    show_border::Bool = false
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     diagonal_bands::BandsConfiguration = BandsConfiguration()
@@ -692,8 +704,8 @@ be of the same size. The `colors` can be either color names or a numeric value; 
 `color_scale` is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs
 (or when saving an HTML file).
 
-The `border_colors` and `border_sizes` are only used if the `show_border` of [`PointsGraphConfiguration`](@ref) is set.
-This will use the `border_style`. The border size is in addition to the point size.
+The `border_colors` and `border_sizes` can be used to display additional data per point. The border size is in addition
+to the point size.
 
 It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
 [`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
@@ -796,6 +808,12 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         for (index, y) in enumerate(data.ys)
             @assert y > 0 "non-positive log y#$(index): $(y)"
         end
+    end
+    if configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.colors isa AbstractStringVector "categorical color_scale for non-string points colors data"
+    end
+    if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.border_colors isa AbstractStringVector "categorical color_scale for non-string points border_colors data"
     end
 
     traces = Vector{GenericTrace}()
@@ -960,21 +978,60 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         )
     end
 
-    if configuration.show_border
-        marker_size = border_marker_size(data, configuration)
-        push!(traces, points_trace(data, data.border_colors, marker_size, "coloraxis2", configuration.border_style))
+    if data.border_colors !== nothing || data.border_sizes !== nothing
+        color_scale = configuration.border_style.color_scale
+        if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            border_colors = data.border_colors
+            @assert border_colors !== nothing
+            for (value, color) in color_scale
+                mask = border_colors .== value
+                if any(mask)
+                    marker_size = border_marker_size(data, configuration, mask)
+                    push!(
+                        traces,
+                        points_trace(data, color, marker_size, nothing, configuration.border_style, mask, value),
+                    )
+                end
+            end
+        else
+            marker_size = border_marker_size(data, configuration)
+            push!(traces, points_trace(data, data.border_colors, marker_size, "coloraxis2", configuration.border_style))
+        end
     end
 
-    push!(
-        traces,
-        points_trace(
-            data,
-            data.colors,
-            data.sizes !== nothing ? data.sizes : configuration.style.size,
-            "coloraxis",
-            configuration.style,
-        ),
-    )
+    color_scale = configuration.style.color_scale
+    if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        for (value, color) in color_scale
+            colors = data.colors
+            @assert colors !== nothing
+            mask = colors .== value
+            if any(mask)
+                push!(
+                    traces,
+                    points_trace(
+                        data,
+                        color,
+                        data.sizes !== nothing ? data.sizes : configuration.style.size,
+                        nothing,
+                        configuration.style,
+                        mask,
+                        value,
+                    ),
+                )
+            end
+        end
+    else
+        push!(
+            traces,
+            points_trace(
+                data,
+                data.colors,
+                data.sizes !== nothing ? data.sizes : configuration.style.size,
+                "coloraxis",
+                configuration.style,
+            ),
+        )
+    end
 
     edges = data.edges
     if edges !== nothing
@@ -1120,46 +1177,69 @@ function fill_trace(color::AbstractString, xs::AbstractVector{<:Real}, ys::Abstr
     return scatter(; x = xs, y = ys, fill = "toself", fillcolor = color, name = "", mode = "none")
 end
 
-function border_marker_size(data::PointsGraphData, configuration::PointsGraphConfiguration)::Union{Real, Vector{<:Real}}
-    if data.border_sizes === nothing
+function border_marker_size(
+    data::PointsGraphData,
+    configuration::PointsGraphConfiguration,
+    mask::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
+)::Union{Real, Vector{<:Real}}
+    sizes = masked_data(data.sizes, mask)
+    border_sizes = masked_data(data.border_sizes, mask)
+
+    if border_sizes === nothing
         border_marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
-        if data.sizes === nothing
+        if sizes === nothing
             points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
             return points_marker_size + 2 * border_marker_size
         else
-            return data.sizes .+ 2 * border_marker_size  # untested
+            return sizes .+ 2 * border_marker_size  # untested
         end
     else
-        if data.sizes === nothing
+        if sizes === nothing
             points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
-            return 2 .* data.border_sizes .+ points_marker_size
+            return 2 .* border_sizes .+ points_marker_size
         else
-            return 2 .* data.border_sizes .+ data.sizes  # untested
+            return 2 .* border_sizes .+ sizes  # untested
         end
     end
 end
 
 function points_trace(
     data::PointsGraphData,
-    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}},
+    color::Maybe{Union{AbstractString, AbstractStringVector, AbstractVector{<:Real}}},
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
-    coloraxis::AbstractString,
+    coloraxis::Maybe{AbstractString},
     points_style::PointsStyleConfiguration,
+    mask::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
+    name::AbstractString = "",
 )::GenericTrace
     return scatter(;
-        x = data.xs,
-        y = data.ys,
-        marker_size = marker_size,
-        marker_color = colors !== nothing ? colors : points_style.color,
-        marker_colorscale = points_style.color_scale isa Vector ? nothing : points_style.color_scale,
+        x = masked_data(data.xs, mask),
+        y = masked_data(data.ys, mask),
+        marker_size = masked_data(marker_size, mask),
+        marker_color = color !== nothing ? masked_data(color, mask) : points_style.color,
+        marker_colorscale = if points_style.color_scale isa AbstractVector
+            nothing
+        else
+            points_style.color_scale
+        end,
         marker_coloraxis = coloraxis,
-        marker_showscale = points_style.show_scale,
+        marker_showscale = points_style.show_scale &&
+                           !(points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}),
         marker_reversescale = points_style.reverse_scale,
-        name = "",
+        showlegend = points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        name = name,
         text = data.hovers,
         hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
     )
+end
+
+function masked_data(data::Any, ::Any)::Any
+    return data
+end
+
+function masked_data(data::AbstractVector, mask::Union{AbstractVector{Bool}, BitVector})::AbstractVector
+    return data[mask]  # NOJET
 end
 
 function edge_trace(data::PointsGraphData, index::Int, edges_style::PointsStyleConfiguration)::GenericTrace
@@ -1277,18 +1357,39 @@ function points_layout(data::PointsGraphData, configuration::PointsGraphConfigur
         yaxis_title = data.y_axis_title,
         yaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
         yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
-        showlegend = false,
+        showlegend = (
+            configuration.style.show_scale &&
+            configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        ) || (
+            configuration.border_style.show_scale &&
+            configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        ),
+        legend_x = if configuration.style.show_scale &&
+                      configuration.border_style.show_scale &&
+                      configuration.border_style.color_scale isa
+                      AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            1.2
+        else
+            nothing
+        end,
         coloraxis2_colorbar_x = if (configuration.border_style.show_scale && configuration.style.show_scale)
             1.2
         else
             nothing
         end,
-        coloraxis_showscale = configuration.style.show_scale,
+        coloraxis_showscale = configuration.style.show_scale && !(
+            configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        ),
         coloraxis_reversescale = configuration.style.reverse_scale,
         coloraxis_colorscale = normalized_color_scale(configuration.style.color_scale),
         coloraxis_cmin = lowest_color_scale(configuration.style.color_scale),
         coloraxis_cmax = highest_color_scale(configuration.style.color_scale),
-        coloraxis2_showscale = configuration.border_style.show_scale,
+        coloraxis2_showscale = (data.border_colors !== nothing || data.border_sizes !== nothing) &&
+                               configuration.border_style.show_scale &&
+                               !(
+                                   configuration.border_style.color_scale isa
+                                   AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+                               ),
         coloraxis2_reversescale = configuration.border_style.reverse_scale,
         coloraxis2_colorscale = normalized_color_scale(configuration.border_style.color_scale),
         coloraxis2_cmin = lowest_color_scale(configuration.border_style.color_scale),
@@ -1301,6 +1402,12 @@ function normalized_color_scale(color_scale::Maybe{AbstractString})::Maybe{Abstr
 end
 
 function normalized_color_scale(
+    color_scale::AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+)::AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+    return color_scale
+end
+
+function normalized_color_scale(
     color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
 )::AbstractVector{<:Tuple{<:Real, <:AbstractString}}
     cmin = lowest_color_scale(color_scale)
@@ -1308,7 +1415,9 @@ function normalized_color_scale(
     return [((value - cmin) / (cmax - cmin), color) for (value, color) in color_scale]
 end
 
-function lowest_color_scale(::Maybe{AbstractString})::Nothing
+function lowest_color_scale(
+    ::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}}},
+)::Nothing
     return nothing
 end
 
@@ -1316,7 +1425,9 @@ function lowest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:Abstra
     return minimum([value for (value, _) in color_scale])
 end
 
-function highest_color_scale(::Maybe{AbstractString})::Nothing
+function highest_color_scale(
+    ::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}}},
+)::Nothing
     return nothing
 end
 

@@ -769,6 +769,33 @@ nested_test("renderers") do
             return nothing
         end
 
+        nested_test("categorical") do
+            data.colors = ["Foo", "Bar", "Baz"]
+            configuration.style.color_scale = [("Foo", "red"), ("Bar", "green"), ("Baz", "blue"), ("Vaz", "magenta")]
+
+            nested_test("()") do
+                render(data, configuration)
+                test_html("points.categorical.html")
+                return nothing
+            end
+
+            nested_test("legend") do
+                configuration.style.show_scale = true
+                render(data, configuration)
+                test_html("points.categorical.legend.html")
+                return nothing
+            end
+
+            nested_test("colorscale") do
+                data.border_colors = [0.0, 1.0, 2.0]
+                configuration.style.show_scale = true
+                configuration.border_style.show_scale = true
+                render(data, configuration)
+                test_html("points.categorical.colorscale.html")
+                return nothing
+            end
+        end
+
         nested_test("values!scale") do
             data.colors = [0.0, 1.0, 2.0]
             render(data, configuration)
@@ -869,36 +896,11 @@ nested_test("renderers") do
         end
 
         nested_test("border") do
-            configuration.show_border = true
-
-            nested_test("()") do
-                render(data, configuration)
-                test_html("points.border.html")
-                return nothing
-            end
-
-            nested_test("size") do
-                configuration.style.size = 6
-                configuration.border_style.size = 6
-                render(data, configuration)
-                test_html("points.border.size.html")
-                return nothing
-            end
-
             nested_test("sizes") do
                 configuration.style.size = 6
                 data.border_sizes = [6, 8, 10]
                 render(data, configuration)
                 test_html("points.border.sizes.html")
-                return nothing
-            end
-
-            nested_test("color") do
-                configuration.style.size = 6
-                configuration.border_style.size = 6
-                configuration.border_style.color = "magenta"
-                render(data, configuration)
-                test_html("points.border.color.html")
                 return nothing
             end
 
@@ -910,6 +912,43 @@ nested_test("renderers") do
                 render(data, configuration)
                 test_html("points.border.colors.html")
                 return nothing
+            end
+
+            nested_test("categorical") do
+                data.border_colors = ["Foo", "Bar", "Baz"]
+                configuration.border_style.color_scale =
+                    [("Foo", "red"), ("Bar", "green"), ("Baz", "blue"), ("Vaz", "magenta")]
+
+                nested_test("()") do
+                    render(data, configuration)
+                    test_html("points.border.categorical.html")
+                    return nothing
+                end
+
+                nested_test("legend") do
+                    configuration.border_style.show_scale = true
+                    render(data, configuration)
+                    test_html("points.border.categorical.legend.html")
+                    return nothing
+                end
+
+                nested_test("colorscale") do
+                    data.colors = [0.0, 1.0, 2.0]
+                    configuration.style.show_scale = true
+                    configuration.border_style.show_scale = true
+                    render(data, configuration)
+                    test_html("points.border.categorical.colorscale.html")
+                    return nothing
+                end
+
+                nested_test("legends") do
+                    data.colors = ["X", "Y", "Z"]
+                    configuration.style.color_scale = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
+                    configuration.style.show_scale = true
+                    render(data, configuration)
+                    test_html("points.border.categorical.legends.html")
+                    return nothing
+                end
             end
 
             nested_test("colorscale") do
