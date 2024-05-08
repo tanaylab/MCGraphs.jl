@@ -16,6 +16,9 @@ export DistributionsGraphConfiguration
 export DistributionsGraphData
 export GraphConfiguration
 export HorizontalValues
+export LineGraphConfiguration
+export LineGraphData
+export LineStyleConfiguration
 export PointsGraphConfiguration
 export PointsGraphData
 export PointsStyleConfiguration
@@ -314,6 +317,14 @@ const CURVE = 4
     )::Nothing
 
 Render a graph given its data and configuration. The implementation depends on the specific graph.
+The supported combinations of data and configuration are:
+
+| Data                             | Configuration                             | Description                                        |
+|:-------------------------------- |:----------------------------------------- |:-------------------------------------------------- |
+| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                    |
+| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                   |
+| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (function).                 |
+| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them. |
 """
 function render(
     data::DistributionGraphData,
@@ -443,60 +454,33 @@ function distribution_layout(
 end
 
 """
-    @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
-        size::Maybe{Real} = nothing
-        color::Maybe{AbstractString} = nothing
-        color_scale::Maybe{Union{
-            AbstractString,
-            AbstractVector{<:Tuple{<:Real, <:AbstractString}},
-            AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        }} = nothing
-        reverse_scale::Bool = false
-        show_scale::Bool = false
+    @kwdef mutable struct LineStyleConfiguration <: ObjectWithValidation
+        line_width::Maybe{Real} = 1.0
+        fill_below::Bool = false
+        line_is_dashed::Bool = false
+        line_color::Maybe{AbstractString} = nothing
     end
 
-Configure points in a graph. By default, the point `size` and `color` is chosen automatically (when this is applied to
-edges, the `size` is the width of the line). You can also override this by specifying sizes and colors in the
-[`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale` will be used instead; you
-can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` to show its legend.
+Configure a line in a graph.
 
-The `color_scale` can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the
-values are numbers, the scale is continuous; if they are strings, this is a categorical scale.
+By default, a solid line is shown; if `line_is_dashed`, the line will be dashed. If `fill_below` is set, the area below
+the line is filled. If the `line_width` is set to `nothing`, no line is shown (and `fill_below` must be set). By
+default, the `line_color` is chosen automatically.
 """
-@kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
-    size::Maybe{Real} = nothing
-    color::Maybe{AbstractString} = nothing
-    color_scale::Maybe{
-        Union{
-            AbstractString,
-            AbstractVector{<:Tuple{<:Real, <:AbstractString}},
-            AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
-        },
-    } = nothing
-    reverse_scale::Bool = false
-    show_scale::Bool = false
+@kwdef mutable struct LineStyleConfiguration <: ObjectWithValidation
+    line_width::Maybe{Real} = 1.0
+    fill_below::Bool = false
+    line_is_dashed::Bool = false
+    line_color::Maybe{AbstractString} = nothing
 end
 
-function Validations.validate_object(
-    of_what::AbstractString,
-    configuration::PointsStyleConfiguration,
-)::Maybe{AbstractString}
-    size = configuration.size
-    if size !== nothing && size <= 0
-        return "non-positive $(of_what) style.size: $(size)"
+function Validations.validate_object(configuration::LineStyleConfiguration)::Maybe{AbstractString}
+    line_width = configuration.line_width
+    if line_width !== nothing && line_width <= 0
+        return "non-positive line_width: $(line_width)"
     end
-    color_scale = configuration.color_scale
-    if color_scale isa AbstractVector
-        if length(color_scale) == 0
-            return "empty $(of_what) style.color_scale"
-        end
-        if eltype(color_scale) <: Tuple{<:Real, <:AbstractString}
-            cmin = minimum([value for (value, _) in color_scale])
-            cmax = maximum([value for (value, _) in color_scale])
-            if cmin == cmax
-                return "single $(of_what) style.color_scale value: $(cmax)"
-            end
-        end
+    if line_width === nothing && !configuration.fill_below
+        return "either line_width or fill_below must be specified"
     end
     return nothing
 end
@@ -590,6 +574,212 @@ function Validations.validate_object(
                "is not less than high line_offset: $(configuration.high.line_offset)"
     end
 
+    return nothing
+end
+
+"""
+    @kwdef mutable struct LineGraphConfiguration <: ObjectWithValidation
+        graph::GraphConfiguration = GraphConfiguration()
+        x_axis::AxisConfiguration = AxisConfiguration()
+        y_axis::AxisConfiguration = AxisConfiguration()
+        style::LineStyleConfiguration = LineStyleConfiguration()
+        vertical_bands::BandsConfiguration = BandsConfiguration()
+        horizontal_bands::BandsConfiguration = BandsConfiguration()
+    end
+
+Configure a graph for showing line plots.
+"""
+@kwdef mutable struct LineGraphConfiguration <: ObjectWithValidation
+    graph::GraphConfiguration = GraphConfiguration()
+    x_axis::AxisConfiguration = AxisConfiguration()
+    y_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
+end
+
+function Validations.validate_object(configuration::LineGraphConfiguration)::Maybe{AbstractString}
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object("x", configuration.x_axis)
+    end
+    if message === nothing
+        message = validate_object("y", configuration.y_axis)
+    end
+    if message === nothing
+        message = validate_object(configuration.style)
+    end
+    if message === nothing
+        message = validate_object("vertical_bands", configuration.vertical_bands, false)
+    end
+    if message === nothing
+        message = validate_object("horizontal_bands", configuration.horizontal_bands, false)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct LineGraphData <: ObjectWithValidation
+        graph_title::Maybe{AbstractString} = nothing
+        x_axis_title::Maybe{AbstractString} = nothing
+        y_axis_title::Maybe{AbstractString} = nothing
+        xs::AbstractVector{<:Real}
+        ys::AbstractVector{<:Real}
+    end
+
+The data for a line graph (e.g. a CDF graph).
+
+By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
+`y_axis_title` for the axes.
+
+The `xs` and `ys` vectors must be of the same size. A line will be drawn through all the points, and the area under the
+line may be filled.
+"""
+@kwdef mutable struct LineGraphData <: ObjectWithValidation
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{<:Real}
+    ys::AbstractVector{<:Real}
+end
+
+function Validations.validate_object(data::LineGraphData)::Maybe{AbstractString}
+    if length(data.xs) != length(data.ys)
+        return "the number of xs: $(length(data.xs))\n" * "is different from the number of ys: $(length(data.ys))"
+    end
+    return nothing
+end
+
+function render(data::LineGraphData, configuration::LineGraphConfiguration = LineGraphConfiguration())::Nothing
+    assert_valid_object(data)
+    assert_valid_object(configuration)
+
+    traces = Vector{GenericTrace}()
+
+    minimum_x = minimum(data.xs)
+    minimum_y = minimum(data.ys)
+    maximum_x = maximum(data.xs)
+    maximum_y = maximum(data.ys)
+
+    push_fill_vertical_bands_traces(traces, configuration.vertical_bands, minimum_x, minimum_y, maximum_x, maximum_y)
+    push_fill_horizontal_bands_traces(
+        traces,
+        configuration.horizontal_bands,
+        minimum_x,
+        minimum_y,
+        maximum_x,
+        maximum_y,
+    )
+
+    push!(traces, line_trace(data, configuration.style))
+
+    for band in
+        (configuration.vertical_bands.low, configuration.vertical_bands.middle, configuration.vertical_bands.high)
+        if band.line_offset !== nothing && band.line_color !== nothing
+            push!(traces, vertical_line_trace(band, minimum_y, maximum_y))
+        end
+    end
+
+    for band in
+        (configuration.horizontal_bands.low, configuration.horizontal_bands.middle, configuration.horizontal_bands.high)
+        if band.line_offset !== nothing && band.line_color !== nothing
+            push!(traces, horizontal_line_trace(band, minimum_x, maximum_x))
+        end
+    end
+
+    layout = line_layout(data, configuration)
+    figure = plot(traces, layout)
+    write_graph(figure, configuration.graph)
+    return nothing
+end
+
+function line_trace(data::LineGraphData, line_style::LineStyleConfiguration)::GenericTrace
+    return scatter(;
+        x = data.xs,
+        y = data.ys,
+        line_color = line_style.line_color,
+        line_width = line_style.line_width === nothing ? 0 : line_style.line_width,
+        line_dash = line_style.line_is_dashed ? "dash" : nothing,
+        fill = line_style.fill_below ? "tozeroy" : nothing,
+        name = "",
+        mode = "lines",
+    )
+end
+
+function line_layout(data::LineGraphData, configuration::LineGraphConfiguration)::Layout
+    return Layout(;  # NOJET
+        title = data.graph_title,
+        template = configuration.graph.template,
+        xaxis_showgrid = configuration.graph.show_grid,
+        xaxis_showticklabels = configuration.graph.show_ticks,
+        xaxis_title = data.x_axis_title,
+        xaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
+        xaxis_type = configuration.x_axis.log_scale ? "log" : nothing,
+        yaxis_showgrid = configuration.graph.show_grid,
+        yaxis_showticklabels = configuration.graph.show_ticks,
+        yaxis_title = data.y_axis_title,
+        yaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
+        yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
+        showlegend = false,
+    )
+end
+
+"""
+    @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
+        size::Maybe{Real} = nothing
+        color::Maybe{AbstractString} = nothing
+        color_scale::Maybe{Union{
+            AbstractString,
+            AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+            AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        }} = nothing
+        reverse_scale::Bool = false
+        show_scale::Bool = false
+    end
+
+Configure points in a graph. By default, the point `size` and `color` is chosen automatically (when this is applied to
+edges, the `size` is the width of the line). You can also override this by specifying sizes and colors in the
+[`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale` will be used instead; you
+can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` to show its legend.
+
+The `color_scale` can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the
+values are numbers, the scale is continuous; if they are strings, this is a categorical scale.
+"""
+@kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
+    size::Maybe{Real} = nothing
+    color::Maybe{AbstractString} = nothing
+    color_scale::Maybe{
+        Union{
+            AbstractString,
+            AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+            AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        },
+    } = nothing
+    reverse_scale::Bool = false
+    show_scale::Bool = false
+end
+
+function Validations.validate_object(
+    of_what::AbstractString,
+    configuration::PointsStyleConfiguration,
+)::Maybe{AbstractString}
+    size = configuration.size
+    if size !== nothing && size <= 0
+        return "non-positive $(of_what) style.size: $(size)"
+    end
+    color_scale = configuration.color_scale
+    if color_scale isa AbstractVector
+        if length(color_scale) == 0
+            return "empty $(of_what) style.color_scale"
+        end
+        if eltype(color_scale) <: Tuple{<:Real, <:AbstractString}
+            cmin = minimum([value for (value, _) in color_scale])
+            cmax = maximum([value for (value, _) in color_scale])
+            if cmin == cmax
+                return "single $(of_what) style.color_scale value: $(cmax)"
+            end
+        end
+    end
     return nothing
 end
 
@@ -823,160 +1013,24 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
     maximum_x = maximum(data.xs)
     maximum_y = maximum(data.ys)
 
-    if configuration.vertical_bands.low.line_offset !== nothing &&
-       configuration.vertical_bands.low.fill_color !== nothing
-        push!(  # NOJET
-            traces,
-            fill_trace(
-                configuration.vertical_bands.low.fill_color,
-                [
-                    minimum_x,
-                    configuration.vertical_bands.low.line_offset,
-                    configuration.vertical_bands.low.line_offset,
-                    minimum_x,
-                ],
-                [minimum_y, minimum_y, maximum_y, maximum_y],
-            ),
-        )
-    end
-
-    if configuration.vertical_bands.high.line_offset !== nothing &&
-       configuration.vertical_bands.high.fill_color !== nothing
-        push!(  # NOJET
-            traces,
-            fill_trace(
-                configuration.vertical_bands.high.fill_color,
-                [
-                    maximum_x,
-                    configuration.vertical_bands.high.line_offset,
-                    configuration.vertical_bands.high.line_offset,
-                    maximum_x,
-                ],
-                [minimum_y, minimum_y, maximum_y, maximum_y],
-            ),
-        )
-    end
-
-    if configuration.vertical_bands.high.line_offset !== nothing &&
-       configuration.vertical_bands.low.line_offset !== nothing &&
-       configuration.vertical_bands.middle.fill_color !== nothing
-        push!(  # NOJET
-            traces,
-            fill_trace(
-                configuration.vertical_bands.middle.fill_color,
-                [
-                    configuration.vertical_bands.low.line_offset,
-                    configuration.vertical_bands.high.line_offset,
-                    configuration.vertical_bands.high.line_offset,
-                    configuration.vertical_bands.low.line_offset,
-                ],
-                [minimum_y, minimum_y, maximum_y, maximum_y],
-            ),
-        )
-    end
-
-    if configuration.horizontal_bands.low.line_offset !== nothing &&
-       configuration.horizontal_bands.low.fill_color !== nothing
-        push!(  # NOJET
-            traces,
-            fill_trace(
-                configuration.horizontal_bands.low.fill_color,
-                [minimum_x, minimum_x, maximum_x, maximum_x],
-                [
-                    minimum_y,
-                    configuration.horizontal_bands.low.line_offset,
-                    configuration.horizontal_bands.low.line_offset,
-                    minimum_y,
-                ],
-            ),
-        )
-    end
-
-    if configuration.horizontal_bands.high.line_offset !== nothing &&
-       configuration.horizontal_bands.high.fill_color !== nothing
-        push!(  # NOJET
-            traces,
-            fill_trace(
-                configuration.horizontal_bands.high.fill_color,
-                [minimum_x, minimum_x, maximum_x, maximum_x],
-                [
-                    maximum_y,
-                    configuration.horizontal_bands.high.line_offset,
-                    configuration.horizontal_bands.high.line_offset,
-                    maximum_y,
-                ],
-            ),
-        )
-    end
-
-    if configuration.horizontal_bands.high.line_offset !== nothing &&
-       configuration.horizontal_bands.low.line_offset !== nothing &&
-       configuration.horizontal_bands.middle.fill_color !== nothing
-        push!(  # NOJET
-            traces,
-            fill_trace(
-                configuration.horizontal_bands.middle.fill_color,
-                [minimum_x, minimum_x, maximum_x, maximum_x],
-                [
-                    configuration.horizontal_bands.low.line_offset,
-                    configuration.horizontal_bands.high.line_offset,
-                    configuration.horizontal_bands.high.line_offset,
-                    configuration.horizontal_bands.low.line_offset,
-                ],
-            ),
-        )
-    end
-
-    log_scale = configuration.x_axis.log_scale
-    if configuration.diagonal_bands.low.line_offset !== nothing &&
-       configuration.diagonal_bands.low.fill_color !== nothing
-        push!(  # NOJET
-            traces,
-            low_diagonal_trace(
-                configuration.diagonal_bands.low.fill_color,
-                log_scale,
-                configuration.diagonal_bands.low.line_offset,
-                minimum_x,
-                minimum_y,
-                maximum_x,
-                maximum_y,
-            ),
-        )
-    end
-
-    if configuration.diagonal_bands.high.line_offset !== nothing &&
-       configuration.diagonal_bands.high.fill_color !== nothing
-        push!(  # NOJET
-            traces,
-            high_diagonal_trace(
-                configuration.diagonal_bands.high.fill_color,
-                log_scale,
-                configuration.diagonal_bands.high.line_offset,
-                minimum_x,
-                minimum_y,
-                maximum_x,
-                maximum_y,
-            ),
-        )
-    end
-
-    if configuration.diagonal_bands.high.line_offset !== nothing &&
-       configuration.diagonal_bands.low.line_offset !== nothing &&
-       configuration.diagonal_bands.middle.fill_color !== nothing
-        push!(
-            traces,
-            middle_diagonal_trace(
-                configuration.diagonal_bands.middle.fill_color,
-                log_scale,
-                configuration.diagonal_bands.low.line_offset,
-                configuration.diagonal_bands.high.line_offset,
-                minimum_x,
-                minimum_y,
-                maximum_x,
-                maximum_y,
-            ),
-        )
-    end
+    push_fill_vertical_bands_traces(traces, configuration.vertical_bands, minimum_x, minimum_y, maximum_x, maximum_y)
+    push_fill_horizontal_bands_traces(
+        traces,
+        configuration.horizontal_bands,
+        minimum_x,
+        minimum_y,
+        maximum_x,
+        maximum_y,
+    )
+    push_fill_diagonal_bands_traces(
+        traces,
+        configuration.x_axis.log_scale,
+        configuration.diagonal_bands,
+        minimum_x,
+        minimum_y,
+        maximum_x,
+        maximum_y,
+    )
 
     if data.border_colors !== nothing || data.border_sizes !== nothing
         color_scale = configuration.border_style.color_scale
@@ -1067,6 +1121,168 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
     layout = points_layout(data, configuration)
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)
+
+    return nothing
+end
+
+function push_fill_vertical_bands_traces(
+    traces::Vector{GenericTrace},
+    configuration::BandsConfiguration,
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real,
+)::Nothing
+    if configuration.low.line_offset !== nothing && configuration.low.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.low.fill_color,
+                [minimum_x, configuration.low.line_offset, configuration.low.line_offset, minimum_x],
+                [minimum_y, minimum_y, maximum_y, maximum_y],
+            ),
+        )
+    end
+
+    if configuration.high.line_offset !== nothing && configuration.high.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.high.fill_color,
+                [maximum_x, configuration.high.line_offset, configuration.high.line_offset, maximum_x],
+                [minimum_y, minimum_y, maximum_y, maximum_y],
+            ),
+        )
+    end
+
+    if configuration.high.line_offset !== nothing &&
+       configuration.low.line_offset !== nothing &&
+       configuration.middle.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.middle.fill_color,
+                [
+                    configuration.low.line_offset,
+                    configuration.high.line_offset,
+                    configuration.high.line_offset,
+                    configuration.low.line_offset,
+                ],
+                [minimum_y, minimum_y, maximum_y, maximum_y],
+            ),
+        )
+    end
+
+    return nothing
+end
+
+function push_fill_horizontal_bands_traces(
+    traces::Vector{GenericTrace},
+    configuration::BandsConfiguration,
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real,
+)::Nothing
+    if configuration.low.line_offset !== nothing && configuration.low.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.low.fill_color,
+                [minimum_x, minimum_x, maximum_x, maximum_x],
+                [minimum_y, configuration.low.line_offset, configuration.low.line_offset, minimum_y],
+            ),
+        )
+    end
+
+    if configuration.high.line_offset !== nothing && configuration.high.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.high.fill_color,
+                [minimum_x, minimum_x, maximum_x, maximum_x],
+                [maximum_y, configuration.high.line_offset, configuration.high.line_offset, maximum_y],
+            ),
+        )
+    end
+
+    if configuration.high.line_offset !== nothing &&
+       configuration.low.line_offset !== nothing &&
+       configuration.middle.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            fill_trace(
+                configuration.middle.fill_color,
+                [minimum_x, minimum_x, maximum_x, maximum_x],
+                [
+                    configuration.low.line_offset,
+                    configuration.high.line_offset,
+                    configuration.high.line_offset,
+                    configuration.low.line_offset,
+                ],
+            ),
+        )
+    end
+
+    return nothing
+end
+
+function push_fill_diagonal_bands_traces(
+    traces::Vector{GenericTrace},
+    log_scale::Bool,
+    configuration::BandsConfiguration,
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real,
+)::Nothing
+    if configuration.low.line_offset !== nothing && configuration.low.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            low_diagonal_trace(
+                configuration.low.fill_color,
+                log_scale,
+                configuration.low.line_offset,
+                minimum_x,
+                minimum_y,
+                maximum_x,
+                maximum_y,
+            ),
+        )
+    end
+
+    if configuration.high.line_offset !== nothing && configuration.high.fill_color !== nothing
+        push!(  # NOJET
+            traces,
+            high_diagonal_trace(
+                configuration.high.fill_color,
+                log_scale,
+                configuration.high.line_offset,
+                minimum_x,
+                minimum_y,
+                maximum_x,
+                maximum_y,
+            ),
+        )
+    end
+
+    if configuration.high.line_offset !== nothing &&
+       configuration.low.line_offset !== nothing &&
+       configuration.middle.fill_color !== nothing
+        push!(
+            traces,
+            middle_diagonal_trace(
+                configuration.middle.fill_color,
+                log_scale,
+                configuration.low.line_offset,
+                configuration.high.line_offset,
+                minimum_x,
+                minimum_y,
+                maximum_x,
+                maximum_y,
+            ),
+        )
+    end
 
     return nothing
 end

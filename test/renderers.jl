@@ -436,6 +436,134 @@ nested_test("renderers") do
         end
     end
 
+    nested_test("line") do
+        data = LineGraphData(; xs = [0.0, 1.0, 2.0], ys = [-0.2, 1.2, 1.8])
+        graph_configuration = GraphConfiguration(; output_file = "actual.html")
+        configuration = LineGraphConfiguration(; graph = graph_configuration)
+
+        nested_test("!line_width") do
+            configuration.style.line_width = 0
+            @test_throws "non-positive line_width: 0" render(data, configuration)
+        end
+
+        nested_test("!fill_below") do
+            configuration.style.line_width = nothing
+            @test_throws "either line_width or fill_below must be specified" render(data, configuration)
+        end
+
+        nested_test("~ys") do
+            push!(data.ys, 2.0)
+            @test_throws dedent("""
+                the number of xs: 3
+                is different from the number of ys: 4
+            """) render(data, configuration)
+        end
+
+        nested_test("()") do
+            render(data, configuration)
+            test_html("line.html")
+            return nothing
+        end
+
+        nested_test("dash") do
+            configuration.style.line_is_dashed = true
+            render(data, configuration)
+            test_html("line.dash.html")
+            return nothing
+        end
+
+        nested_test("size") do
+            configuration.style.line_width = 5
+            render(data, configuration)
+            test_html("line.size.html")
+            return nothing
+        end
+
+        nested_test("color") do
+            configuration.style.line_color = "red"
+            render(data, configuration)
+            test_html("line.color.html")
+            return nothing
+        end
+
+        nested_test("fill_below") do
+            configuration.style.fill_below = true
+            render(data, configuration)
+            test_html("line.fill_below.html")
+            return nothing
+        end
+
+        nested_test("fill_below!line") do
+            configuration.style.line_width = nothing
+            configuration.style.fill_below = true
+            render(data, configuration)
+            test_html("line.fill_below!line.html")
+            return nothing
+        end
+
+        nested_test("!grid") do
+            configuration.graph.show_grid = false
+            configuration.graph.show_ticks = false
+            render(data, configuration)
+            return test_html("line.!grid.html")
+        end
+
+        nested_test("titles") do
+            data.graph_title = "Graph"
+            data.x_axis_title = "X"
+            data.y_axis_title = "Y"
+            render(data, configuration)
+            test_html("line.titles.html")
+            return nothing
+        end
+
+        nested_test("vertical_lines") do
+            configuration.vertical_bands.middle.line_offset = 1.25
+            configuration.vertical_bands.low.line_offset = 0.75
+            configuration.vertical_bands.high.line_offset = 1.5
+            render(data, configuration)
+            test_html("line.vertical_lines.html")
+            return nothing
+        end
+
+        nested_test("vertical_fills") do
+            configuration.vertical_bands.middle.line_color = nothing
+            configuration.vertical_bands.low.line_color = nothing
+            configuration.vertical_bands.high.line_color = nothing
+            configuration.vertical_bands.middle.fill_color = "#00ff0080"
+            configuration.vertical_bands.low.fill_color = "#0000ff80"
+            configuration.vertical_bands.high.fill_color = "ff000080"
+            configuration.vertical_bands.low.line_offset = 0.75
+            configuration.vertical_bands.high.line_offset = 1.5
+            render(data, configuration)
+            test_html("line.vertical_fills.html")
+            return nothing
+        end
+
+        nested_test("horizontal_lines") do
+            configuration.horizontal_bands.middle.line_offset = 1.25
+            configuration.horizontal_bands.low.line_offset = 0.75
+            configuration.horizontal_bands.high.line_offset = 1.5
+            render(data, configuration)
+            test_html("line.horizontal_lines.html")
+            return nothing
+        end
+
+        nested_test("horizontal_fills") do
+            configuration.horizontal_bands.middle.line_color = nothing
+            configuration.horizontal_bands.low.line_color = nothing
+            configuration.horizontal_bands.high.line_color = nothing
+            configuration.horizontal_bands.middle.fill_color = "#00ff0080"
+            configuration.horizontal_bands.low.fill_color = "#0000ff80"
+            configuration.horizontal_bands.high.fill_color = "ff000080"
+            configuration.horizontal_bands.low.line_offset = 0.75
+            configuration.horizontal_bands.high.line_offset = 1.5
+            render(data, configuration)
+            test_html("line.horizontal_fills.html")
+            return nothing
+        end
+    end
+
     nested_test("points") do
         data = PointsGraphData(; xs = [0.0, 1.0, 2.0], ys = [-0.2, 1.2, 1.8])
         graph_configuration = GraphConfiguration(; output_file = "actual.html")

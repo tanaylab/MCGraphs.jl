@@ -67,8 +67,20 @@
 </a>
 </li>
 <li>
+<a class="tocitem" href="#Lines">
+<span>Lines
+</span>
+</a>
+</li>
+<li>
 <a class="tocitem" href="#Points">
 <span>Points
+</span>
+</a>
+</li>
+<li>
+<a class="tocitem" href="#Bands-in-graphs">
+<span>Bands in graphs
 </span>
 </a>
 </li>
@@ -178,8 +190,82 @@
 )::Nothing
 </code>
 </pre>
-<p>Render a graph given its data and configuration. The implementation depends on the specific graph.
+<p>Render a graph given its data and configuration. The implementation depends on the specific graph. The supported combinations of data and configuration are:
 </p>
+<table>
+<tr>
+<th style="text-align: left">Data
+</th>
+<th style="text-align: left">Configuration
+</th>
+<th style="text-align: left">Description
+</th>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
+<code>DistributionGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
+<code>DistributionGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single distribution.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphConfiguration">
+<code>DistributionsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of multiple distributions.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LineGraphData">
+<code>LineGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
+<code>LineGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single line (function).
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>PointsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of points, possibly with edges between them.
+</td>
+</tr>
+</table>
 </div>
 </section>
 </article>
@@ -528,6 +614,126 @@ end
 </div>
 </section>
 </article>
+<h2 id="Lines">
+<a class="docs-heading-anchor" href="#Lines">Lines
+</a>
+<a id="Lines-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Lines" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LineGraphData" href="#MCGraphs.Renderers.LineGraphData">
+<code>MCGraphs.Renderers.LineGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LineGraphData &lt;: ObjectWithValidation
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{&lt;:Real}
+    ys::AbstractVector{&lt;:Real}
+end
+</code>
+</pre>
+<p>The data for a line graph (e.g. a CDF graph).
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>x_axis_title
+</code> and 
+<code>y_axis_title
+</code> for the axes.
+</p>
+<p>The 
+<code>xs
+</code> and 
+<code>ys
+</code> vectors must be of the same size. A line will be drawn through all the points, and the area under the line may be filled.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LineGraphConfiguration" href="#MCGraphs.Renderers.LineGraphConfiguration">
+<code>MCGraphs.Renderers.LineGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LineGraphConfiguration &lt;: ObjectWithValidation
+    graph::GraphConfiguration = GraphConfiguration()
+    x_axis::AxisConfiguration = AxisConfiguration()
+    y_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph for showing line plots.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LineStyleConfiguration" href="#MCGraphs.Renderers.LineStyleConfiguration">
+<code>MCGraphs.Renderers.LineStyleConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LineStyleConfiguration &lt;: ObjectWithValidation
+    line_width::Maybe{Real} = 1.0
+    fill_below::Bool = false
+    line_is_dashed::Bool = false
+    line_color::Maybe{AbstractString} = nothing
+end
+</code>
+</pre>
+<p>Configure a line in a graph.
+</p>
+<p>By default, a solid line is shown; if 
+<code>line_is_dashed
+</code>, the line will be dashed. If 
+<code>fill_below
+</code> is set, the area below the line is filled. If the 
+<code>line_width
+</code> is set to 
+<code>nothing
+</code>, no line is shown (and 
+<code>fill_below
+</code> must be set). By default, the 
+<code>line_color
+</code> is chosen automatically.
+</p>
+</div>
+</section>
+</article>
 <h2 id="Points">
 <a class="docs-heading-anchor" href="#Points">Points
 </a>
@@ -762,6 +968,14 @@ end
 </div>
 </section>
 </article>
+<h2 id="Bands-in-graphs">
+<a class="docs-heading-anchor" href="#Bands-in-graphs">Bands in graphs
+</a>
+<a id="Bands-in-graphs-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Bands-in-graphs" title="Permalink">
+</a>
+</h2>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
@@ -895,6 +1109,24 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
 <code>MCGraphs.Renderers.GraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
+<code>MCGraphs.Renderers.LineGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.LineGraphData">
+<code>MCGraphs.Renderers.LineGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.LineStyleConfiguration">
+<code>MCGraphs.Renderers.LineStyleConfiguration
 </code>
 </a>
 </li>
