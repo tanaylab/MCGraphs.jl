@@ -15,6 +15,8 @@ export AxisConfiguration
 export CdfDirection
 export CdfGraphConfiguration
 export CdfGraphData
+export CdfsGraphConfiguration
+export CdfsGraphData
 export DistributionGraphConfiguration
 export DistributionGraphData
 export DistributionStyleConfiguration
@@ -348,14 +350,15 @@ Render a graph given its data and configuration. The implementation depends on t
 [`AbstractGraphData`](@ref) there is a matching [`AbstractGraphConfiguration`](@ref) (a default one is provided for the
 `configuration`). The supported type pairs are:
 
-| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                         |
-|:-------------------------------- |:----------------------------------------- |:--------------------------------------------------- |
-| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                     |
-| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                    |
-| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).    |
-| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.      |
-| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function. |
-| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.  |
+| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                            |
+|:-------------------------------- |:----------------------------------------- |:------------------------------------------------------ |
+| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                        |
+| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                       |
+| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).       |
+| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.         |
+| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function.    |
+| [`CdfsGraphData`](@ref)          | [`CdfsGraphConfiguration`](@ref)          | Graph of a multiple cumulative distribution functions. |
+| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.     |
 """
 function render(
     data::DistributionGraphData,
@@ -1084,26 +1087,6 @@ CDF graphs are internally converted to line graphs for rendering.
     show_percent::Bool = false
 end
 
-function Validations.validate_object(configuration::CdfGraphConfiguration)::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
-    if message === nothing
-        message = validate_object("values", configuration.value_axis)
-    end
-    if message === nothing
-        message = validate_object("fractions", configuration.fraction_axis)
-    end
-    if message === nothing
-        message = validate_object(configuration.style)
-    end
-    if message === nothing
-        message = validate_object("value_bands", configuration.value_bands, false)
-    end
-    if message === nothing
-        message = validate_object("fraction_bands", configuration.fraction_bands, false)
-    end
-    return message
-end
-
 """
     @kwdef mutable struct CdfGraphData <: AbstractGraphData
         graph_title::Maybe{AbstractString} = nothing
@@ -1126,6 +1109,13 @@ The order of the `values` does not matter.
     values::AbstractVector{<:Real}
 end
 
+function Validations.validate_object(data::CdfGraphData)::Maybe{AbstractString}
+    if length(data.values) < 2
+        return "too few values: $(length(data.values))"
+    end
+    return nothing
+end
+
 function render(data::CdfGraphData, configuration::CdfGraphConfiguration = CdfGraphConfiguration())::Nothing
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -1137,21 +1127,13 @@ function render(data::CdfGraphData, configuration::CdfGraphConfiguration = CdfGr
 end
 
 function cdf_data_as_line_data(data::CdfGraphData, configuration::CdfGraphConfiguration)::LineGraphData
-    n_values = length(data.values)
-    sorted_values = sort(data.values)
-    fractions = collect(1.0:length(sorted_values)) ./ n_values
-    if configuration.direction == DownToValue
-        fractions = 1 .- fractions
-    end
-    if configuration.show_percent
-        fractions .*= 100
-    end
+    values, fractions = collect_cdf_data(data.values, configuration)
     if configuration.orientation == HorizontalValues
         return LineGraphData(;
             graph_title = data.graph_title,
             x_axis_title = data.value_axis_title,
             y_axis_title = data.fraction_axis_title,
-            xs = sorted_values,
+            xs = values,
             ys = fractions,
         )
     else
@@ -1160,7 +1142,7 @@ function cdf_data_as_line_data(data::CdfGraphData, configuration::CdfGraphConfig
             x_axis_title = data.fraction_axis_title,
             y_axis_title = data.value_axis_title,
             xs = fractions,
-            ys = sorted_values,
+            ys = values,
         )
     end
 end
@@ -1171,6 +1153,7 @@ function cdf_configuration_as_line_configuration(configuration::CdfGraphConfigur
             graph = configuration.graph,
             x_axis = configuration.value_axis,
             y_axis = configuration.fraction_axis,
+            style = configuration.style,
             vertical_bands = configuration.value_bands,
             horizontal_bands = configuration.fraction_bands,
         )
@@ -1179,8 +1162,196 @@ function cdf_configuration_as_line_configuration(configuration::CdfGraphConfigur
             graph = configuration.graph,
             x_axis = configuration.fraction_axis,
             y_axis = configuration.value_axis,
+            style = configuration.style,
             vertical_bands = configuration.fraction_bands,
             horizontal_bands = configuration.value_bands,
+        )
+    end
+end
+
+"""
+    @kwdef mutable struct CdfsGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        value_axis::AxisConfiguration = AxisConfiguration()
+        fraction_axis::AxisConfiguration = AxisConfiguration()
+        style::LineStyleConfiguration = LineStyleConfiguration()
+        orientation::ValuesOrientation = HorizontalValues
+        direction::CdfDirection = UpToValue
+        value_bands::BandsConfiguration = BandsConfiguration()
+        fraction_bands::BandsConfiguration = BandsConfiguration()
+        show_legend::Bool = false
+    end
+
+Configure a graph for showing multiple CDF (Cumulative Distribution Function) graph. This is the same as
+[`CdfGraphConfiguration`](@ref) with the addition of a `show_legend` field.
+
+CDF graphs are internally converted to line graphs for rendering.
+"""
+@kwdef mutable struct CdfsGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    fraction_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    orientation::ValuesOrientation = HorizontalValues
+    direction::CdfDirection = UpToValue
+    value_bands::BandsConfiguration = BandsConfiguration()
+    fraction_bands::BandsConfiguration = BandsConfiguration()
+    show_percent::Bool = false
+    show_legend::Bool = false
+end
+
+function Validations.validate_object(
+    configuration::Union{CdfGraphConfiguration, CdfsGraphConfiguration},
+)::Maybe{AbstractString}
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object("values", configuration.value_axis)
+    end
+    if message === nothing
+        message = validate_object("fractions", configuration.fraction_axis)
+    end
+    if message === nothing
+        message = validate_object(configuration.style)
+    end
+    if message === nothing
+        message = validate_object("value_bands", configuration.value_bands, false)
+    end
+    if message === nothing
+        message = validate_object("fraction_bands", configuration.fraction_bands, false)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct CdfsGraphData <: AbstractGraphData
+        graph_title::Maybe{AbstractString} = nothing
+        value_axis_title::Maybe{AbstractString} = nothing
+        fraction_axis_title::Maybe{AbstractString} = nothing
+        values::AbstractVector{<:AbstractVector{<:Real}}
+        names::Maybe{AbstractStringVector} = nothing
+        line_colors::Maybe{AbstractStringVector} = nothing
+        line_widths::Maybe{AbstractVector{<:Real}} = nothing
+        fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+        are_dashed::Maybe{AbstractVector{Bool}} = nothing
+    end
+
+The data for multiple CDFs (Cumulative Distribution Functions) graph.
+
+By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
+`fraction_axis_title` for the axes.
+
+The order of the `values` does not matter.
+"""
+@kwdef mutable struct CdfsGraphData <: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    fraction_axis_title::Maybe{AbstractString} = nothing
+    legend_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{<:AbstractVector{<:Real}}
+    names::Maybe{AbstractStringVector} = nothing
+    line_colors::Maybe{AbstractStringVector} = nothing
+    line_widths::Maybe{AbstractVector{<:Real}} = nothing
+    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+end
+
+function Validations.validate_object(data::CdfsGraphData)::Maybe{AbstractString}
+    if length(data.values) == 0
+        return "empty values vector"
+    end
+    for (index, values) in enumerate(data.values)
+        if length(values) < 2
+            return "too few values#$(index): $(length(values))"
+        end
+    end
+    return nothing
+end
+
+function render(data::CdfsGraphData, configuration::CdfsGraphConfiguration = CdfsGraphConfiguration())::Nothing
+    assert_valid_object(data)
+    assert_valid_object(configuration)
+
+    lines_data = cdfs_data_as_lines_data(data, configuration)
+    lines_configuration = cdfs_configuration_as_lines_configuration(configuration)
+    render(lines_data, lines_configuration)
+    return nothing
+end
+
+function cdfs_data_as_lines_data(data::CdfsGraphData, configuration::CdfsGraphConfiguration)::LinesGraphData
+    fractions = Vector{Vector{Float64}}()
+    values = Vector{Vector{eltype(eltype(data.values))}}()
+    for trace_values in data.values
+        trace_values, trace_fractions = collect_cdf_data(trace_values, configuration)
+        push!(fractions, trace_fractions)
+        push!(values, trace_values)
+    end
+    if configuration.orientation == HorizontalValues
+        return LinesGraphData(;
+            graph_title = data.graph_title,
+            x_axis_title = data.value_axis_title,
+            y_axis_title = data.fraction_axis_title,
+            legend_title = data.legend_title,
+            xs = values,
+            ys = fractions,
+            names = data.names,
+            line_colors = data.line_colors,
+            line_widths = data.line_widths,
+            fill_belows = data.fill_belows,
+            are_dashed = data.are_dashed,
+        )
+    else
+        return LinesGraphData(;
+            graph_title = data.graph_title,
+            x_axis_title = data.fraction_axis_title,
+            y_axis_title = data.value_axis_title,
+            legend_title = data.legend_title,
+            xs = fractions,
+            ys = values,
+            names = data.names,
+            line_colors = data.line_colors,
+            line_widths = data.line_widths,
+            fill_belows = data.fill_belows,
+            are_dashed = data.are_dashed,
+        )
+    end
+end
+
+function collect_cdf_data(
+    values::AbstractVector{T},
+    configuration::Union{CdfGraphConfiguration, CdfsGraphConfiguration},
+)::Tuple{Vector{T}, Vector{Float64}} where {T <: Real}
+    n_values = length(values)
+    sorted_values = sort(values)
+    fractions = collect(1.0:length(sorted_values)) ./ n_values
+    if configuration.direction == DownToValue
+        fractions = (1 + 1 / n_values) .- fractions
+    end
+    if configuration.show_percent
+        fractions .*= 100
+    end
+    return (sorted_values, fractions)
+end
+
+function cdfs_configuration_as_lines_configuration(configuration::CdfsGraphConfiguration)::LinesGraphConfiguration
+    if configuration.orientation == HorizontalValues
+        return LinesGraphConfiguration(;
+            graph = configuration.graph,
+            x_axis = configuration.value_axis,
+            y_axis = configuration.fraction_axis,
+            style = configuration.style,
+            vertical_bands = configuration.value_bands,
+            horizontal_bands = configuration.fraction_bands,
+            show_legend = configuration.show_legend,
+        )
+    else
+        return LinesGraphConfiguration(;
+            graph = configuration.graph,
+            x_axis = configuration.fraction_axis,
+            y_axis = configuration.value_axis,
+            style = configuration.style,
+            vertical_bands = configuration.fraction_bands,
+            horizontal_bands = configuration.value_bands,
+            show_legend = configuration.show_legend,
         )
     end
 end

@@ -31,10 +31,12 @@ MCGraphs.Renderers.LineStyleConfiguration
 MCGraphs.Renderers.Stacking
 ```
 
-##  CDFs
+## CDFs
 
 ```@docs
 MCGraphs.Renderers.CdfGraphData
+MCGraphs.Renderers.CdfsGraphData
+MCGraphs.Renderers.CdfsGraphConfiguration
 MCGraphs.Renderers.CdfGraphConfiguration
 MCGraphs.Renderers.CdfDirection
 ```

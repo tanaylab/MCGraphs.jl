@@ -307,6 +307,22 @@
 </tr>
 <tr>
 <td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphData">
+<code>CdfsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphConfiguration">
+<code>CdfsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a multiple cumulative distribution functions.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
 <code>PointsGraphData
 </code>
@@ -1045,6 +1061,90 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfsGraphData" href="#MCGraphs.Renderers.CdfsGraphData">
+<code>MCGraphs.Renderers.CdfsGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct CdfsGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    fraction_axis_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
+    names::Maybe{AbstractStringVector} = nothing
+    line_colors::Maybe{AbstractStringVector} = nothing
+    line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
+    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+end
+</code>
+</pre>
+<p>The data for multiple CDFs (Cumulative Distribution Functions) graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code> and 
+<code>fraction_axis_title
+</code> for the axes.
+</p>
+<p>The order of the 
+<code>values
+</code> does not matter.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfsGraphConfiguration" href="#MCGraphs.Renderers.CdfsGraphConfiguration">
+<code>MCGraphs.Renderers.CdfsGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct CdfsGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    fraction_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    orientation::ValuesOrientation = HorizontalValues
+    direction::CdfDirection = UpToValue
+    value_bands::BandsConfiguration = BandsConfiguration()
+    fraction_bands::BandsConfiguration = BandsConfiguration()
+    show_legend::Bool = false
+end
+</code>
+</pre>
+<p>Configure a graph for showing multiple CDF (Cumulative Distribution Function) graph. This is the same as 
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
+<code>CdfGraphConfiguration
+</code>
+</a> with the addition of a 
+<code>show_legend
+</code> field.
+</p>
+<p>CDF graphs are internally converted to line graphs for rendering.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.CdfGraphConfiguration" href="#MCGraphs.Renderers.CdfGraphConfiguration">
 <code>MCGraphs.Renderers.CdfGraphConfiguration
 </code>
@@ -1493,6 +1593,18 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
 <code>MCGraphs.Renderers.CdfGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphConfiguration">
+<code>MCGraphs.Renderers.CdfsGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphData">
+<code>MCGraphs.Renderers.CdfsGraphData
 </code>
 </a>
 </li>

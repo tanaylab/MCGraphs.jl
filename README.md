@@ -132,7 +132,7 @@ This also serves as the main TODO list (including the Python and R wrappers).
       + Legend.
       + Overlay.
       + Stacked.
-      + TODO: CDF variant.
+      + CDFs variant.
   - Bar graph (TODO: Julia; TODO: Python, TODO: R).
 
       + TODO: Annotations.
