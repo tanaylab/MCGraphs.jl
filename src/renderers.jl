@@ -1,4 +1,5 @@
 """
+the
 Render interactive or static graphs.
 
 This provides a selection of basic graph types needed for metacells visualization. For each one, we define a `struct`
@@ -8,6 +9,8 @@ a file.
 """
 module Renderers
 
+export AbstractGraphConfiguration
+export AbstractGraphData
 export AxisConfiguration
 export DistributionGraphConfiguration
 export DistributionGraphData
@@ -32,6 +35,16 @@ using Daf.GenericTypes
 using PlotlyJS
 
 """
+Common abstract base for all complete graph configuration types. See [`render`](@ref).
+"""
+abstract type AbstractGraphConfiguration <: ObjectWithValidation end
+
+"""
+Common abstract base for all complete graph data types. See [`render`](@ref).
+"""
+abstract type AbstractGraphData <: ObjectWithValidation end
+
+"""
 The orientation of the values axis in a distribution or a bars graph:
 
 `HorizontalValues` - The values are the X axis
@@ -51,7 +64,8 @@ The orientation of the values axis in a distribution or a bars graph:
         show_ticks::Bool = true
     end
 
-Generic configuration that applies to any graph.
+Generic configuration that applies to any graph. Each complete [`AbstractGraphConfiguration`](@ref) contains a `graph`
+field of this type.
 
 If `output_file` is specified, it is the path of a file to write the graph into (ending with `.png` or `.svg`). If
 `show_interactive` is set, then generate an interactive graph (in a Jupyter notebook). One of `output_file` and
@@ -178,7 +192,7 @@ function Validations.validate_object(configuration::DistributionStyleConfigurati
 end
 
 """
-    @kwdef mutable struct DistributionGraphConfiguration <: ObjectWithValidation
+    @kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
         style::DistributionStyleConfiguration = DistributionStyleConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
@@ -190,14 +204,14 @@ Configure a graph for showing a distribution (with [`DistributionGraphData`](@re
 The optional `color` will be chosen automatically if not specified. When showing multiple distributions, it is also
 possible to specify the color of each one in the [`DistributionsGraphData`](@ref).
 """
-@kwdef mutable struct DistributionGraphConfiguration <: ObjectWithValidation
+@kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 
 """
-    @kwdef mutable struct DistributionsGraphConfiguration <: ObjectWithValidation
+    @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
         style::DistributionStyleConfiguration = DistributionStyleConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
@@ -210,7 +224,7 @@ Configure a graph for showing several distributions several distributions.
 This is identical to [`DistributionGraphConfiguration`](@ref) with the addition of `show_legend` to show a legend. This
 is not set by default as it makes little sense unless `overlay` is also set. TODO: Implement `overlay`.
 """
-@kwdef mutable struct DistributionsGraphConfiguration <: ObjectWithValidation
+@kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
@@ -232,7 +246,7 @@ function Validations.validate_object(
 end
 
 """
-    @kwdef mutable struct DistributionGraphData
+    @kwdef mutable struct DistributionGraphData <: AbstractGraphData
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
@@ -243,7 +257,7 @@ end
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
 the `trace_axis_title`. The optional `name` is used as the tick value for the distribution.
 """
-@kwdef mutable struct DistributionGraphData <: ObjectWithValidation
+@kwdef mutable struct DistributionGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
@@ -260,23 +274,26 @@ function Validations.validate_object(data::DistributionGraphData)::Maybe{Abstrac
 end
 
 """
-    @kwdef mutable struct DistributionsGraphData <: ObjectWithValidation
+    @kwdef mutable struct DistributionsGraphData <: AbstractGraphData
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
+        legend_title::Maybe{AbstractString} = nothing
         values::AbstractVector{<:AbstractVector{<:Real}}
         names::Maybe{AbstractStringVector} = nothing
         colors::Maybe{AbstractStringVector} = nothing
     end
 
 The data for a multiple distributions graph. By default, all the titles are empty. You can specify the overall
-`graph_title` as well as the `value_axis_title` and the `trace_axis_title`. If specified, the `names` and/or the
-`colors` vectors must contain the same number of elements as the number of vectors in the `values`.
+`graph_title` as well as the `value_axis_title`, the `trace_axis_title` and the `legend_title` (if `show_legend` is
+set). If specified, the `names` and/or the `colors` vectors must contain the same number of elements as the number of
+vectors in the `values`.
 """
-@kwdef mutable struct DistributionsGraphData <: ObjectWithValidation
+@kwdef mutable struct DistributionsGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
+    legend_title::Maybe{AbstractString} = nothing
     values::AbstractVector{<:AbstractVector{<:Real}}
     names::Maybe{AbstractStringVector} = nothing
     colors::Maybe{AbstractStringVector} = nothing
@@ -312,18 +329,19 @@ const CURVE = 4
 
 """
     render(
-        data::SomeGraphData,
-        configuration::SomeGraphConfiguration = SomeGraphConfiguration()
+        data::AbstractGraphData,
+        configuration::AbstractGraphConfiguration = ...,
     )::Nothing
 
-Render a graph given its data and configuration. The implementation depends on the specific graph.
-The supported combinations of data and configuration are:
+Render a graph given its data and configuration. The implementation depends on the specific graph. For each
+[`AbstractGraphData`](@ref) there is a matching [`AbstractGraphConfiguration`](@ref) (a default one is provided for the
+`configuration`). The supported type pairs are:
 
-| Data                             | Configuration                             | Description                                        |
+| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                        |
 |:-------------------------------- |:----------------------------------------- |:-------------------------------------------------- |
 | [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                    |
 | [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                   |
-| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (function).                 |
+| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).   |
 | [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them. |
 """
 function render(
@@ -336,6 +354,7 @@ function render(
         data.values,
         data.name === nothing ? "Trace" : data.name,
         configuration.style.color,
+        nothing,
         configuration,
     )
     layout = distribution_layout(data.name !== nothing, data, configuration, false)
@@ -358,6 +377,7 @@ function render(
             data.values[index],
             data.names === nothing ? "Trace $(index)" : data.names[index],
             data.colors === nothing ? configuration.style.color : data.colors[index],
+            data.legend_title,
             configuration,
         ) for index in 1:n_values
     ]
@@ -371,6 +391,7 @@ function distribution_trace(
     values::AbstractVector{<:Real},
     name::AbstractString,
     color::Maybe{AbstractString},
+    legend_title::Maybe{AbstractString},
     configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration},
 )::GenericTrace
     style = (
@@ -401,6 +422,7 @@ function distribution_trace(
         points = points,
         name = name,
         marker_color = color,
+        legendgrouptitle_text = legend_title,
     )
 end
 
@@ -578,7 +600,7 @@ function Validations.validate_object(
 end
 
 """
-    @kwdef mutable struct LineGraphConfiguration <: ObjectWithValidation
+    @kwdef mutable struct LineGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
@@ -589,7 +611,7 @@ end
 
 Configure a graph for showing line plots.
 """
-@kwdef mutable struct LineGraphConfiguration <: ObjectWithValidation
+@kwdef mutable struct LineGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
@@ -619,7 +641,7 @@ function Validations.validate_object(configuration::LineGraphConfiguration)::May
 end
 
 """
-    @kwdef mutable struct LineGraphData <: ObjectWithValidation
+    @kwdef mutable struct LineGraphData <: AbstractGraphData
         graph_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
@@ -635,7 +657,7 @@ By default, all the titles are empty. You can specify the overall `graph_title` 
 The `xs` and `ys` vectors must be of the same size. A line will be drawn through all the points, and the area under the
 line may be filled.
 """
-@kwdef mutable struct LineGraphData <: ObjectWithValidation
+@kwdef mutable struct LineGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
@@ -743,7 +765,8 @@ edges, the `size` is the width of the line). You can also override this by speci
 can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` to show its legend.
 
 The `color_scale` can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the
-values are numbers, the scale is continuous; if they are strings, this is a categorical scale.
+values are numbers, the scale is continuous; if they are strings, this is a categorical scale. A categorical scale can't
+be reversed.
 """
 @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
     size::Maybe{Real} = nothing
@@ -778,13 +801,15 @@ function Validations.validate_object(
             if cmin == cmax
                 return "single $(of_what) style.color_scale value: $(cmax)"
             end
+        elseif configuration.reverse_scale
+            return "reversed categorical $(of_what) style.color_scale"
         end
     end
     return nothing
 end
 
 """
-    @kwdef mutable struct PointsGraphConfiguration <: ObjectWithValidation
+    @kwdef mutable struct PointsGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
@@ -808,12 +833,12 @@ This allows displaying some additional data per point.
 
 !!! note
 
-    You can't set the `show_legend` of the [`GraphConfiguration`](@ref) of a points graph. Instead you probably want to
-    set the `show_scale` of the `style` (and/or of the `border_style` and/or `edges_style`). In addition, the color
-    scale options of the `edges_style` must not be set as `edges_colors` of [`PointsGraphData`](@ref) is restricted to
+    There is no `show_legend` for a [`GraphConfiguration`](@ref) of a points graph. Instead you probably want to set the
+    `show_scale` of the `style` (and/or of the `border_style` and/or `edges_style`). In addition, the color scale
+    options of the `edges_style` must not be set, as the `edges_colors` of [`PointsGraphData`](@ref) is restricted to
     explicit colors.
 """
-@kwdef mutable struct PointsGraphConfiguration <: ObjectWithValidation
+@kwdef mutable struct PointsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
@@ -868,10 +893,12 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
 end
 
 """
-    @kwdef mutable struct PointsGraphData <: ObjectWithValidation
+    @kwdef mutable struct PointsGraphData <: AbstractGraphData
         graph_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
+        scale_title::Maybe{AbstractString} = nothing
+        border_scale_title::Maybe{AbstractString} = nothing
         xs::AbstractVector{<:Real}
         ys::AbstractVector{<:Real}
         colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
@@ -897,14 +924,19 @@ be of the same size. The `colors` can be either color names or a numeric value; 
 The `border_colors` and `border_sizes` can be used to display additional data per point. The border size is in addition
 to the point size.
 
+The `scale_title` and `border_scale_title` are only used if `show_scale` is set for the relevant color scales. You can't
+specify `show_scale` if there is no `colors` data or if the `colors` contain explicit color names.
+
 It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
 [`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
 The `edges_colors` are restricted to explicit colors, not a color scale.
 """
-@kwdef mutable struct PointsGraphData <: ObjectWithValidation
+@kwdef mutable struct PointsGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
+    scale_title::Maybe{AbstractString} = nothing
+    border_scale_title::Maybe{AbstractString} = nothing
     xs::AbstractVector{<:Real}
     ys::AbstractVector{<:Real}
     colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
@@ -1000,10 +1032,29 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         end
     end
     if configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.colors isa AbstractStringVector "categorical color_scale for non-string points colors data"
+        @assert data.colors isa AbstractStringVector "categorical style.color_scale for non-string points data.colors"
+    end
+    if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.border_colors isa AbstractStringVector (
+            "categorical borders_style.color_scale for non-string points data.border_colors"
+        )
+    end
+    if configuration.style.show_scale
+        @assert data.colors !== nothing "no data.colors specified for points style.show_scale"
+        @assert !(data.colors isa AbstractStringVector) ||
+                configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.colors specified for points style.show_scale"
+        )
     end
     if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         @assert data.border_colors isa AbstractStringVector "categorical color_scale for non-string points border_colors data"
+    end
+    if configuration.border_style.show_scale
+        @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_scale"
+        @assert !(data.border_colors isa AbstractStringVector) ||
+                configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.border_colors specified for points border_style.show_scale"
+        )
     end
 
     traces = Vector{GenericTrace}()
@@ -1043,13 +1094,34 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
                     marker_size = border_marker_size(data, configuration, mask)
                     push!(
                         traces,
-                        points_trace(data, color, marker_size, nothing, configuration.border_style, mask, value),
+                        points_trace(
+                            data,
+                            color,
+                            marker_size,
+                            nothing,
+                            configuration.border_style,
+                            data.border_scale_title,
+                            "borders",
+                            mask,
+                            value,
+                        ),
                     )
                 end
             end
         else
             marker_size = border_marker_size(data, configuration)
-            push!(traces, points_trace(data, data.border_colors, marker_size, "coloraxis2", configuration.border_style))
+            push!(
+                traces,
+                points_trace(
+                    data,
+                    data.border_colors,
+                    marker_size,
+                    "coloraxis2",
+                    configuration.border_style,
+                    data.border_scale_title,
+                    "borders",
+                ),
+            )
         end
     end
 
@@ -1068,6 +1140,8 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
                         data.sizes !== nothing ? data.sizes : configuration.style.size,
                         nothing,
                         configuration.style,
+                        data.scale_title,
+                        "points",
                         mask,
                         value,
                     ),
@@ -1083,6 +1157,8 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
                 data.sizes !== nothing ? data.sizes : configuration.style.size,
                 "coloraxis",
                 configuration.style,
+                data.scale_title,
+                "points",
             ),
         )
     end
@@ -1425,8 +1501,10 @@ function points_trace(
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
     coloraxis::Maybe{AbstractString},
     points_style::PointsStyleConfiguration,
+    scale_title::Maybe{AbstractString},
+    legend_group::AbstractString,
     mask::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
-    name::AbstractString = "",
+    name::Maybe{AbstractString} = nothing,
 )::GenericTrace
     return scatter(;
         x = masked_data(data.xs, mask),
@@ -1442,8 +1520,11 @@ function points_trace(
         marker_showscale = points_style.show_scale &&
                            !(points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}),
         marker_reversescale = points_style.reverse_scale,
-        showlegend = points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
-        name = name,
+        showlegend = points_style.show_scale &&
+                     points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        legendgroup = legend_group,
+        legendgrouptitle_text = scale_title,
+        name = name !== nothing ? name : points_style.show_scale ? "Trace" : "",
         text = data.hovers,
         hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
@@ -1600,6 +1681,7 @@ function points_layout(data::PointsGraphData, configuration::PointsGraphConfigur
         coloraxis_colorscale = normalized_color_scale(configuration.style.color_scale),
         coloraxis_cmin = lowest_color_scale(configuration.style.color_scale),
         coloraxis_cmax = highest_color_scale(configuration.style.color_scale),
+        coloraxis_colorbar_title_text = data.scale_title,
         coloraxis2_showscale = (data.border_colors !== nothing || data.border_sizes !== nothing) &&
                                configuration.border_style.show_scale &&
                                !(
@@ -1610,6 +1692,7 @@ function points_layout(data::PointsGraphData, configuration::PointsGraphConfigur
         coloraxis2_colorscale = normalized_color_scale(configuration.border_style.color_scale),
         coloraxis2_cmin = lowest_color_scale(configuration.border_style.color_scale),
         coloraxis2_cmax = highest_color_scale(configuration.border_style.color_scale),
+        coloraxis2_colorbar_title_text = data.border_scale_title,
     )
 end
 

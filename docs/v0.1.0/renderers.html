@@ -159,7 +159,7 @@
 </header>
 <section>
 <div>
-<p>Render interactive or static graphs.
+<p>the Render interactive or static graphs.
 </p>
 <p>This provides a selection of basic graph types needed for metacells visualization. For each one, we define a 
 <code>struct
@@ -185,18 +185,36 @@
 <div>
 <pre>
 <code class="language-julia hljs">render(
-    data::SomeGraphData,
-    configuration::SomeGraphConfiguration = SomeGraphConfiguration()
+    data::AbstractGraphData,
+    configuration::AbstractGraphConfiguration = ...,
 )::Nothing
 </code>
 </pre>
-<p>Render a graph given its data and configuration. The implementation depends on the specific graph. The supported combinations of data and configuration are:
+<p>Render a graph given its data and configuration. The implementation depends on the specific graph. For each 
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
+<code>AbstractGraphData
+</code>
+</a> there is a matching 
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>AbstractGraphConfiguration
+</code>
+</a> (a default one is provided for the 
+<code>configuration
+</code>). The supported type pairs are:
 </p>
 <table>
 <tr>
-<th style="text-align: left">Data
+<th style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
+<code>AbstractGraphData
+</code>
+</a>
 </th>
-<th style="text-align: left">Configuration
+<th style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>AbstractGraphConfiguration
+</code>
+</a>
 </th>
 <th style="text-align: left">Description
 </th>
@@ -246,7 +264,7 @@
 </code>
 </a>
 </td>
-<td style="text-align: left">Graph of a single line (function).
+<td style="text-align: left">Graph of a single line (e.g. a function y=f(x)).
 </td>
 </tr>
 <tr>
@@ -266,6 +284,50 @@
 </td>
 </tr>
 </table>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.AbstractGraphData" href="#MCGraphs.Renderers.AbstractGraphData">
+<code>MCGraphs.Renderers.AbstractGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>Common abstract base for all complete graph data types. See 
+<a href="renderers.html#MCGraphs.Renderers.render">
+<code>render
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.AbstractGraphConfiguration" href="#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>MCGraphs.Renderers.AbstractGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>Common abstract base for all complete graph configuration types. See 
+<a href="renderers.html#MCGraphs.Renderers.render">
+<code>render
+</code>
+</a>.
+</p>
 </div>
 </section>
 </article>
@@ -294,7 +356,13 @@
 end
 </code>
 </pre>
-<p>Generic configuration that applies to any graph.
+<p>Generic configuration that applies to any graph. Each complete 
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>AbstractGraphConfiguration
+</code>
+</a> contains a 
+<code>graph
+</code> field of this type.
 </p>
 <p>If 
 <code>output_file
@@ -415,7 +483,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct DistributionGraphData
+<code class="language-julia hljs">@kwdef mutable struct DistributionGraphData &lt;: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
@@ -451,10 +519,11 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct DistributionsGraphData &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct DistributionsGraphData &lt;: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
+    legend_title::Maybe{AbstractString} = nothing
     values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
     names::Maybe{AbstractStringVector} = nothing
     colors::Maybe{AbstractStringVector} = nothing
@@ -465,9 +534,13 @@ end
 <code>graph_title
 </code> as well as the 
 <code>value_axis_title
-</code> and the 
+</code>, the 
 <code>trace_axis_title
-</code>. If specified, the 
+</code> and the 
+<code>legend_title
+</code> (if 
+<code>show_legend
+</code> is set). If specified, the 
 <code>names
 </code> and/or the 
 <code>colors
@@ -492,7 +565,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
@@ -534,7 +607,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct DistributionsGraphConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct DistributionsGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
@@ -636,7 +709,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct LineGraphData &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct LineGraphData &lt;: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
@@ -678,7 +751,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct LineGraphConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct LineGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
@@ -756,10 +829,12 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct PointsGraphData &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct PointsGraphData &lt;: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
+    scale_title::Maybe{AbstractString} = nothing
+    border_scale_title::Maybe{AbstractString} = nothing
     xs::AbstractVector{&lt;:Real}
     ys::AbstractVector{&lt;:Real}
     colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
@@ -805,6 +880,20 @@ end
 <code>border_sizes
 </code> can be used to display additional data per point. The border size is in addition to the point size.
 </p>
+<p>The 
+<code>scale_title
+</code> and 
+<code>border_scale_title
+</code> are only used if 
+<code>show_scale
+</code> is set for the relevant color scales. You can&#39;t specify 
+<code>show_scale
+</code> if there is no 
+<code>colors
+</code> data or if the 
+<code>colors
+</code> contain explicit color names.
+</p>
 <p>It is possible to draw straight 
 <code>edges
 </code> between specific point pairs. In this case the 
@@ -838,7 +927,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct PointsGraphConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct PointsGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
@@ -887,9 +976,9 @@ end
 <header class="admonition-header">Note
 </header>
 <div class="admonition-body">
-<p>You can&#39;t set the 
+<p>There is no 
 <code>show_legend
-</code> of the 
+</code> for a 
 <a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
 <code>GraphConfiguration
 </code>
@@ -903,7 +992,7 @@ end
 <code>edges_style
 </code>). In addition, the color scale options of the 
 <code>edges_style
-</code> must not be set as 
+</code> must not be set, as the 
 <code>edges_colors
 </code> of 
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
@@ -963,7 +1052,7 @@ end
 </p>
 <p>The 
 <code>color_scale
-</code> can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the values are numbers, the scale is continuous; if they are strings, this is a categorical scale.
+</code> can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the values are numbers, the scale is continuous; if they are strings, this is a categorical scale. A categorical scale can&#39;t be reversed.
 </p>
 </div>
 </section>
@@ -1055,6 +1144,18 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers">
 <code>MCGraphs.Renderers
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>MCGraphs.Renderers.AbstractGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
+<code>MCGraphs.Renderers.AbstractGraphData
 </code>
 </a>
 </li>

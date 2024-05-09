@@ -3,6 +3,8 @@
 ```@docs
 MCGraphs.Renderers
 MCGraphs.Renderers.render
+MCGraphs.Renderers.AbstractGraphData
+MCGraphs.Renderers.AbstractGraphConfiguration
 MCGraphs.Renderers.GraphConfiguration
 MCGraphs.Renderers.AxisConfiguration
 MCGraphs.Renderers.ValuesOrientation
