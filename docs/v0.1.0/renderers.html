@@ -524,7 +524,7 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
+    values::AbstractVector{AbstractVector{&lt;:Real}}
     names::Maybe{AbstractStringVector} = nothing
     colors::Maybe{AbstractStringVector} = nothing
 end
@@ -741,6 +741,86 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LinesGraphData" href="#MCGraphs.Renderers.LinesGraphData">
+<code>MCGraphs.Renderers.LinesGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LinesGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{AbstractVector{&lt;:Real}}
+    ys::AbstractVector{AbstractVector{&lt;:Real}}
+    colors::Maybe{AbstractStringVector} = nothing
+    line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
+end
+</code>
+</pre>
+<p>The data for a multiple lines graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>x_axis_title
+</code> and 
+<code>y_axis_title
+</code> for the axes.
+</p>
+<p>The 
+<code>xs
+</code> and 
+<code>ys
+</code> vectors must be of the same size (one per line). For each line, its 
+<code>xs
+</code> and 
+<code>ys
+</code> coordinate arrays must also be of the same size; a line will be drawn through all the points, and the area under the line may be filled. If 
+<code>stack_lines
+</code> is specified in 
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
+<code>LinesGraphConfiguration
+</code>
+</a>, then the lines are specified in top-to-bottom order.
+</p>
+<p>The 
+<code>names
+</code>, 
+<code>line_colors
+</code>, 
+<code>line_widths
+</code>, 
+<code>fill_belows
+</code> and 
+<code>are_dashed
+</code> arrays must have the same number of entries (one per line). The 
+<code>colors
+</code> are restricted to explicit colors; therefore the color scale options of the 
+<code>style
+</code> must not be used.
+</p>
+<div class="admonition is-info">
+<header class="admonition-header">Note
+</header>
+<div class="admonition-body">
+<p>If 
+<code>stacked
+</code> is spe
+</p>
+</div>
+</div>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.LineGraphConfiguration" href="#MCGraphs.Renderers.LineGraphConfiguration">
 <code>MCGraphs.Renderers.LineGraphConfiguration
 </code>
@@ -762,6 +842,45 @@ end
 </code>
 </pre>
 <p>Configure a graph for showing line plots.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LinesGraphConfiguration" href="#MCGraphs.Renderers.LinesGraphConfiguration">
+<code>MCGraphs.Renderers.LinesGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LinesGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    x_axis::AxisConfiguration = AxisConfiguration()
+    y_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
+    show_legend::Bool = false
+    stacking::Maybe{Stacking} = nothing
+end
+</code>
+</pre>
+<p>Configure a graph for showing multiple line plots. This allows using 
+<code>show_legend
+</code> to display a legend of the different lines, and 
+<code>stacking
+</code> to stack instead of overlay the lines. If 
+<code>stacking
+</code> is specified, then 
+<code>fill_below
+</code> is implied, regardless of what its actual setting is.
 </p>
 </div>
 </section>
@@ -807,6 +926,36 @@ end
 </div>
 </section>
 </article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.Stacking" href="#MCGraphs.Renderers.Stacking">
+<code>MCGraphs.Renderers.Stacking
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>If stacking multiple data sets, how:
+</p>
+<p>
+<code>StackValues
+</code> - simply add the values on top of each other.
+</p>
+<p>
+<code>StackFractions
+</code> - normalize the added values so their some is 1.
+</p>
+<p>
+<code>StackPercents
+</code> - normalize the added values so their some is 100 (percent).
+</p>
+</div>
+</section>
+</article>
 <h2 id="Points">
 <a class="docs-heading-anchor" href="#Points">Points
 </a>
@@ -844,7 +993,7 @@ end
     border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
     edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
     edges_colors::Maybe{AbstractStringVector} = nothing
-    edges_sizes::Maybe{&lt;:AbstractVector{&lt;:Real}} = nothing
+    edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
 end
 </code>
 </pre>
@@ -1232,6 +1381,18 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
+<code>MCGraphs.Renderers.LinesGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphData">
+<code>MCGraphs.Renderers.LinesGraphData
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
 <code>MCGraphs.Renderers.PointsGraphConfiguration
 </code>
@@ -1246,6 +1407,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.PointsStyleConfiguration">
 <code>MCGraphs.Renderers.PointsStyleConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.Stacking">
+<code>MCGraphs.Renderers.Stacking
 </code>
 </a>
 </li>

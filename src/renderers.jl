@@ -22,10 +22,16 @@ export HorizontalValues
 export LineGraphConfiguration
 export LineGraphData
 export LineStyleConfiguration
+export LinesGraphConfiguration
+export LinesGraphData
 export PointsGraphConfiguration
 export PointsGraphData
 export PointsStyleConfiguration
 export ValuesOrientation
+export StackFractions
+export StackPercents
+export StackValues
+export Stacking
 export VerticalValues
 export render
 
@@ -279,7 +285,7 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
-        values::AbstractVector{<:AbstractVector{<:Real}}
+        values::AbstractVector{AbstractVector{<:Real}}
         names::Maybe{AbstractStringVector} = nothing
         colors::Maybe{AbstractStringVector} = nothing
     end
@@ -294,7 +300,7 @@ vectors in the `values`.
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{<:AbstractVector{<:Real}}
+    values::AbstractVector{AbstractVector{<:Real}}
     names::Maybe{AbstractStringVector} = nothing
     colors::Maybe{AbstractStringVector} = nothing
 end
@@ -620,26 +626,6 @@ Configure a graph for showing line plots.
     horizontal_bands::BandsConfiguration = BandsConfiguration()
 end
 
-function Validations.validate_object(configuration::LineGraphConfiguration)::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
-    if message === nothing
-        message = validate_object("x", configuration.x_axis)
-    end
-    if message === nothing
-        message = validate_object("y", configuration.y_axis)
-    end
-    if message === nothing
-        message = validate_object(configuration.style)
-    end
-    if message === nothing
-        message = validate_object("vertical_bands", configuration.vertical_bands, false)
-    end
-    if message === nothing
-        message = validate_object("horizontal_bands", configuration.horizontal_bands, false)
-    end
-    return message
-end
-
 """
     @kwdef mutable struct LineGraphData <: AbstractGraphData
         graph_title::Maybe{AbstractString} = nothing
@@ -709,7 +695,7 @@ function render(data::LineGraphData, configuration::LineGraphConfiguration = Lin
         end
     end
 
-    layout = line_layout(data, configuration)
+    layout = lines_layout(data, false, configuration)
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)
     return nothing
@@ -728,7 +714,311 @@ function line_trace(data::LineGraphData, line_style::LineStyleConfiguration)::Ge
     )
 end
 
-function line_layout(data::LineGraphData, configuration::LineGraphConfiguration)::Layout
+"""
+If stacking multiple data sets, how:
+
+`StackValues` - simply add the values on top of each other.
+
+`StackFractions` - normalize the added values so their some is 1.
+
+`StackPercents` - normalize the added values so their some is 100 (percent).
+"""
+@enum Stacking StackValues StackFractions StackPercents
+
+"""
+    @kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        x_axis::AxisConfiguration = AxisConfiguration()
+        y_axis::AxisConfiguration = AxisConfiguration()
+        style::LineStyleConfiguration = LineStyleConfiguration()
+        vertical_bands::BandsConfiguration = BandsConfiguration()
+        horizontal_bands::BandsConfiguration = BandsConfiguration()
+        show_legend::Bool = false
+        stacking::Maybe{Stacking} = nothing
+    end
+
+Configure a graph for showing multiple line plots. This allows using `show_legend` to display a legend of the different
+lines, and `stacking` to stack instead of overlay the lines. If `stacking` is specified, then `fill_below` is implied,
+regardless of what its actual setting is.
+"""
+@kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    x_axis::AxisConfiguration = AxisConfiguration()
+    y_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
+    show_legend::Bool = false
+    stacking::Maybe{Stacking} = nothing
+end
+
+function Validations.validate_object(
+    configuration::Union{LineGraphConfiguration, LinesGraphConfiguration},
+)::Maybe{AbstractString}
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object("x", configuration.x_axis)
+    end
+    if message === nothing
+        message = validate_object("y", configuration.y_axis)
+    end
+    if message === nothing
+        message = validate_object(configuration.style)
+    end
+    if message === nothing
+        message = validate_object("vertical_bands", configuration.vertical_bands, false)
+    end
+    if message === nothing
+        message = validate_object("horizontal_bands", configuration.horizontal_bands, false)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct LinesGraphData <: AbstractGraphData
+        graph_title::Maybe{AbstractString} = nothing
+        x_axis_title::Maybe{AbstractString} = nothing
+        y_axis_title::Maybe{AbstractString} = nothing
+        xs::AbstractVector{AbstractVector{<:Real}}
+        ys::AbstractVector{AbstractVector{<:Real}}
+        colors::Maybe{AbstractStringVector} = nothing
+        line_widths::Maybe{AbstractVector{<:Real}} = nothing
+    end
+
+The data for a multiple lines graph.
+
+By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
+`y_axis_title` for the axes.
+
+The `xs` and `ys` vectors must be of the same size (one per line). For each line, its `xs` and `ys` coordinate arrays
+must also be of the same size; a line will be drawn through all the points, and the area under the line may be filled.
+If `stack_lines` is specified in [`LinesGraphConfiguration`](@ref), then the lines are specified in top-to-bottom order.
+
+The `names`, `line_colors`, `line_widths`, `fill_belows` and `are_dashed` arrays must have the same number of
+entries (one per line). The `colors` are restricted to explicit colors; therefore the color scale options of the `style`
+must not be used.
+
+!!! note
+
+    If `stacked` is spe
+"""
+@kwdef mutable struct LinesGraphData <: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    legend_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{AbstractVector{<:Real}}
+    ys::AbstractVector{AbstractVector{<:Real}}
+    names::Maybe{AbstractStringVector} = nothing
+    line_colors::Maybe{AbstractStringVector} = nothing
+    line_widths::Maybe{AbstractVector{<:Real}} = nothing
+    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+end
+
+function Validations.validate_object(data::LinesGraphData)::Maybe{AbstractString}
+    if length(data.xs) != length(data.ys)
+        return "the number of xs lines: $(length(data.xs))\n" *
+               "is different from the number of ys lines: $(length(data.ys))"
+    end
+    if length(data.xs) == 0
+        return "empty lines vectors"
+    end
+
+    for (index, (xs, ys)) in enumerate(zip(data.xs, data.ys))
+        if length(xs) != length(ys)
+            return "the number of line#$(index) xs: $(length(xs))\n" *
+                   "is different from the number of ys: $(length(ys))"
+        end
+        if length(xs) < 2
+            return "too few points in line#$(index): $(length(xs))"
+        end
+    end
+
+    if data.names !== nothing && length(data.names) != length(data.xs)
+        return "the number of names: $(length(data.names))\n" *
+               "is different from the number of lines: $(length(data.xs))"
+    end
+
+    if data.line_colors !== nothing && length(data.line_colors) != length(data.xs)
+        return "the number of line_colors: $(length(data.line_colors))\n" *
+               "is different from the number of lines: $(length(data.xs))"
+    end
+
+    line_widths = data.line_widths
+    if line_widths !== nothing
+        if length(line_widths) != length(data.xs)
+            return "the number of line_widths: $(length(line_widths))\n" *
+                   "is different from the number of lines: $(length(data.xs))"
+        end
+        for (index, line_width) in enumerate(line_widths)
+            if line_width <= 0
+                return "non-positive line_width#$(index): $(line_width)"
+            end
+        end
+    end
+
+    if data.fill_belows !== nothing && length(data.fill_belows) != length(data.xs)
+        return "the number of fill_belows: $(length(data.fill_belows))\n" *
+               "is different from the number of lines: $(length(data.xs))"
+    end
+
+    if data.are_dashed !== nothing && length(data.are_dashed) != length(data.xs)
+        return "the number of are_dashed: $(length(data.are_dashed))\n" *
+               "is different from the number of lines: $(length(data.xs))"
+    end
+
+    return nothing
+end
+
+function render(data::LinesGraphData, configuration::LinesGraphConfiguration = LinesGraphConfiguration())::Nothing
+    assert_valid_object(data)
+    assert_valid_object(configuration)
+    if configuration.stacking == StackPercents || configuration.stacking == StackFractions
+        for (line_index, ys) in enumerate(data.ys)
+            for (point_index, y) in enumerate(ys)
+                @assert y >= 0 "negative stacked fraction/percent line#$(line_index) ys#$(point_index): $(y)"
+            end
+        end
+    end
+
+    if configuration.stacking === nothing
+        xs = data.xs
+        ys = data.ys
+    else
+        xs, ys = unify_xs(data.xs, data.ys)
+    end
+
+    traces = Vector{GenericTrace}()
+
+    for index in 1:length(data.xs)
+        push!(traces, lines_trace(xs[index], ys[index], data, index, configuration, data.legend_title))
+    end
+
+    layout = lines_layout(data, configuration.show_legend, configuration)
+    figure = plot(traces, layout)
+    write_graph(figure, configuration.graph)
+    return nothing
+end
+
+function unify_xs(
+    xs::AbstractVector{<:AbstractVector{<:Real}},
+    ys::AbstractVector{<:AbstractVector{<:Real}},
+)::Tuple{Vector{Vector{Float32}}, Vector{Vector{Float32}}}
+    n_lines = length(xs)
+    unified_xs = Vector{Vector{Float32}}()
+    unified_ys = Vector{Vector{Float32}}()
+    zero_before = zeros(Bool, n_lines)
+    zero_after = zeros(Bool, n_lines)
+    for _ in 1:n_lines
+        push!(unified_xs, Vector{Float32}())
+        push!(unified_ys, Vector{Float32}())
+    end
+    next_point_indices = fill(1, n_lines)
+    while true
+        unified_x = nothing
+        for line_index in 1:n_lines
+            point_index = next_point_indices[line_index]
+            if point_index <= length(xs[line_index])
+                if unified_x === nothing
+                    unified_x = xs[line_index][point_index]
+                else
+                    unified_x = min(unified_x, xs[line_index][point_index])
+                end
+            end
+        end
+        if unified_x === nothing
+            return (unified_xs, unified_ys)
+        end
+        for line_index in 1:n_lines
+            point_index = next_point_indices[line_index]
+            next_x = xs[line_index][min(point_index, length(xs[line_index]))]
+            if unified_x > next_x
+                if !zero_after[line_index]
+                    push!(unified_xs[line_index], next_x)
+                    push!(unified_ys[line_index], 0)
+                    zero_after[line_index] = true
+                end
+                push!(unified_xs[line_index], unified_x)
+                push!(unified_ys[line_index], 0)
+            else
+                next_y = ys[line_index][point_index]
+                if unified_x == next_x
+                    if zero_before[line_index]
+                        push!(unified_xs[line_index], unified_x)
+                        push!(unified_ys[line_index], 0)
+                        zero_before[line_index] = false
+                    end
+                    push!(unified_xs[line_index], next_x)
+                    push!(unified_ys[line_index], next_y)
+                    next_point_indices[line_index] += 1
+                elseif point_index == 1
+                    push!(unified_xs[line_index], unified_x)
+                    push!(unified_ys[line_index], 0)
+                    zero_before[line_index] = true
+                else
+                    @assert !zero_before[line_index]
+                    prev_x = xs[line_index][point_index - 1]
+                    prev_y = ys[line_index][point_index - 1]
+                    push!(unified_xs[line_index], unified_x)
+                    push!(unified_ys[line_index], prev_y + (next_y - prev_y) * (unified_x - prev_x) / (next_x - prev_x))
+                end
+            end
+        end
+    end
+end
+
+function lines_trace(
+    xs::AbstractVector{<:Real},
+    ys::AbstractVector{<:Real},
+    data::LinesGraphData,
+    index::Int,
+    configuration::LinesGraphConfiguration,
+    legend_title::Maybe{AbstractString},
+)::GenericTrace
+    return scatter(;
+        x = xs,
+        y = ys,
+        line_color = data.line_colors !== nothing ? data.line_colors[index] : configuration.style.line_color,
+        line_width = if data.line_widths !== nothing
+            data.line_widths[index]
+        elseif configuration.style.line_width === nothing
+            0
+        else
+            configuration.style.line_width  # NOJET
+        end,
+        line_dash = if (data.are_dashed !== nothing ? data.are_dashed[index] : configuration.style.line_is_dashed)
+            "dash"
+        else
+            nothing
+        end,
+        fill = if !(data.fill_belows !== nothing ? data.fill_belows[index] : configuration.style.fill_below)
+            nothing
+        elseif index == length(data.xs)
+            "tozeroy"
+        else
+            "tonexty"
+        end,
+        name = data.names !== nothing ? data.names[index] : "Trace $(index)",
+        stackgroup = configuration.stacking === nothing ? nothing : "stacked",
+        groupnorm = if configuration.stacking == StackFractions
+            "fraction"
+        elseif configuration.stacking == StackPercents
+            "percent"
+        else
+            nothing
+        end,
+        legendgroup = "lines",
+        legendgrouptitle_text = legend_title,
+        mode = "lines",
+    )
+end
+
+function lines_layout(
+    data::Union{LinesGraphData, LineGraphData},
+    show_legend::Bool,
+    configuration::Union{LinesGraphConfiguration, LineGraphConfiguration},
+)::Layout
     return Layout(;  # NOJET
         title = data.graph_title,
         template = configuration.graph.template,
@@ -742,7 +1032,7 @@ function line_layout(data::LineGraphData, configuration::LineGraphConfiguration)
         yaxis_title = data.y_axis_title,
         yaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
         yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
-        showlegend = false,
+        showlegend = show_legend,
     )
 end
 
@@ -908,7 +1198,7 @@ end
         border_sizes::Maybe{AbstractVector{<:Real}} = nothing
         edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
         edges_colors::Maybe{AbstractStringVector} = nothing
-        edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+        edges_sizes::Maybe{AbstractVector{<:Real}} = nothing
     end
 
 The data for a scatter graph of points.
@@ -940,13 +1230,13 @@ The `edges_colors` are restricted to explicit colors, not a color scale.
     xs::AbstractVector{<:Real}
     ys::AbstractVector{<:Real}
     colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
-    sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+    sizes::Maybe{AbstractVector{<:Real}} = nothing
     hovers::Maybe{AbstractStringVector} = nothing
     border_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
-    border_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+    border_sizes::Maybe{AbstractVector{<:Real}} = nothing
     edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
     edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
-    edges_sizes::Maybe{<:AbstractVector{<:Real}} = nothing
+    edges_sizes::Maybe{AbstractVector{<:Real}} = nothing
 end
 
 function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractString}

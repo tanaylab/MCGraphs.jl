@@ -24,8 +24,11 @@ MCGraphs.Renderers.DistributionStyleConfiguration
 
 ```@docs
 MCGraphs.Renderers.LineGraphData
+MCGraphs.Renderers.LinesGraphData
 MCGraphs.Renderers.LineGraphConfiguration
+MCGraphs.Renderers.LinesGraphConfiguration
 MCGraphs.Renderers.LineStyleConfiguration
+MCGraphs.Renderers.Stacking
 ```
 
 ## Points

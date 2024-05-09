@@ -548,6 +548,199 @@ nested_test("renderers") do
         end
     end
 
+    nested_test("lines") do
+        configuration = LinesGraphConfiguration()
+        data = LinesGraphData(;
+            xs = [[0.0, 1.0, 2.0], [0.25, 0.5, 1.5, 2.5]],
+            ys = [[-0.2, 1.2, 1.8], [0.1, 1.0, 0.5, 2.0]],
+        )
+
+        nested_test("()") do
+            test_html(data, configuration, "lines.html")
+            return nothing
+        end
+
+        nested_test("invalid") do
+            configuration.graph.show_interactive = true
+
+            nested_test("!lines") do
+                empty!(data.xs)
+                empty!(data.ys)
+                @test_throws "empty lines vectors" render(data, configuration)
+            end
+
+            nested_test("~ys") do
+                push!(data.ys, [2.0])
+                @test_throws dedent("""
+                    the number of xs lines: 2
+                    is different from the number of ys lines: 3
+                """) render(data, configuration)
+            end
+
+            nested_test("~points") do
+                push!(data.ys[2], 1.0)
+                @test_throws dedent("""
+                    the number of line#2 xs: 4
+                    is different from the number of ys: 5
+                """) render(data, configuration)
+            end
+
+            nested_test("~xs") do
+                empty!(data.xs[1])
+                empty!(data.ys[1])
+                @test_throws "too few points in line#1: 0" render(data, configuration)
+            end
+
+            nested_test("~names") do
+                data.names = ["Foo"]
+                @test_throws dedent("""
+                    the number of names: 1
+                    is different from the number of lines: 2
+                """) render(data, configuration)
+            end
+
+            nested_test("~colors") do
+                data.line_colors = ["red"]
+                @test_throws dedent("""
+                    the number of line_colors: 1
+                    is different from the number of lines: 2
+                """) render(data, configuration)
+            end
+
+            nested_test("~sizes") do
+                data.line_widths = [1]
+                @test_throws dedent("""
+                    the number of line_widths: 1
+                    is different from the number of lines: 2
+                """) render(data, configuration)
+            end
+
+            nested_test("!sizes") do
+                data.line_widths = [1, -1]
+                @test_throws "non-positive line_width#2: -1" render(data, configuration)
+            end
+
+            nested_test("!fill_below") do
+                configuration.style.line_width = nothing
+                @test_throws "either line_width or fill_below must be specified" render(data, configuration)
+            end
+
+            nested_test("~fills") do
+                data.fill_belows = [true]
+                @test_throws dedent("""
+                    the number of fill_belows: 1
+                    is different from the number of lines: 2
+                """) render(data, configuration)
+            end
+
+            nested_test("~dashs") do
+                data.are_dashed = [true]
+                @test_throws dedent("""
+                    the number of are_dashed: 1
+                    is different from the number of lines: 2
+                """) render(data, configuration)
+            end
+        end
+
+        nested_test("size") do
+            configuration.style.line_width = 4
+            test_html(data, configuration, "lines.size.html")
+            return nothing
+        end
+
+        nested_test("sizes") do
+            data.line_widths = [4, 8]
+            test_html(data, configuration, "lines.sizes.html")
+            return nothing
+        end
+
+        nested_test("color") do
+            configuration.style.line_color = "red"
+            test_html(data, configuration, "lines.color.html")
+            return nothing
+        end
+
+        nested_test("colors") do
+            data.line_colors = ["red", "green"]
+            test_html(data, configuration, "lines.colors.html")
+            return nothing
+        end
+
+        nested_test("dash") do
+            configuration.style.line_is_dashed = true
+            test_html(data, configuration, "lines.dash.html")
+            return nothing
+        end
+
+        nested_test("dashs") do
+            data.are_dashed = [true, false]
+            test_html(data, configuration, "lines.dashs.html")
+            return nothing
+        end
+
+        nested_test("fill") do
+            configuration.style.fill_below = true
+
+            nested_test("()") do
+                test_html(data, configuration, "lines.fill.html")
+                return nothing
+            end
+
+            nested_test("!line") do
+                configuration.style.line_width = nothing
+                test_html(data, configuration, "lines.fill.!line.html")
+                return nothing
+            end
+        end
+
+        nested_test("fills") do
+            data.fill_belows = [true, false]
+            test_html(data, configuration, "lines.fills.html")
+            return nothing
+        end
+
+        nested_test("stack") do
+            nested_test("values") do
+                configuration.stacking = StackValues
+                test_html(data, configuration, "lines.stack.values.html")
+                return nothing
+            end
+
+            nested_test("percents") do
+                data.ys[1][1] = 0.2
+                configuration.stacking = StackPercents
+                test_html(data, configuration, "lines.stack.percents.html")
+                return nothing
+            end
+
+            nested_test("fractions") do
+                data.ys[1][1] = 0.2
+                configuration.stacking = StackFractions
+                test_html(data, configuration, "lines.stack.fractions.html")
+                return nothing
+            end
+        end
+
+        nested_test("legend") do
+            configuration.show_legend = true
+
+            nested_test("()") do
+                test_legend(data, configuration, "lines") do
+                    return data.legend_title = "Lines"
+                end
+                return nothing
+            end
+
+            nested_test("names") do
+                data.names = ["Foo", "Bar"]
+                test_legend(data, configuration, "lines.names") do
+                    return data.legend_title = "Lines"
+                end
+                return nothing
+            end
+        end
+    end
+
     nested_test("points") do
         configuration = PointsGraphConfiguration()
         data = PointsGraphData(; xs = [0.0, 1.0, 2.0], ys = [-0.2, 1.2, 1.8])
