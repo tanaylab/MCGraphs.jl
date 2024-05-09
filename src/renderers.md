@@ -31,6 +31,14 @@ MCGraphs.Renderers.LineStyleConfiguration
 MCGraphs.Renderers.Stacking
 ```
 
+##  CDFs
+
+```@docs
+MCGraphs.Renderers.CdfGraphData
+MCGraphs.Renderers.CdfGraphConfiguration
+MCGraphs.Renderers.CdfDirection
+```
+
 ## Points
 
 ```@docs

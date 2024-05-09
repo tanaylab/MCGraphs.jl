@@ -122,15 +122,17 @@ This also serves as the main TODO list (including the Python and R wrappers).
           * Colorbar.
       + Edges.
       + Log axis.
-  - Line graph (used for CDF) (Julia; TODO: Python, TODO: R).
+  - Line graph (Julia; TODO: Python, TODO: R).
 
-      + TODO: Horizontal bands (lines and fill).
-      + TODO: Vertical bands (lines and fill).
-  - Lines graph (used for CDF) (Julia; TODO: Python, TODO: R).
+      + Horizontal bands (lines and fill).
+      + Vertical bands (lines and fill).
+      + CDF variant.
+  - Lines graph (Julia; TODO: Python, TODO: R).
 
       + Legend.
       + Overlay.
       + Stacked.
+      + TODO: CDF variant.
   - Bar graph (TODO: Julia; TODO: Python, TODO: R).
 
       + TODO: Annotations.

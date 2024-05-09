@@ -12,11 +12,15 @@ module Renderers
 export AbstractGraphConfiguration
 export AbstractGraphData
 export AxisConfiguration
+export CdfDirection
+export CdfGraphConfiguration
+export CdfGraphData
 export DistributionGraphConfiguration
 export DistributionGraphData
 export DistributionStyleConfiguration
 export DistributionsGraphConfiguration
 export DistributionsGraphData
+export DownToValue
 export GraphConfiguration
 export HorizontalValues
 export LineGraphConfiguration
@@ -27,11 +31,12 @@ export LinesGraphData
 export PointsGraphConfiguration
 export PointsGraphData
 export PointsStyleConfiguration
-export ValuesOrientation
 export StackFractions
 export StackPercents
 export StackValues
 export Stacking
+export UpToValue
+export ValuesOrientation
 export VerticalValues
 export render
 
@@ -343,12 +348,14 @@ Render a graph given its data and configuration. The implementation depends on t
 [`AbstractGraphData`](@ref) there is a matching [`AbstractGraphConfiguration`](@ref) (a default one is provided for the
 `configuration`). The supported type pairs are:
 
-| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                        |
-|:-------------------------------- |:----------------------------------------- |:-------------------------------------------------- |
-| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                    |
-| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                   |
-| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).   |
-| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them. |
+| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                         |
+|:-------------------------------- |:----------------------------------------- |:--------------------------------------------------- |
+| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                     |
+| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                    |
+| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).    |
+| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.      |
+| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function. |
+| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.  |
 """
 function render(
     data::DistributionGraphData,
@@ -635,7 +642,7 @@ end
         ys::AbstractVector{<:Real}
     end
 
-The data for a line graph (e.g. a CDF graph).
+The data for a line graph.
 
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
 `y_axis_title` for the axes.
@@ -1034,6 +1041,148 @@ function lines_layout(
         yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
         showlegend = show_legend,
     )
+end
+
+"""
+The direction of the CDF graph:
+
+`UpToValue` - Show the fraction of values up to each value.
+
+`DownToValue` - Show the fraction of values down to each value.
+"""
+@enum CdfDirection UpToValue DownToValue
+
+"""
+    @kwdef mutable struct CdfGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        value_axis::AxisConfiguration = AxisConfiguration()
+        fraction_axis::AxisConfiguration = AxisConfiguration()
+        style::LineStyleConfiguration = LineStyleConfiguration()
+        orientation::ValuesOrientation = HorizontalValues
+        direction::CdfDirection = UpToValue
+        value_bands::BandsConfiguration = BandsConfiguration()
+        fraction_bands::BandsConfiguration = BandsConfiguration()
+    end
+
+Configure a graph for showing a CDF (Cumulative Distribution Function) graph. By default, the X axis is used for the
+values and the Y axis for the fraction; this can be switched using the `orientation`. By default, the fraction is
+of the values up to each value; this can be switched using the `direction`.
+
+By default, the fraction axis units are between 0 and 1; if `show_percent`, this is changed to between 0 and 100.
+
+CDF graphs are internally converted to line graphs for rendering.
+"""
+@kwdef mutable struct CdfGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    fraction_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    orientation::ValuesOrientation = HorizontalValues
+    direction::CdfDirection = UpToValue
+    value_bands::BandsConfiguration = BandsConfiguration()
+    fraction_bands::BandsConfiguration = BandsConfiguration()
+    show_percent::Bool = false
+end
+
+function Validations.validate_object(configuration::CdfGraphConfiguration)::Maybe{AbstractString}
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object("values", configuration.value_axis)
+    end
+    if message === nothing
+        message = validate_object("fractions", configuration.fraction_axis)
+    end
+    if message === nothing
+        message = validate_object(configuration.style)
+    end
+    if message === nothing
+        message = validate_object("value_bands", configuration.value_bands, false)
+    end
+    if message === nothing
+        message = validate_object("fraction_bands", configuration.fraction_bands, false)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct CdfGraphData <: AbstractGraphData
+        graph_title::Maybe{AbstractString} = nothing
+        value_axis_title::Maybe{AbstractString} = nothing
+        fraction_axis_title::Maybe{AbstractString} = nothing
+        values::AbstractVector{<:Real}
+    end
+
+The data for a CDF (Cumulative Distribution Function) graph.
+
+By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
+`fraction_axis_title` for the axes.
+
+The order of the `values` does not matter.
+"""
+@kwdef mutable struct CdfGraphData <: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    fraction_axis_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{<:Real}
+end
+
+function render(data::CdfGraphData, configuration::CdfGraphConfiguration = CdfGraphConfiguration())::Nothing
+    assert_valid_object(data)
+    assert_valid_object(configuration)
+
+    line_data = cdf_data_as_line_data(data, configuration)
+    line_configuration = cdf_configuration_as_line_configuration(configuration)
+    render(line_data, line_configuration)
+    return nothing
+end
+
+function cdf_data_as_line_data(data::CdfGraphData, configuration::CdfGraphConfiguration)::LineGraphData
+    n_values = length(data.values)
+    sorted_values = sort(data.values)
+    fractions = collect(1.0:length(sorted_values)) ./ n_values
+    if configuration.direction == DownToValue
+        fractions = 1 .- fractions
+    end
+    if configuration.show_percent
+        fractions .*= 100
+    end
+    if configuration.orientation == HorizontalValues
+        return LineGraphData(;
+            graph_title = data.graph_title,
+            x_axis_title = data.value_axis_title,
+            y_axis_title = data.fraction_axis_title,
+            xs = sorted_values,
+            ys = fractions,
+        )
+    else
+        return LineGraphData(;
+            graph_title = data.graph_title,
+            x_axis_title = data.fraction_axis_title,
+            y_axis_title = data.value_axis_title,
+            xs = fractions,
+            ys = sorted_values,
+        )
+    end
+end
+
+function cdf_configuration_as_line_configuration(configuration::CdfGraphConfiguration)::LineGraphConfiguration
+    if configuration.orientation == HorizontalValues
+        return LineGraphConfiguration(;
+            graph = configuration.graph,
+            x_axis = configuration.value_axis,
+            y_axis = configuration.fraction_axis,
+            vertical_bands = configuration.value_bands,
+            horizontal_bands = configuration.fraction_bands,
+        )
+    else
+        return LineGraphConfiguration(;
+            graph = configuration.graph,
+            x_axis = configuration.fraction_axis,
+            y_axis = configuration.value_axis,
+            vertical_bands = configuration.fraction_bands,
+            horizontal_bands = configuration.value_bands,
+        )
+    end
 end
 
 """
