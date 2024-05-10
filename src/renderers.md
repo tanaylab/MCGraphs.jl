@@ -10,6 +10,23 @@ MCGraphs.Renderers.AxisConfiguration
 MCGraphs.Renderers.ValuesOrientation
 ```
 
+## Bars
+
+```@docs
+MCGraphs.Renderers.BarGraphData
+MCGraphs.Renderers.BarGraphConfiguration
+```
+
+## CDFs
+
+```@docs
+MCGraphs.Renderers.CdfGraphData
+MCGraphs.Renderers.CdfsGraphData
+MCGraphs.Renderers.CdfsGraphConfiguration
+MCGraphs.Renderers.CdfGraphConfiguration
+MCGraphs.Renderers.CdfDirection
+```
+
 ## Distribution
 
 ```@docs
@@ -29,16 +46,6 @@ MCGraphs.Renderers.LineGraphConfiguration
 MCGraphs.Renderers.LinesGraphConfiguration
 MCGraphs.Renderers.LineStyleConfiguration
 MCGraphs.Renderers.Stacking
-```
-
-## CDFs
-
-```@docs
-MCGraphs.Renderers.CdfGraphData
-MCGraphs.Renderers.CdfsGraphData
-MCGraphs.Renderers.CdfsGraphConfiguration
-MCGraphs.Renderers.CdfGraphConfiguration
-MCGraphs.Renderers.CdfDirection
 ```
 
 ## Points

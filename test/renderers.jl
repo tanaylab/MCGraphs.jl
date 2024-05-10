@@ -176,7 +176,7 @@ nested_test("renderers") do
                 configuration.value_axis.minimum = 1
                 configuration.value_axis.maximum = 0
                 @test_throws dedent("""
-                    values axis maximum: 0
+                    value axis maximum: 0
                     is not larger than minimum: 1
                 """) render(data, configuration)
             end
@@ -854,6 +854,95 @@ nested_test("renderers") do
                 return data.legend_title = "Traces"
             end
             return nothing
+        end
+    end
+
+    nested_test("bar") do
+        data = BarGraphData(; values = [-0.2, 1.2, 1.8])
+        configuration = BarGraphConfiguration()
+
+        nested_test("()") do
+            return test_html(data, configuration, "bar.html")
+        end
+
+        nested_test("invalid") do
+            configuration.graph.show_interactive = true
+
+            nested_test("~values") do
+                empty!(data.values)
+                @test_throws "empty values vector" render(data, configuration)
+            end
+
+            nested_test("~names") do
+                data.names = ["Foo"]
+                @test_throws dedent("""
+                    the number of names: 1
+                    is different from the number of bars: 3
+                """) render(data, configuration)
+            end
+
+            nested_test("~hovers") do
+                data.hovers = ["Foo"]
+                @test_throws dedent("""
+                    the number of hovers: 1
+                    is different from the number of bars: 3
+                """) render(data, configuration)
+            end
+
+            nested_test("~colors") do
+                data.colors = ["red"]
+                @test_throws dedent("""
+                    the number of colors: 1
+                    is different from the number of bars: 3
+                """) render(data, configuration)
+            end
+        end
+
+        nested_test("names") do
+            data.names = ["Foo", "Bar", "Baz"]
+            return test_html(data, configuration, "bar.names.html")
+        end
+
+        nested_test("titles") do
+            data.graph_title = "Graph"
+            data.bar_axis_title = "Bars"
+            data.value_axis_title = "Values"
+            return test_html(data, configuration, "bar.titles.html")
+        end
+
+        nested_test("horizontal") do
+            configuration.orientation = HorizontalValues
+
+            nested_test("()") do
+                return test_html(data, configuration, "bar.horizontal.html")
+            end
+
+            nested_test("names") do
+                data.names = ["Foo", "Bar", "Baz"]
+                return test_html(data, configuration, "bar.horizontal.names.html")
+            end
+
+            nested_test("titles") do
+                data.graph_title = "Graph"
+                data.bar_axis_title = "Bars"
+                data.value_axis_title = "Values"
+                return test_html(data, configuration, "bar.horizontal.titles.html")
+            end
+        end
+
+        nested_test("color") do
+            configuration.color = "red"
+            return test_html(data, configuration, "bar.color.html")
+        end
+
+        nested_test("colors") do
+            data.colors = ["red", "green", "blue"]
+            return test_html(data, configuration, "bar.colors.html")
+        end
+
+        nested_test("hovers") do
+            data.hovers = ["Foo", "Bar", "Baz"]
+            return test_html(data, configuration, "bar.hovers.html")
         end
     end
 

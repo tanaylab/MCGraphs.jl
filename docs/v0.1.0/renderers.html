@@ -61,6 +61,18 @@
 </a>
 <ul class="internal">
 <li>
+<a class="tocitem" href="#Bars">
+<span>Bars
+</span>
+</a>
+</li>
+<li>
+<a class="tocitem" href="#CDFs">
+<span>CDFs
+</span>
+</a>
+</li>
+<li>
 <a class="tocitem" href="#Distribution">
 <span>Distribution
 </span>
@@ -69,12 +81,6 @@
 <li>
 <a class="tocitem" href="#Lines">
 <span>Lines
-</span>
-</a>
-</li>
-<li>
-<a class="tocitem" href="#CDFs">
-<span>CDFs
 </span>
 </a>
 </li>
@@ -165,7 +171,7 @@
 </header>
 <section>
 <div>
-<p>the Render interactive or static graphs.
+<p>Render interactive or static graphs.
 </p>
 <p>This provides a selection of basic graph types needed for metacells visualization. For each one, we define a 
 <code>struct
@@ -224,6 +230,54 @@
 </th>
 <th style="text-align: left">Description
 </th>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
+<code>BarGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
+<code>BarGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single set of bars (histogram).
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
+<code>CdfGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
+<code>CdfGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single cumulative distribution function.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphData">
+<code>CdfsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphConfiguration">
+<code>CdfsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a multiple cumulative distribution functions.
+</td>
 </tr>
 <tr>
 <td style="text-align: left">
@@ -287,38 +341,6 @@
 </a>
 </td>
 <td style="text-align: left">Graph of multiple functions, possibly stacked.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
-<code>CdfGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
-<code>CdfGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of a single cumulative distribution function.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.CdfsGraphData">
-<code>CdfsGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.CdfsGraphConfiguration">
-<code>CdfsGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of a multiple cumulative distribution functions.
 </td>
 </tr>
 <tr>
@@ -511,6 +533,295 @@ end
 <p>
 <code>VerticalValues
 </code> - The values are the Y axis (the default).
+</p>
+</div>
+</section>
+</article>
+<h2 id="Bars">
+<a class="docs-heading-anchor" href="#Bars">Bars
+</a>
+<a id="Bars-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Bars" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarGraphData" href="#MCGraphs.Renderers.BarGraphData">
+<code>MCGraphs.Renderers.BarGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BarGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    bar_axis_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{&lt;:Real}
+    names::Maybe{AbstractStringVector} = nothing
+    colors::Maybe{AbstractStringVector} = nothing
+    hovers::Maybe{AbstractStringVector} = nothing
+end
+</code>
+</pre>
+<p>The data for a bar (histogram) graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code> and 
+<code>bar_axis_title
+</code> for the axes.
+</p>
+<p>If specified, the 
+<code>names
+</code> and/or 
+<code>colors
+</code> and/or 
+<code>hovers
+</code> vectors must contain the same number of elements as the number of 
+<code>values
+</code>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarGraphConfiguration" href="#MCGraphs.Renderers.BarGraphConfiguration">
+<code>MCGraphs.Renderers.BarGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BarGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    color::Maybe{AbstractString} = nothing
+    orientation::ValuesOrientation = VerticalValues
+end
+</code>
+</pre>
+<p>Configure a graph for showing a bar (histogram) graph. The 
+<code>color
+</code> is chosen automatically. You can override it globally, or per-bar in the 
+<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
+<code>BarGraphData
+</code>
+</a>. By default, the X axis is used for the bars and the Y axis for the values; this can be switched using the 
+<code>orientation
+</code>.
+</p>
+</div>
+</section>
+</article>
+<h2 id="CDFs">
+<a class="docs-heading-anchor" href="#CDFs">CDFs
+</a>
+<a id="CDFs-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#CDFs" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfGraphData" href="#MCGraphs.Renderers.CdfGraphData">
+<code>MCGraphs.Renderers.CdfGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct CdfGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    fraction_axis_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{&lt;:Real}
+end
+</code>
+</pre>
+<p>The data for a CDF (Cumulative Distribution Function) graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code> and 
+<code>fraction_axis_title
+</code> for the axes.
+</p>
+<p>The order of the 
+<code>values
+</code> does not matter.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfsGraphData" href="#MCGraphs.Renderers.CdfsGraphData">
+<code>MCGraphs.Renderers.CdfsGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct CdfsGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    fraction_axis_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
+    names::Maybe{AbstractStringVector} = nothing
+    line_colors::Maybe{AbstractStringVector} = nothing
+    line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
+    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+end
+</code>
+</pre>
+<p>The data for multiple CDFs (Cumulative Distribution Functions) graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code> and 
+<code>fraction_axis_title
+</code> for the axes.
+</p>
+<p>The order of the 
+<code>values
+</code> does not matter.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfsGraphConfiguration" href="#MCGraphs.Renderers.CdfsGraphConfiguration">
+<code>MCGraphs.Renderers.CdfsGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct CdfsGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    fraction_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    orientation::ValuesOrientation = HorizontalValues
+    direction::CdfDirection = UpToValue
+    value_bands::BandsConfiguration = BandsConfiguration()
+    fraction_bands::BandsConfiguration = BandsConfiguration()
+    show_legend::Bool = false
+end
+</code>
+</pre>
+<p>Configure a graph for showing multiple CDF (Cumulative Distribution Function) graph. This is the same as 
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
+<code>CdfGraphConfiguration
+</code>
+</a> with the addition of a 
+<code>show_legend
+</code> field.
+</p>
+<p>CDF graphs are internally converted to line graphs for rendering.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfGraphConfiguration" href="#MCGraphs.Renderers.CdfGraphConfiguration">
+<code>MCGraphs.Renderers.CdfGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct CdfGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    fraction_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    orientation::ValuesOrientation = HorizontalValues
+    direction::CdfDirection = UpToValue
+    value_bands::BandsConfiguration = BandsConfiguration()
+    fraction_bands::BandsConfiguration = BandsConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph for showing a CDF (Cumulative Distribution Function) graph. By default, the X axis is used for the values and the Y axis for the fraction; this can be switched using the 
+<code>orientation
+</code>. By default, the fraction is of the values up to each value; this can be switched using the 
+<code>direction
+</code>.
+</p>
+<p>By default, the fraction axis units are between 0 and 1; if 
+<code>show_percent
+</code>, this is changed to between 0 and 100.
+</p>
+<p>CDF graphs are internally converted to line graphs for rendering.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfDirection" href="#MCGraphs.Renderers.CdfDirection">
+<code>MCGraphs.Renderers.CdfDirection
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>The direction of the CDF graph:
+</p>
+<p>
+<code>UpToValue
+</code> - Show the fraction of values up to each value.
+</p>
+<p>
+<code>DownToValue
+</code> - Show the fraction of values down to each value.
 </p>
 </div>
 </section>
@@ -1010,204 +1321,6 @@ end
 </div>
 </section>
 </article>
-<h2 id="CDFs">
-<a class="docs-heading-anchor" href="#CDFs">CDFs
-</a>
-<a id="CDFs-1">
-</a>
-<a class="docs-heading-anchor-permalink" href="#CDFs" title="Permalink">
-</a>
-</h2>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.CdfGraphData" href="#MCGraphs.Renderers.CdfGraphData">
-<code>MCGraphs.Renderers.CdfGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct CdfGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
-    value_axis_title::Maybe{AbstractString} = nothing
-    fraction_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{&lt;:Real}
-end
-</code>
-</pre>
-<p>The data for a CDF (Cumulative Distribution Function) graph.
-</p>
-<p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
-</code> as well as the 
-<code>value_axis_title
-</code> and 
-<code>fraction_axis_title
-</code> for the axes.
-</p>
-<p>The order of the 
-<code>values
-</code> does not matter.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.CdfsGraphData" href="#MCGraphs.Renderers.CdfsGraphData">
-<code>MCGraphs.Renderers.CdfsGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct CdfsGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
-    value_axis_title::Maybe{AbstractString} = nothing
-    fraction_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractStringVector} = nothing
-    line_colors::Maybe{AbstractStringVector} = nothing
-    line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
-    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-    are_dashed::Maybe{AbstractVector{Bool}} = nothing
-end
-</code>
-</pre>
-<p>The data for multiple CDFs (Cumulative Distribution Functions) graph.
-</p>
-<p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
-</code> as well as the 
-<code>value_axis_title
-</code> and 
-<code>fraction_axis_title
-</code> for the axes.
-</p>
-<p>The order of the 
-<code>values
-</code> does not matter.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.CdfsGraphConfiguration" href="#MCGraphs.Renderers.CdfsGraphConfiguration">
-<code>MCGraphs.Renderers.CdfsGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct CdfsGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    value_axis::AxisConfiguration = AxisConfiguration()
-    fraction_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
-    orientation::ValuesOrientation = HorizontalValues
-    direction::CdfDirection = UpToValue
-    value_bands::BandsConfiguration = BandsConfiguration()
-    fraction_bands::BandsConfiguration = BandsConfiguration()
-    show_legend::Bool = false
-end
-</code>
-</pre>
-<p>Configure a graph for showing multiple CDF (Cumulative Distribution Function) graph. This is the same as 
-<a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
-<code>CdfGraphConfiguration
-</code>
-</a> with the addition of a 
-<code>show_legend
-</code> field.
-</p>
-<p>CDF graphs are internally converted to line graphs for rendering.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.CdfGraphConfiguration" href="#MCGraphs.Renderers.CdfGraphConfiguration">
-<code>MCGraphs.Renderers.CdfGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct CdfGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    value_axis::AxisConfiguration = AxisConfiguration()
-    fraction_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
-    orientation::ValuesOrientation = HorizontalValues
-    direction::CdfDirection = UpToValue
-    value_bands::BandsConfiguration = BandsConfiguration()
-    fraction_bands::BandsConfiguration = BandsConfiguration()
-end
-</code>
-</pre>
-<p>Configure a graph for showing a CDF (Cumulative Distribution Function) graph. By default, the X axis is used for the values and the Y axis for the fraction; this can be switched using the 
-<code>orientation
-</code>. By default, the fraction is of the values up to each value; this can be switched using the 
-<code>direction
-</code>.
-</p>
-<p>By default, the fraction axis units are between 0 and 1; if 
-<code>show_percent
-</code>, this is changed to between 0 and 100.
-</p>
-<p>CDF graphs are internally converted to line graphs for rendering.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.CdfDirection" href="#MCGraphs.Renderers.CdfDirection">
-<code>MCGraphs.Renderers.CdfDirection
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<p>The direction of the CDF graph:
-</p>
-<p>
-<code>UpToValue
-</code> - Show the fraction of values up to each value.
-</p>
-<p>
-<code>DownToValue
-</code> - Show the fraction of values down to each value.
-</p>
-</div>
-</section>
-</article>
 <h2 id="Points">
 <a class="docs-heading-anchor" href="#Points">Points
 </a>
@@ -1575,6 +1688,18 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.BandsConfiguration">
 <code>MCGraphs.Renderers.BandsConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
+<code>MCGraphs.Renderers.BarGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
+<code>MCGraphs.Renderers.BarGraphData
 </code>
 </a>
 </li>

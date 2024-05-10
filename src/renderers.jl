@@ -1,5 +1,4 @@
 """
-the
 Render interactive or static graphs.
 
 This provides a selection of basic graph types needed for metacells visualization. For each one, we define a `struct`
@@ -12,6 +11,8 @@ module Renderers
 export AbstractGraphConfiguration
 export AbstractGraphData
 export AxisConfiguration
+export BarGraphConfiguration
+export BarGraphData
 export CdfDirection
 export CdfGraphConfiguration
 export CdfGraphData
@@ -253,7 +254,7 @@ function Validations.validate_object(
         message = validate_object(configuration.style)
     end
     if message === nothing
-        message = validate_object("values", configuration.value_axis)
+        message = validate_object("value", configuration.value_axis)
     end
     return message
 end
@@ -352,12 +353,13 @@ Render a graph given its data and configuration. The implementation depends on t
 
 | [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                            |
 |:-------------------------------- |:----------------------------------------- |:------------------------------------------------------ |
+| [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).             |
+| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function.    |
+| [`CdfsGraphData`](@ref)          | [`CdfsGraphConfiguration`](@ref)          | Graph of a multiple cumulative distribution functions. |
 | [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                        |
 | [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                       |
 | [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).       |
 | [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.         |
-| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function.    |
-| [`CdfsGraphData`](@ref)          | [`CdfsGraphConfiguration`](@ref)          | Graph of a multiple cumulative distribution functions. |
 | [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.     |
 """
 function render(
@@ -1040,7 +1042,7 @@ function lines_layout(
         yaxis_showgrid = configuration.graph.show_grid,
         yaxis_showticklabels = configuration.graph.show_ticks,
         yaxis_title = data.y_axis_title,
-        yaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
+        yaxis_range = (configuration.y_axis.minimum, configuration.y_axis.maximum),
         yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
         showlegend = show_legend,
     )
@@ -1205,10 +1207,10 @@ function Validations.validate_object(
 )::Maybe{AbstractString}
     message = validate_object(configuration.graph)
     if message === nothing
-        message = validate_object("values", configuration.value_axis)
+        message = validate_object("value", configuration.value_axis)
     end
     if message === nothing
-        message = validate_object("fractions", configuration.fraction_axis)
+        message = validate_object("fraction", configuration.fraction_axis)
     end
     if message === nothing
         message = validate_object(configuration.style)
@@ -1354,6 +1356,164 @@ function cdfs_configuration_as_lines_configuration(configuration::CdfsGraphConfi
             show_legend = configuration.show_legend,
         )
     end
+end
+
+"""
+    @kwdef mutable struct BarGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        value_axis::AxisConfiguration = AxisConfiguration()
+        color::Maybe{AbstractString} = nothing
+        orientation::ValuesOrientation = VerticalValues
+    end
+
+Configure a graph for showing a bar (histogram) graph. The `color` is chosen automatically. You can override it
+globally, or per-bar in the [`BarGraphData`](@ref). By default, the X axis is used for the bars and the Y axis for the
+values; this can be switched using the `orientation`.
+"""
+@kwdef mutable struct BarGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    color::Maybe{AbstractString} = nothing
+    orientation::ValuesOrientation = VerticalValues
+end
+
+function Validations.validate_object(configuration::BarGraphConfiguration)::Maybe{AbstractString}
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object("value", configuration.value_axis)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct BarGraphData <: AbstractGraphData
+        graph_title::Maybe{AbstractString} = nothing
+        value_axis_title::Maybe{AbstractString} = nothing
+        bar_axis_title::Maybe{AbstractString} = nothing
+        values::AbstractVector{<:Real}
+        names::Maybe{AbstractStringVector} = nothing
+        colors::Maybe{AbstractStringVector} = nothing
+        hovers::Maybe{AbstractStringVector} = nothing
+    end
+
+The data for a bar (histogram) graph.
+
+By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
+`bar_axis_title` for the axes.
+
+If specified, the `names` and/or `colors` and/or `hovers` vectors must contain the same number of elements as the number
+of `values`.
+"""
+@kwdef mutable struct BarGraphData <: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    bar_axis_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{<:Real}
+    names::Maybe{AbstractStringVector} = nothing
+    colors::Maybe{AbstractStringVector} = nothing
+    hovers::Maybe{AbstractStringVector} = nothing
+end
+
+function Validations.validate_object(data::BarGraphData)::Maybe{AbstractString}
+    if length(data.values) == 0
+        return "empty values vector"
+    end
+    names = data.names
+    if names !== nothing && length(names) != length(data.values)
+        return "the number of names: $(length(names))\n" *
+               "is different from the number of bars: $(length(data.values))"
+    end
+    colors = data.colors
+    if colors !== nothing && length(colors) != length(data.values)
+        return "the number of colors: $(length(colors))\n" *
+               "is different from the number of bars: $(length(data.values))"
+    end
+    hovers = data.hovers
+    if hovers !== nothing && length(hovers) != length(data.values)
+        return "the number of hovers: $(length(hovers))\n" *
+               "is different from the number of bars: $(length(data.values))"
+    end
+    return nothing
+end
+
+function render(data::BarGraphData, configuration::BarGraphConfiguration)::Nothing
+    assert_valid_object(data)
+    assert_valid_object(configuration)
+
+    trace = bar_trace(data, configuration)
+    layout = bar_layout(data, configuration)
+    figure = plot(trace, layout)
+    write_graph(figure, configuration.graph)
+
+    return nothing
+end
+
+function bar_trace(data::BarGraphData, configuration::BarGraphConfiguration)::GenericTrace
+    if configuration.orientation == HorizontalValues
+        xs = data.values
+        ys = data.names !== nothing ? data.names : ["Bar $(index)" for index in 1:length(data.values)]
+        orientation = "h"
+    elseif configuration.orientation == VerticalValues
+        xs = data.names !== nothing ? data.names : ["Bar $(index)" for index in 1:length(data.values)]
+        ys = data.values
+        orientation = "v"
+    else
+        @assert false
+    end
+    return bar(;
+        x = xs,
+        y = ys,
+        orientation = orientation,
+        marker_color = data.colors !== nothing ? data.colors : configuration.color,
+        customdata = data.hovers,
+        hovertemplate = data.hovers === nothing ? nothing : "%{customdata}<extra></extra>",
+    )
+end
+
+function bar_layout(data::BarGraphData, configuration::BarGraphConfiguration)::Layout
+    if configuration.orientation == HorizontalValues
+        xaxis_showgrid = configuration.graph.show_grid
+        xaxis_showticklabels = configuration.graph.show_ticks
+        xaxis_title = data.value_axis_title
+        xaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
+        xaxis_type = configuration.value_axis.log_scale ? "log" : nothing
+
+        yaxis_showgrid = false
+        yaxis_showticklabels = data.names !== nothing
+        yaxis_title = data.bar_axis_title
+        yaxis_range = nothing
+        yaxis_type = nothing
+    elseif configuration.orientation == VerticalValues
+        xaxis_showgrid = false
+        xaxis_showticklabels = data.names !== nothing
+        xaxis_title = data.bar_axis_title
+        xaxis_range = nothing
+        xaxis_type = nothing
+
+        yaxis_showgrid = configuration.graph.show_grid
+        yaxis_showticklabels = configuration.graph.show_ticks
+        yaxis_title = data.value_axis_title
+        yaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
+        yaxis_type = configuration.value_axis.log_scale ? "log" : nothing
+    else
+        @assert false
+    end
+
+    return Layout(;  # NOJET
+        title = data.graph_title,
+        template = configuration.graph.template,
+        xaxis_showgrid = xaxis_showgrid,
+        xaxis_showticklabels = xaxis_showticklabels,
+        xaxis_title = xaxis_title,
+        xaxis_range = xaxis_range,
+        xaxis_type = xaxis_type,
+        yaxis_showgrid = yaxis_showgrid,
+        yaxis_showticklabels = yaxis_showticklabels,
+        yaxis_title = yaxis_title,
+        yaxis_range = yaxis_range,
+        yaxis_type = yaxis_type,
+        showlegend = false,
+    )
 end
 
 """
@@ -2262,7 +2422,7 @@ function points_layout(data::PointsGraphData, configuration::PointsGraphConfigur
         yaxis_showgrid = configuration.graph.show_grid,
         yaxis_showticklabels = configuration.graph.show_ticks,
         yaxis_title = data.y_axis_title,
-        yaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
+        yaxis_range = (configuration.y_axis.minimum, configuration.y_axis.maximum),
         yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
         showlegend = (
             configuration.style.show_scale &&
