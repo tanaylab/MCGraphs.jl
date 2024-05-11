@@ -1382,17 +1382,19 @@ end
         value_axis::AxisConfiguration = AxisConfiguration()
         color::Maybe{AbstractString} = nothing
         orientation::ValuesOrientation = VerticalValues
+        bar_gap::Maybe{<:Real} = nothing
     end
 
 Configure a graph for showing a single bar (histogram) graph. The `color` is chosen automatically. You can override it
 globally, or per-bar in the [`BarGraphData`](@ref). By default, the X axis is used for the bars and the Y axis for the
-values; this can be switched using the `orientation`.
+values; this can be switched using the `orientation`. The `bar_gap` is the fraction of white space between bars.
 """
 @kwdef mutable struct BarGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
     orientation::ValuesOrientation = VerticalValues
+    bar_gap::Maybe{<:Real} = nothing
 end
 
 """
@@ -1471,6 +1473,7 @@ end
         value_axis::AxisConfiguration = AxisConfiguration()
         color::Maybe{AbstractString} = nothing
         orientation::ValuesOrientation = VerticalValues
+        bar_gap::Maybe{<:Real} = nothing
         show_legend::Bool = false
         stacking::Maybe{Stacking} = nothing
     end
@@ -1483,6 +1486,7 @@ without the `color` field (which makes no sense when multiple series are shown),
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     orientation::ValuesOrientation = VerticalValues
+    bar_gap::Maybe{<:Real} = nothing
     show_legend::Bool = false
     stacking::Maybe{Stacking} = nothing
 end
@@ -1493,6 +1497,16 @@ function Validations.validate_object(
     message = validate_object(configuration.graph)
     if message === nothing
         message = validate_object("value", configuration.value_axis)
+    end
+    if message === nothing
+        bar_gap = configuration.bar_gap
+        if bar_gap !== nothing
+            if bar_gap < 0
+                message = "non-positive bar_gap: $(bar_gap)"
+            elseif bar_gap >= 1
+                message = "too-large bar_gap: $(bar_gap)"
+            end
+        end
     end
     return message
 end
@@ -1710,6 +1724,7 @@ function bar_layout(
         yaxis_type = yaxis_type,
         showlegend = show_legend,
         barmode = stacked ? "stack" : nothing,
+        bargap = configuration.bar_gap,
     )
 end
 

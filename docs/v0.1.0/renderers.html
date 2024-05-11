@@ -628,6 +628,7 @@ end
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
     orientation::ValuesOrientation = VerticalValues
+    bar_gap::Maybe{&lt;:Real} = nothing
 end
 </code>
 </pre>
@@ -639,7 +640,9 @@ end
 </code>
 </a>. By default, the X axis is used for the bars and the Y axis for the values; this can be switched using the 
 <code>orientation
-</code>.
+</code>. The 
+<code>bar_gap
+</code> is the fraction of white space between bars.
 </p>
 </div>
 </section>
@@ -723,6 +726,7 @@ end
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
     orientation::ValuesOrientation = VerticalValues
+    bar_gap::Maybe{&lt;:Real} = nothing
     show_legend::Bool = false
     stacking::Maybe{Stacking} = nothing
 end

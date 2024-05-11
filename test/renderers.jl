@@ -868,6 +868,16 @@ nested_test("renderers") do
         nested_test("invalid") do
             configuration.graph.show_interactive = true
 
+            nested_test("!bar_gap") do
+                configuration.bar_gap = -1
+                @test_throws "non-positive bar_gap: -1" render(data, configuration)
+            end
+
+            nested_test("~bar_gap") do
+                configuration.bar_gap = 1
+                @test_throws "too-large bar_gap: 1" render(data, configuration)
+            end
+
             nested_test("~values") do
                 empty!(data.values)
                 @test_throws "empty values vector" render(data, configuration)
@@ -928,6 +938,11 @@ nested_test("renderers") do
                 data.value_axis_title = "Values"
                 return test_html(data, configuration, "bar.horizontal.titles.html")
             end
+        end
+
+        nested_test("!bar_gap") do
+            configuration.bar_gap = 0
+            return test_html(data, configuration, "bar.!bar_gap.html")
         end
 
         nested_test("color") do
@@ -1028,6 +1043,11 @@ nested_test("renderers") do
                 test_html(data, configuration, "bars.stack.fractions.html")
                 return nothing
             end
+        end
+
+        nested_test("!bar_gap") do
+            configuration.bar_gap = 0
+            return test_html(data, configuration, "bars.!bar_gap.html")
         end
 
         nested_test("legend") do
