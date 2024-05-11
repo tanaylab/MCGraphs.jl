@@ -15,6 +15,8 @@ MCGraphs.Renderers.ValuesOrientation
 ```@docs
 MCGraphs.Renderers.BarGraphData
 MCGraphs.Renderers.BarGraphConfiguration
+MCGraphs.Renderers.BarsGraphData
+MCGraphs.Renderers.BarsGraphConfiguration
 ```
 
 ## CDFs

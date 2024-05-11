@@ -134,13 +134,10 @@ This also serves as the main TODO list (including the Python and R wrappers).
       + Stacked.
       + CDFs variant.
   - Bar graph (Julia; TODO: Python, TODO: R).
-  - Bars graph (TODO: Julia; TODO: Python, TODO: R).
+  - Bars graph (Julia; TODO: Python, TODO: R).
 
-      + TODO: Legend.
       + TODO: Annotations.
       + TODO: Annotations Legend.
-      + TODO: Grouped.
-      + TODO: Stacked.
   - Heatmap graph (TODO: Julia; TODO: Python, TODO: R).
 
       + TODO: Annotations.

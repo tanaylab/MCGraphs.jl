@@ -946,6 +946,160 @@ nested_test("renderers") do
         end
     end
 
+    nested_test("bars") do
+        data = BarsGraphData(; values = [[0.0, 1.0, 2.0], [0.2, 1.2, 1.8]])
+        configuration = BarsGraphConfiguration()
+
+        nested_test("()") do
+            test_html(data, configuration, "bars.html")
+            return nothing
+        end
+
+        nested_test("invalid") do
+            configuration.graph.show_interactive = true
+
+            nested_test("!values") do
+                empty!(data.values)
+                @test_throws "empty values vector" render(data, configuration)
+            end
+
+            nested_test("!!values") do
+                empty!(data.values[1])
+                empty!(data.values[2])
+                @test_throws "empty values vectors" render(data, configuration)
+            end
+
+            nested_test("~values") do
+                push!(data.values[1], 0.0)
+                @test_throws dedent("""
+                    the number of values#1: 4
+                    is different from the number of values#2: 3
+                """) render(data, configuration)
+            end
+
+            nested_test("~bar_names") do
+                data.bar_names = ["Foo"]
+                @test_throws dedent("""
+                    the number of bar_names: 1
+                    is different from the number of bars: 3
+                """) render(data, configuration)
+            end
+
+            nested_test("~names") do
+                data.names = ["Foo"]
+                @test_throws dedent("""
+                    the number of names: 1
+                    is different from the number of series: 2
+                """) render(data, configuration)
+            end
+
+            nested_test("~hovers") do
+                data.hovers = ["Foo"]
+                @test_throws dedent("""
+                    the number of hovers: 1
+                    is different from the number of series: 2
+                """) render(data, configuration)
+            end
+
+            nested_test("~colors") do
+                data.colors = ["red"]
+                @test_throws dedent("""
+                    the number of colors: 1
+                    is different from the number of series: 2
+                """) render(data, configuration)
+            end
+        end
+
+        nested_test("stack") do
+            nested_test("values") do
+                configuration.stacking = StackValues
+                test_html(data, configuration, "bars.stack.values.html")
+                return nothing
+            end
+
+            nested_test("percents") do
+                configuration.stacking = StackPercents
+                test_html(data, configuration, "bars.stack.percents.html")
+                return nothing
+            end
+
+            nested_test("fractions") do
+                configuration.stacking = StackFractions
+                test_html(data, configuration, "bars.stack.fractions.html")
+                return nothing
+            end
+        end
+
+        nested_test("legend") do
+            configuration.show_legend = true
+            test_legend(data, configuration, "bars") do
+                return data.legend_title = "Series"
+            end
+        end
+
+        nested_test("names") do
+            data.names = ["Foo", "Bar"]
+
+            nested_test("()") do
+                return test_html(data, configuration, "bars.names.html")
+            end
+
+            nested_test("legend") do
+                configuration.show_legend = true
+                test_legend(data, configuration, "bars.names") do
+                    return data.legend_title = "Series"
+                end
+            end
+        end
+
+        nested_test("bar_names") do
+            data.bar_names = ["Foo", "Bar", "Baz"]
+            return test_html(data, configuration, "bars.bar_names.html")
+        end
+
+        nested_test("titles") do
+            data.graph_title = "Graph"
+            data.bar_axis_title = "Bars"
+            data.value_axis_title = "Values"
+            return test_html(data, configuration, "bars.titles.html")
+        end
+
+        nested_test("horizontal") do
+            configuration.orientation = HorizontalValues
+
+            nested_test("()") do
+                return test_html(data, configuration, "bars.horizontal.html")
+            end
+
+            nested_test("names") do
+                data.names = ["Foo", "Bar"]
+                return test_html(data, configuration, "bars.horizontal.names.html")
+            end
+
+            nested_test("bar_names") do
+                data.bar_names = ["Foo", "Bar", "Baz"]
+                return test_html(data, configuration, "bars.horizontal.bar_names.html")
+            end
+
+            nested_test("titles") do
+                data.graph_title = "Graph"
+                data.bar_axis_title = "Bars"
+                data.value_axis_title = "Values"
+                return test_html(data, configuration, "bars.horizontal.titles.html")
+            end
+        end
+
+        nested_test("colors") do
+            data.colors = ["red", "green"]
+            return test_html(data, configuration, "bars.colors.html")
+        end
+
+        nested_test("hovers") do
+            data.hovers = ["Foo", "Bar"]
+            return test_html(data, configuration, "bars.hovers.html")
+        end
+    end
+
     nested_test("points") do
         configuration = PointsGraphConfiguration()
         data = PointsGraphData(; xs = [0.0, 1.0, 2.0], ys = [-0.2, 1.2, 1.8])

@@ -249,6 +249,22 @@
 </tr>
 <tr>
 <td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphData">
+<code>BarsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>BarsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of multiple sets of bars (histograms).
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
 <a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
 <code>CdfGraphData
 </code>
@@ -276,7 +292,7 @@
 </code>
 </a>
 </td>
-<td style="text-align: left">Graph of a multiple cumulative distribution functions.
+<td style="text-align: left">Graph of multiple cumulative distribution functions.
 </td>
 </tr>
 <tr>
@@ -524,7 +540,7 @@ end
 </header>
 <section>
 <div>
-<p>The orientation of the values axis in a distribution or a bars graph:
+<p>The orientation of the values axis in a distribution or bars graph:
 </p>
 <p>
 <code>HorizontalValues
@@ -570,7 +586,7 @@ end
 end
 </code>
 </pre>
-<p>The data for a bar (histogram) graph.
+<p>The data for a single bar (histogram) graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
 <code>graph_title
@@ -615,7 +631,7 @@ end
 end
 </code>
 </pre>
-<p>Configure a graph for showing a bar (histogram) graph. The 
+<p>Configure a graph for showing a single bar (histogram) graph. The 
 <code>color
 </code> is chosen automatically. You can override it globally, or per-bar in the 
 <a href="renderers.html#MCGraphs.Renderers.BarGraphData">
@@ -624,6 +640,107 @@ end
 </a>. By default, the X axis is used for the bars and the Y axis for the values; this can be switched using the 
 <code>orientation
 </code>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarsGraphData" href="#MCGraphs.Renderers.BarsGraphData">
+<code>MCGraphs.Renderers.BarsGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BarsGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    bar_axis_title::Maybe{AbstractString} = nothing
+    legend_title::Maybe{AbstractString} = nothing
+    values::AbstractString{&lt;:AbstractVector{&lt;:Real}}
+    names::Maybe{AbstractStringVector} = nothing
+    colors::Maybe{AbstractStringVector} = nothing
+    hovers::Maybe{AbstractStringVector} = nothing
+    bar_names::Maybe{AbstractStringVector} = nothing
+end
+</code>
+</pre>
+<p>The data for a multiple bars (histograms) graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code>, 
+<code>bar_axis_title
+</code> for the axes, and the 
+<code>legend_title
+</code> (if 
+<code>show_legend
+</code> is set in 
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>BarsGraphConfiguration
+</code>
+</a>.
+</p>
+<p>All the 
+<code>values
+</code> vectors must be of the same size. If specified, the 
+<code>bar_names vector must contain the same number of elements. If specified, the
+</code>names
+<code>and/or
+</code>colors
+<code>and/or
+</code>hovers
+<code>vectors must contain the same number of elements as the number of
+</code>values` vectors (that is, the number of series).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarsGraphConfiguration" href="#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>MCGraphs.Renderers.BarsGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BarsGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    color::Maybe{AbstractString} = nothing
+    orientation::ValuesOrientation = VerticalValues
+    show_legend::Bool = false
+    stacking::Maybe{Stacking} = nothing
+end
+</code>
+</pre>
+<p>Configure a graph for showing multiple bars (histograms) graph. This is similar to 
+<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
+<code>BarGraphConfiguration
+</code>
+</a>, without the 
+<code>color
+</code> field (which makes no sense when multiple series are shown), and with the addition of a 
+<code>show_legend
+</code> and 
+<code>stacking
+</code> fields. If 
+<code>stacking
+</code> isn&#39;t specified then the different series are just grouped.
 </p>
 </div>
 </section>
@@ -1127,7 +1244,7 @@ end
 end
 </code>
 </pre>
-<p>The data for a multiple lines graph.
+<p>The data for multiple lines graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
 <code>graph_title
@@ -1700,6 +1817,18 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.BarGraphData">
 <code>MCGraphs.Renderers.BarGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>MCGraphs.Renderers.BarsGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphData">
+<code>MCGraphs.Renderers.BarsGraphData
 </code>
 </a>
 </li>

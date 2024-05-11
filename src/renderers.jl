@@ -13,6 +13,8 @@ export AbstractGraphData
 export AxisConfiguration
 export BarGraphConfiguration
 export BarGraphData
+export BarsGraphConfiguration
+export BarsGraphData
 export CdfDirection
 export CdfGraphConfiguration
 export CdfGraphData
@@ -59,7 +61,7 @@ Common abstract base for all complete graph data types. See [`render`](@ref).
 abstract type AbstractGraphData <: ObjectWithValidation end
 
 """
-The orientation of the values axis in a distribution or a bars graph:
+The orientation of the values axis in a distribution or bars graph:
 
 `HorizontalValues` - The values are the X axis
 
@@ -351,16 +353,17 @@ Render a graph given its data and configuration. The implementation depends on t
 [`AbstractGraphData`](@ref) there is a matching [`AbstractGraphConfiguration`](@ref) (a default one is provided for the
 `configuration`). The supported type pairs are:
 
-| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                            |
-|:-------------------------------- |:----------------------------------------- |:------------------------------------------------------ |
-| [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).             |
-| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function.    |
-| [`CdfsGraphData`](@ref)          | [`CdfsGraphConfiguration`](@ref)          | Graph of a multiple cumulative distribution functions. |
-| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                        |
-| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                       |
-| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).       |
-| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.         |
-| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.     |
+| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                          |
+|:-------------------------------- |:----------------------------------------- |:---------------------------------------------------- |
+| [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).           |
+| [`BarsGraphData`](@ref)          | [`BarsGraphConfiguration`](@ref)          | Graph of multiple sets of bars (histograms).         |
+| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function.  |
+| [`CdfsGraphData`](@ref)          | [`CdfsGraphConfiguration`](@ref)          | Graph of multiple cumulative distribution functions. |
+| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                      |
+| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                     |
+| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).     |
+| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.       |
+| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.   |
 """
 function render(
     data::DistributionGraphData,
@@ -375,7 +378,7 @@ function render(
         nothing,
         configuration,
     )
-    layout = distribution_layout(data.name !== nothing, data, configuration, false)
+    layout = distribution_layout(data, configuration; has_tick_names = data.name !== nothing, show_legend = false)
     figure = plot(trace, layout)
     write_graph(figure, configuration.graph)
     return nothing
@@ -399,7 +402,12 @@ function render(
             configuration,
         ) for index in 1:n_values
     ]
-    layout = distribution_layout(data.names !== nothing, data, configuration, configuration.show_legend)
+    layout = distribution_layout(
+        data,
+        configuration;
+        has_tick_names = data.names !== nothing,
+        show_legend = configuration.show_legend,
+    )
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)
     return nothing
@@ -445,9 +453,9 @@ function distribution_trace(
 end
 
 function distribution_layout(
-    has_tick_names::Bool,
     data::Union{DistributionGraphData, DistributionsGraphData},
-    configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration},
+    configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration};
+    has_tick_names::Bool,
     show_legend::Bool,
 )::Layout
     if configuration.style.orientation == VerticalValues
@@ -707,7 +715,7 @@ function render(data::LineGraphData, configuration::LineGraphConfiguration = Lin
         end
     end
 
-    layout = lines_layout(data, false, configuration)
+    layout = lines_layout(data, configuration; show_legend = false)
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)
     return nothing
@@ -797,7 +805,7 @@ end
         line_widths::Maybe{AbstractVector{<:Real}} = nothing
     end
 
-The data for a multiple lines graph.
+The data for multiple lines graph.
 
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
 `y_axis_title` for the axes.
@@ -904,10 +912,20 @@ function render(data::LinesGraphData, configuration::LinesGraphConfiguration = L
     traces = Vector{GenericTrace}()
 
     for index in 1:length(data.xs)
-        push!(traces, lines_trace(xs[index], ys[index], data, index, configuration, data.legend_title))
+        push!(
+            traces,
+            lines_trace(
+                data,
+                configuration;
+                xs = xs[index],
+                ys = ys[index],
+                index = index,
+                legend_title = data.legend_title,
+            ),
+        )
     end
 
-    layout = lines_layout(data, configuration.show_legend, configuration)
+    layout = lines_layout(data, configuration; show_legend = configuration.show_legend)
     figure = plot(traces, layout)
     write_graph(figure, configuration.graph)
     return nothing
@@ -981,11 +999,11 @@ function unify_xs(
 end
 
 function lines_trace(
+    data::LinesGraphData,
+    configuration::LinesGraphConfiguration;
     xs::AbstractVector{<:Real},
     ys::AbstractVector{<:Real},
-    data::LinesGraphData,
     index::Int,
-    configuration::LinesGraphConfiguration,
     legend_title::Maybe{AbstractString},
 )::GenericTrace
     return scatter(;
@@ -1028,8 +1046,8 @@ end
 
 function lines_layout(
     data::Union{LinesGraphData, LineGraphData},
+    configuration::Union{LinesGraphConfiguration, LineGraphConfiguration};
     show_legend::Bool,
-    configuration::Union{LinesGraphConfiguration, LineGraphConfiguration},
 )::Layout
     return Layout(;  # NOJET
         title = data.graph_title,
@@ -1366,7 +1384,7 @@ end
         orientation::ValuesOrientation = VerticalValues
     end
 
-Configure a graph for showing a bar (histogram) graph. The `color` is chosen automatically. You can override it
+Configure a graph for showing a single bar (histogram) graph. The `color` is chosen automatically. You can override it
 globally, or per-bar in the [`BarGraphData`](@ref). By default, the X axis is used for the bars and the Y axis for the
 values; this can be switched using the `orientation`.
 """
@@ -1375,14 +1393,6 @@ values; this can be switched using the `orientation`.
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
     orientation::ValuesOrientation = VerticalValues
-end
-
-function Validations.validate_object(configuration::BarGraphConfiguration)::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
-    if message === nothing
-        message = validate_object("value", configuration.value_axis)
-    end
-    return message
 end
 
 """
@@ -1396,7 +1406,7 @@ end
         hovers::Maybe{AbstractStringVector} = nothing
     end
 
-The data for a bar (histogram) graph.
+The data for a single bar (histogram) graph.
 
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
 `bar_axis_title` for the axes.
@@ -1440,22 +1450,199 @@ function render(data::BarGraphData, configuration::BarGraphConfiguration)::Nothi
     assert_valid_object(data)
     assert_valid_object(configuration)
 
-    trace = bar_trace(data, configuration)
-    layout = bar_layout(data, configuration)
+    trace = bar_trace(
+        data,
+        configuration;
+        values = data.values,
+        color = data.colors !== nothing ? data.colors : configuration.color,
+        hover = data.hovers,
+        names = data.names,
+    )
+    layout = bar_layout(data, configuration; has_tick_names = data.names !== nothing, show_legend = false)
     figure = plot(trace, layout)
     write_graph(figure, configuration.graph)
 
     return nothing
 end
 
-function bar_trace(data::BarGraphData, configuration::BarGraphConfiguration)::GenericTrace
+"""
+    @kwdef mutable struct BarsGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        value_axis::AxisConfiguration = AxisConfiguration()
+        color::Maybe{AbstractString} = nothing
+        orientation::ValuesOrientation = VerticalValues
+        show_legend::Bool = false
+        stacking::Maybe{Stacking} = nothing
+    end
+
+Configure a graph for showing multiple bars (histograms) graph. This is similar to [`BarGraphConfiguration`](@ref),
+without the `color` field (which makes no sense when multiple series are shown), and with the addition of a
+`show_legend` and `stacking` fields. If `stacking` isn't specified then the different series are just grouped.
+"""
+@kwdef mutable struct BarsGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    orientation::ValuesOrientation = VerticalValues
+    show_legend::Bool = false
+    stacking::Maybe{Stacking} = nothing
+end
+
+function Validations.validate_object(
+    configuration::Union{BarGraphConfiguration, BarsGraphConfiguration},
+)::Maybe{AbstractString}
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object("value", configuration.value_axis)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct BarsGraphData <: AbstractGraphData
+        graph_title::Maybe{AbstractString} = nothing
+        value_axis_title::Maybe{AbstractString} = nothing
+        bar_axis_title::Maybe{AbstractString} = nothing
+        legend_title::Maybe{AbstractString} = nothing
+        values::AbstractString{<:AbstractVector{<:Real}}
+        names::Maybe{AbstractStringVector} = nothing
+        colors::Maybe{AbstractStringVector} = nothing
+        hovers::Maybe{AbstractStringVector} = nothing
+        bar_names::Maybe{AbstractStringVector} = nothing
+    end
+
+The data for a multiple bars (histograms) graph.
+
+By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title`,
+`bar_axis_title` for the axes, and the `legend_title` (if `show_legend` is set in [`BarsGraphConfiguration`](@ref).
+
+All the `values` vectors must be of the same size. If specified, the `bar_names vector must contain the same number of elements. If specified, the `names`and/or`colors`and/or`hovers`vectors must contain the same number of elements as the number of`values` vectors (that is, the number of series).
+"""
+@kwdef mutable struct BarsGraphData <: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    bar_axis_title::Maybe{AbstractString} = nothing
+    legend_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{<:AbstractVector{<:Real}}
+    names::Maybe{AbstractStringVector} = nothing
+    colors::Maybe{AbstractStringVector} = nothing
+    hovers::Maybe{AbstractStringVector} = nothing
+    bar_names::Maybe{AbstractStringVector} = nothing
+end
+
+function Validations.validate_object(data::BarsGraphData)::Maybe{AbstractString}
+    n_series = length(data.values)
+    if n_series == 0
+        return "empty values vector"
+    end
+    n_values = length(data.values[1])
+    for (index, values) in enumerate(data.values)
+        if length(values) != n_values
+            return "the number of values#1: $(n_values)\n" *
+                   "is different from the number of values#$(index): $(length(values))"
+        end
+    end
+    if n_values == 0
+        return "empty values vectors"
+    end
+    names = data.names
+    if names !== nothing && length(names) != n_series
+        return "the number of names: $(length(names))\n" * "is different from the number of series: $(n_series)"
+    end
+    colors = data.colors
+    if colors !== nothing && length(colors) != n_series
+        return "the number of colors: $(length(colors))\n" * "is different from the number of series: $(n_series)"
+    end
+    hovers = data.hovers
+    if hovers !== nothing && length(hovers) != n_series
+        return "the number of hovers: $(length(hovers))\n" * "is different from the number of series: $(n_series)"
+    end
+    bar_names = data.bar_names
+    if bar_names !== nothing && length(bar_names) != n_values
+        return "the number of bar_names: $(length(bar_names))\n" * "is different from the number of bars: $(n_values)"
+    end
+    return nothing
+end
+
+function render(data::BarsGraphData, configuration::BarsGraphConfiguration)::Nothing
+    assert_valid_object(data)
+    assert_valid_object(configuration)
+
+    stacking = configuration.stacking
+    if stacking === nothing
+        values = data.values
+    else
+        for (series_index, values) in enumerate(data.values)
+            for (bar_index, value) in enumerate(values)
+                @assert value >= 0 "negative stacked value#$(bar_index) of series#$(series_index): $(value)"
+            end
+        end
+        values = stacked_values(stacking, data.values)
+    end
+
+    traces = Vector{GenericTrace}()
+    for index in 1:length(data.values)
+        push!(
+            traces,
+            bar_trace(
+                data,
+                configuration;
+                values = values[index],
+                color = data.colors !== nothing ? data.colors[index] : nothing,
+                hover = data.hovers !== nothing ? fill(data.hovers[index], length(values[1])) : nothing,
+                names = data.bar_names,
+                name = data.names !== nothing ? data.names[index] : "Series $(index)",
+                legend_title = data.legend_title,
+            ),
+        )
+    end
+    layout = bar_layout(
+        data,
+        configuration;
+        has_tick_names = data.bar_names !== nothing,
+        show_legend = configuration.show_legend,
+        stacked = configuration.stacking !== nothing,
+    )
+    figure = plot(traces, layout)
+    write_graph(figure, configuration.graph)
+
+    return nothing
+end
+
+function stacked_values(stacking::Stacking, values::T)::T where {(T <: AbstractVector{<:AbstractVector{<:Real}})}
+    if stacking == StackValues
+        return values
+    end
+
+    total_values = zeros(eltype(eltype(values)), length(values[1]))
+    for series_values in values
+        total_values .+= series_values
+    end
+
+    if stacking == StackPercents
+        total_values ./= 100
+    end
+    total_values[total_values .== 0] .= 1
+
+    return [series_values ./= total_values for series_values in values]
+end
+
+function bar_trace(
+    data::Union{BarGraphData, BarsGraphData},
+    configuration::Union{BarGraphConfiguration, BarsGraphConfiguration};
+    values::AbstractVector{<:Real},
+    color::Maybe{Union{AbstractString, AbstractStringVector}},
+    hover::Maybe{Union{AbstractString, AbstractStringVector}},
+    names::Maybe{AbstractStringVector},
+    name::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+)::GenericTrace
     if configuration.orientation == HorizontalValues
-        xs = data.values
-        ys = data.names !== nothing ? data.names : ["Bar $(index)" for index in 1:length(data.values)]
+        xs = values
+        ys = names !== nothing ? names : ["Bar $(index)" for index in 1:length(data.values)]
         orientation = "h"
     elseif configuration.orientation == VerticalValues
-        xs = data.names !== nothing ? data.names : ["Bar $(index)" for index in 1:length(data.values)]
-        ys = data.values
+        xs = names !== nothing ? names : ["Bar $(index)" for index in 1:length(data.values)]
+        ys = values
         orientation = "v"
     else
         @assert false
@@ -1463,14 +1650,23 @@ function bar_trace(data::BarGraphData, configuration::BarGraphConfiguration)::Ge
     return bar(;
         x = xs,
         y = ys,
+        name = name,
         orientation = orientation,
-        marker_color = data.colors !== nothing ? data.colors : configuration.color,
-        customdata = data.hovers,
-        hovertemplate = data.hovers === nothing ? nothing : "%{customdata}<extra></extra>",
+        marker_color = color,
+        customdata = hover,
+        hovertemplate = hover === nothing ? nothing : "%{customdata}<extra></extra>",
+        legendgroup = "series",
+        legendgrouptitle_text = legend_title,
     )
 end
 
-function bar_layout(data::BarGraphData, configuration::BarGraphConfiguration)::Layout
+function bar_layout(
+    data::Union{BarGraphData, BarsGraphData},
+    configuration::Union{BarGraphConfiguration, BarsGraphConfiguration};
+    has_tick_names::Bool,
+    show_legend::Bool,
+    stacked::Bool = false,
+)::Layout
     if configuration.orientation == HorizontalValues
         xaxis_showgrid = configuration.graph.show_grid
         xaxis_showticklabels = configuration.graph.show_ticks
@@ -1479,13 +1675,13 @@ function bar_layout(data::BarGraphData, configuration::BarGraphConfiguration)::L
         xaxis_type = configuration.value_axis.log_scale ? "log" : nothing
 
         yaxis_showgrid = false
-        yaxis_showticklabels = data.names !== nothing
+        yaxis_showticklabels = has_tick_names
         yaxis_title = data.bar_axis_title
         yaxis_range = nothing
         yaxis_type = nothing
     elseif configuration.orientation == VerticalValues
         xaxis_showgrid = false
-        xaxis_showticklabels = data.names !== nothing
+        xaxis_showticklabels = has_tick_names
         xaxis_title = data.bar_axis_title
         xaxis_range = nothing
         xaxis_type = nothing
@@ -1512,7 +1708,8 @@ function bar_layout(data::BarGraphData, configuration::BarGraphConfiguration)::L
         yaxis_title = yaxis_title,
         yaxis_range = yaxis_range,
         yaxis_type = yaxis_type,
-        showlegend = false,
+        showlegend = show_legend,
+        barmode = stacked ? "stack" : nothing,
     )
 end
 
@@ -1845,12 +2042,12 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
     )
     push_fill_diagonal_bands_traces(
         traces,
-        configuration.x_axis.log_scale,
         configuration.diagonal_bands,
         minimum_x,
         minimum_y,
         maximum_x,
-        maximum_y,
+        maximum_y;
+        log_scale = configuration.x_axis.log_scale,
     )
 
     if data.border_colors !== nothing || data.border_sizes !== nothing
@@ -1865,15 +2062,15 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
                     push!(
                         traces,
                         points_trace(
-                            data,
-                            color,
-                            marker_size,
-                            nothing,
-                            configuration.border_style,
-                            data.border_scale_title,
-                            "borders",
-                            mask,
-                            value,
+                            data;
+                            color = color,
+                            marker_size = marker_size,
+                            coloraxis = nothing,
+                            points_style = configuration.border_style,
+                            scale_title = data.border_scale_title,
+                            legend_group = "borders",
+                            mask = mask,
+                            name = value,
                         ),
                     )
                 end
@@ -1883,13 +2080,13 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
             push!(
                 traces,
                 points_trace(
-                    data,
-                    data.border_colors,
-                    marker_size,
-                    "coloraxis2",
-                    configuration.border_style,
-                    data.border_scale_title,
-                    "borders",
+                    data;
+                    color = data.border_colors,
+                    marker_size = marker_size,
+                    coloraxis = "coloraxis2",
+                    points_style = configuration.border_style,
+                    scale_title = data.border_scale_title,
+                    legend_group = "borders",
                 ),
             )
         end
@@ -1905,15 +2102,15 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
                 push!(
                     traces,
                     points_trace(
-                        data,
-                        color,
-                        data.sizes !== nothing ? data.sizes : configuration.style.size,
-                        nothing,
-                        configuration.style,
-                        data.scale_title,
-                        "points",
-                        mask,
-                        value,
+                        data;
+                        color = color,
+                        marker_size = data.sizes !== nothing ? data.sizes : configuration.style.size,
+                        coloraxis = nothing,
+                        points_style = configuration.style,
+                        scale_title = data.scale_title,
+                        legend_group = "points",
+                        mask = mask,
+                        name = value,
                     ),
                 )
             end
@@ -1922,13 +2119,13 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         push!(
             traces,
             points_trace(
-                data,
-                data.colors,
-                data.sizes !== nothing ? data.sizes : configuration.style.size,
-                "coloraxis",
-                configuration.style,
-                data.scale_title,
-                "points",
+                data;
+                color = data.colors,
+                marker_size = data.sizes !== nothing ? data.sizes : configuration.style.size,
+                coloraxis = "coloraxis",
+                points_style = configuration.style,
+                scale_title = data.scale_title,
+                legend_group = "points",
             ),
         )
     end
@@ -1936,7 +2133,7 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
     edges = data.edges
     if edges !== nothing
         for index in 1:length(edges)
-            push!(traces, edge_trace(data, index, configuration.edges_style))
+            push!(traces, edge_trace(data, configuration.edges_style; index = index))
         end
     end
 
@@ -1959,7 +2156,14 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
         if band.line_offset !== nothing && band.line_color !== nothing
             push!(
                 traces,
-                diagonal_line_trace(band, configuration.x_axis.log_scale, minimum_x, minimum_y, maximum_x, maximum_y),
+                diagonal_line_trace(
+                    band,
+                    minimum_x,
+                    minimum_y,
+                    maximum_x,
+                    maximum_y;
+                    log_scale = configuration.x_axis.log_scale,
+                ),
             )
         end
     end
@@ -1983,9 +2187,9 @@ function push_fill_vertical_bands_traces(
         push!(  # NOJET
             traces,
             fill_trace(
-                configuration.low.fill_color,
                 [minimum_x, configuration.low.line_offset, configuration.low.line_offset, minimum_x],
-                [minimum_y, minimum_y, maximum_y, maximum_y],
+                [minimum_y, minimum_y, maximum_y, maximum_y];
+                color = configuration.low.fill_color,
             ),
         )
     end
@@ -1994,9 +2198,9 @@ function push_fill_vertical_bands_traces(
         push!(  # NOJET
             traces,
             fill_trace(
-                configuration.high.fill_color,
                 [maximum_x, configuration.high.line_offset, configuration.high.line_offset, maximum_x],
-                [minimum_y, minimum_y, maximum_y, maximum_y],
+                [minimum_y, minimum_y, maximum_y, maximum_y];
+                color = configuration.high.fill_color,
             ),
         )
     end
@@ -2007,14 +2211,14 @@ function push_fill_vertical_bands_traces(
         push!(  # NOJET
             traces,
             fill_trace(
-                configuration.middle.fill_color,
                 [
                     configuration.low.line_offset,
                     configuration.high.line_offset,
                     configuration.high.line_offset,
                     configuration.low.line_offset,
                 ],
-                [minimum_y, minimum_y, maximum_y, maximum_y],
+                [minimum_y, minimum_y, maximum_y, maximum_y];
+                color = configuration.middle.fill_color,
             ),
         )
     end
@@ -2034,9 +2238,9 @@ function push_fill_horizontal_bands_traces(
         push!(  # NOJET
             traces,
             fill_trace(
-                configuration.low.fill_color,
                 [minimum_x, minimum_x, maximum_x, maximum_x],
-                [minimum_y, configuration.low.line_offset, configuration.low.line_offset, minimum_y],
+                [minimum_y, configuration.low.line_offset, configuration.low.line_offset, minimum_y];
+                color = configuration.low.fill_color,
             ),
         )
     end
@@ -2045,9 +2249,9 @@ function push_fill_horizontal_bands_traces(
         push!(  # NOJET
             traces,
             fill_trace(
-                configuration.high.fill_color,
                 [minimum_x, minimum_x, maximum_x, maximum_x],
-                [maximum_y, configuration.high.line_offset, configuration.high.line_offset, maximum_y],
+                [maximum_y, configuration.high.line_offset, configuration.high.line_offset, maximum_y];
+                color = configuration.high.fill_color,
             ),
         )
     end
@@ -2058,14 +2262,14 @@ function push_fill_horizontal_bands_traces(
         push!(  # NOJET
             traces,
             fill_trace(
-                configuration.middle.fill_color,
                 [minimum_x, minimum_x, maximum_x, maximum_x],
                 [
                     configuration.low.line_offset,
                     configuration.high.line_offset,
                     configuration.high.line_offset,
                     configuration.low.line_offset,
-                ],
+                ];
+                color = configuration.middle.fill_color,
             ),
         )
     end
@@ -2075,24 +2279,24 @@ end
 
 function push_fill_diagonal_bands_traces(
     traces::Vector{GenericTrace},
-    log_scale::Bool,
     configuration::BandsConfiguration,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real,
+    maximum_y::Real;
+    log_scale::Bool,
 )::Nothing
     if configuration.low.line_offset !== nothing && configuration.low.fill_color !== nothing
         push!(  # NOJET
             traces,
             low_diagonal_trace(
-                configuration.low.fill_color,
-                log_scale,
                 configuration.low.line_offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
-                maximum_y,
+                maximum_y;
+                color = configuration.low.fill_color,
+                log_scale = log_scale,
             ),
         )
     end
@@ -2101,13 +2305,13 @@ function push_fill_diagonal_bands_traces(
         push!(  # NOJET
             traces,
             high_diagonal_trace(
-                configuration.high.fill_color,
-                log_scale,
                 configuration.high.line_offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
-                maximum_y,
+                maximum_y;
+                color = configuration.high.fill_color,
+                log_scale = log_scale,
             ),
         )
     end
@@ -2115,17 +2319,17 @@ function push_fill_diagonal_bands_traces(
     if configuration.high.line_offset !== nothing &&
        configuration.low.line_offset !== nothing &&
        configuration.middle.fill_color !== nothing
-        push!(
+        push!(  # NOJET
             traces,
             middle_diagonal_trace(
-                configuration.middle.fill_color,
-                log_scale,
                 configuration.low.line_offset,
                 configuration.high.line_offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
-                maximum_y,
+                maximum_y;
+                color = configuration.middle.fill_color,
+                log_scale = log_scale,
             ),
         )
     end
@@ -2134,87 +2338,86 @@ function push_fill_diagonal_bands_traces(
 end
 
 function low_diagonal_trace(
-    color::AbstractString,
-    log_scale::Bool,
     offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real,
+    maximum_y::Real;
+    color::AbstractString,
+    log_scale::Bool,
 )::GenericTrace
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
     threshold, increase, decrease = band_operations(log_scale)
     if offset < threshold
         return fill_trace(
-            color,
             [decrease(minimum_xy, offset), maximum_xy, maximum_xy],
-            [minimum_xy, increase(maximum_xy, offset), minimum_xy],
+            [minimum_xy, increase(maximum_xy, offset), minimum_xy];
+            color = color,
         )
     else
         return fill_trace(
-            color,
             [minimum_xy, maximum_xy, maximum_xy, decrease(maximum_xy, offset), minimum_xy],
-            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, increase(minimum_xy, offset)],
+            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, increase(minimum_xy, offset)];
+            color = color,
         )
     end
 end
 
 function high_diagonal_trace(
-    color::AbstractString,
-    log_scale::Bool,
     offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real,
+    maximum_y::Real;
+    color::AbstractString,
+    log_scale::Bool,
 )::GenericTrace
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
     threshold, increase, decrease = band_operations(log_scale)
     if offset < threshold
         return fill_trace(
-            color,
             [minimum_xy, minimum_xy, maximum_xy, maximum_xy, decrease(minimum_xy, offset)],
-            [minimum_xy, maximum_xy, maximum_xy, increase(maximum_xy, offset), minimum_xy],
+            [minimum_xy, maximum_xy, maximum_xy, increase(maximum_xy, offset), minimum_xy];
+            color = color,
         )
     else
         return fill_trace(
-            color,
             [minimum_xy, decrease(maximum_xy, offset), minimum_xy],
-            [increase(minimum_xy, offset), maximum_xy, maximum_xy],
+            [increase(minimum_xy, offset), maximum_xy, maximum_xy];
+            color = color,
         )
     end
 end
 
 function middle_diagonal_trace(
-    color::AbstractString,
-    log_scale::Bool,
     low_offset::Real,
     high_offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real,
+    maximum_y::Real;
+    color::AbstractString,
+    log_scale::Bool,
 )::GenericTrace
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
     threshold, increase, decrease = band_operations(log_scale)
     if high_offset < threshold
         return fill_trace(
-            color,
             [decrease(minimum_xy, high_offset), decrease(minimum_xy, low_offset), maximum_xy, maximum_xy],
-            [minimum_xy, minimum_xy, increase(maximum_xy, low_offset), increase(maximum_xy, high_offset)],
+            [minimum_xy, minimum_xy, increase(maximum_xy, low_offset), increase(maximum_xy, high_offset)];
+            color = color,
         )
     elseif low_offset > threshold
         return fill_trace(
-            color,
             [minimum_xy, minimum_xy, decrease(maximum_xy, high_offset), decrease(maximum_xy, low_offset)],
-            [increase(minimum_xy, low_offset), increase(minimum_xy, high_offset), maximum_xy, maximum_xy],
+            [increase(minimum_xy, low_offset), increase(minimum_xy, high_offset), maximum_xy, maximum_xy];
+            color = color,
         )
     else
         return fill_trace(
-            color,
             [
                 minimum_xy,
                 decrease(minimum_xy, low_offset),
@@ -2230,12 +2433,13 @@ function middle_diagonal_trace(
                 maximum_xy,
                 maximum_xy,
                 increase(minimum_xy, high_offset),
-            ],
+            ];
+            color = color,
         )
     end
 end
 
-function fill_trace(color::AbstractString, xs::AbstractVector{<:Real}, ys::AbstractVector{<:Real})::GenericTrace
+function fill_trace(xs::AbstractVector{<:Real}, ys::AbstractVector{<:Real}; color::AbstractString)::GenericTrace
     return scatter(; x = xs, y = ys, fill = "toself", fillcolor = color, name = "", mode = "none")
 end
 
@@ -2266,7 +2470,7 @@ function border_marker_size(
 end
 
 function points_trace(
-    data::PointsGraphData,
+    data::PointsGraphData;
     color::Maybe{Union{AbstractString, AbstractStringVector, AbstractVector{<:Real}}},
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
     coloraxis::Maybe{AbstractString},
@@ -2309,7 +2513,7 @@ function masked_data(data::AbstractVector, mask::Union{AbstractVector{Bool}, Bit
     return data[mask]  # NOJET
 end
 
-function edge_trace(data::PointsGraphData, index::Int, edges_style::PointsStyleConfiguration)::GenericTrace
+function edge_trace(data::PointsGraphData, edges_style::PointsStyleConfiguration; index::Int)::GenericTrace
     from_point, to_point = data.edges[index]
     return scatter(;
         x = [data.xs[from_point], data.xs[to_point]],
@@ -2369,11 +2573,11 @@ end
 
 function diagonal_line_trace(
     band_region_configuration::BandRegionConfiguration,
-    log_scale::Bool,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real,
+    maximum_y::Real;
+    log_scale::Bool,
 )::GenericTrace
     @assert band_region_configuration.line_offset !== nothing
     @assert band_region_configuration.line_color !== nothing
