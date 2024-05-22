@@ -3,6 +3,7 @@
 ```@docs
 MCGraphs.Renderers
 MCGraphs.Renderers.render
+MCGraphs.Renderers.Figure
 MCGraphs.Renderers.AbstractGraphData
 MCGraphs.Renderers.AbstractGraphConfiguration
 MCGraphs.Renderers.GraphConfiguration

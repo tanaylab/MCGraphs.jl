@@ -199,7 +199,7 @@
 <code class="language-julia hljs">render(
     data::AbstractGraphData,
     configuration::AbstractGraphConfiguration = ...,
-)::Nothing
+)::Figure
 </code>
 </pre>
 <p>Render a graph given its data and configuration. The implementation depends on the specific graph. For each 
@@ -376,6 +376,36 @@
 </td>
 </tr>
 </table>
+<p>This returns a 
+<a href="renderers.html#MCGraphs.Renderers.Figure">
+<code>Figure
+</code>
+</a> which can be displayed directly, or converted to JSON for transfer to other programming languages (Python or R)
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.Figure" href="#MCGraphs.Renderers.Figure">
+<code>MCGraphs.Renderers.Figure
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>The type of a rendered graph. See 
+<a href="renderers.html#MCGraphs.Renderers.render">
+<code>render
+</code>
+</a>.
+</p>
+<p>A figure contains everything needed to display an interactive graph (or generate a static one on disk). It can also be converted to a JSON string for handing it over to a different programming language (e.g., to be used to display the interactive graph in a Python Jupyter notebook, given an appropriate wrapper code).
+</p>
 </div>
 </section>
 </article>
@@ -438,8 +468,6 @@
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct GraphConfiguration &lt;: ObjectWithValidation
-    output_file::Maybe{AbstractString} = nothing
-    show_interactive::Bool = false
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
     template::AbstractString = &quot;simple_white&quot;
@@ -455,20 +483,6 @@ end
 </a> contains a 
 <code>graph
 </code> field of this type.
-</p>
-<p>If 
-<code>output_file
-</code> is specified, it is the path of a file to write the graph into (ending with 
-<code>.png
-</code> or 
-<code>.svg
-</code>). If 
-<code>show_interactive
-</code> is set, then generate an interactive graph (in a Jupyter notebook). One of 
-<code>output_file
-</code> and 
-<code>show_interactive
-</code> must be specified.
 </p>
 <p>The optional 
 <code>width
@@ -1897,6 +1911,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.Figure">
+<code>MCGraphs.Renderers.Figure
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
 <code>MCGraphs.Renderers.GraphConfiguration
 </code>
@@ -2011,7 +2031,7 @@ end
 <hr/>
 <p>This document was generated with 
 <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl
-</a> version 1.4.0. Using Julia version 1.10.0.
+</a> version 1.4.1. Using Julia version 1.10.0.
 </p>
 </section>
 <footer class="modal-card-foot">

@@ -50,6 +50,17 @@ using ..Validations
 using Daf.GenericTypes
 using PlotlyJS
 
+import PlotlyJS.SyncPlot
+
+"""
+The type of a rendered graph. See [`render`](@ref).
+
+A figure contains everything needed to display an interactive graph (or generate a static one on disk). It can also be
+converted to a JSON string for handing it over to a different programming language (e.g., to be used to display the
+interactive graph in a Python Jupyter notebook, given an appropriate wrapper code).
+"""
+Figure = Union{Plot, SyncPlot}
+
 """
 Common abstract base for all complete graph configuration types. See [`render`](@ref).
 """
@@ -71,8 +82,6 @@ The orientation of the values axis in a distribution or bars graph:
 
 """
     @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
-        output_file::Maybe{AbstractString} = nothing
-        show_interactive::Bool = false
         width::Maybe{Int} = nothing
         height::Maybe{Int} = nothing
         template::AbstractString = "simple_white"
@@ -83,10 +92,6 @@ The orientation of the values axis in a distribution or bars graph:
 Generic configuration that applies to any graph. Each complete [`AbstractGraphConfiguration`](@ref) contains a `graph`
 field of this type.
 
-If `output_file` is specified, it is the path of a file to write the graph into (ending with `.png` or `.svg`). If
-`show_interactive` is set, then generate an interactive graph (in a Jupyter notebook). One of `output_file` and
-`show_interactive` must be specified.
-
 The optional `width` and `height` are in pixels, that is, 1/96 of an inch.
 
 By default, `show_grid` and `show_ticks` are set.
@@ -95,8 +100,6 @@ The default `template` is "simple_white" which is the cleanest. The `show_grid` 
 the grid and/or ticks for an even cleaner (but less informative) look.
 """
 @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
-    output_file::Maybe{AbstractString} = nothing
-    show_interactive::Bool = false
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
     template::AbstractString = "simple_white"
@@ -105,10 +108,6 @@ the grid and/or ticks for an even cleaner (but less informative) look.
 end
 
 function Validations.validate_object(configuration::GraphConfiguration)::Maybe{AbstractString}
-    if configuration.output_file === nothing && !configuration.show_interactive
-        return "must specify at least one of: graph.output_file, graph.show_interactive"
-    end
-
     width = configuration.width
     if width !== nothing && width <= 0
         return "non-positive graph width: $(width)"
@@ -347,7 +346,7 @@ const CURVE = 4
     render(
         data::AbstractGraphData,
         configuration::AbstractGraphConfiguration = ...,
-    )::Nothing
+    )::Figure
 
 Render a graph given its data and configuration. The implementation depends on the specific graph. For each
 [`AbstractGraphData`](@ref) there is a matching [`AbstractGraphConfiguration`](@ref) (a default one is provided for the
@@ -364,13 +363,18 @@ Render a graph given its data and configuration. The implementation depends on t
 | [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).     |
 | [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.       |
 | [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.   |
+
+This returns a [`Figure`](@ref) which can be displayed directly, or converted to JSON for transfer to other programming languages
+(Python or R)
 """
 function render(
     data::DistributionGraphData,
     configuration::DistributionGraphConfiguration = DistributionGraphConfiguration(),
-)::Nothing
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
+
     trace = distribution_trace(  # NOJET
         data.values,
         data.name === nothing ? "Trace" : data.name,
@@ -378,16 +382,19 @@ function render(
         nothing,
         configuration,
     )
+
     layout = distribution_layout(data, configuration; has_tick_names = data.name !== nothing, show_legend = false)
     figure = plot(trace, layout)
-    write_graph(figure, configuration.graph)
-    return nothing
+    write_figure_to_file(figure, configuration.graph, output_file)
+
+    return figure
 end
 
 function render(
     data::DistributionsGraphData,
     configuration::DistributionsGraphConfiguration = DistributionsGraphConfiguration(),
-)::Nothing
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     @assert !configuration.overlay "not implemented: overlay"
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -402,6 +409,7 @@ function render(
             configuration,
         ) for index in 1:n_values
     ]
+
     layout = distribution_layout(
         data,
         configuration;
@@ -409,8 +417,9 @@ function render(
         show_legend = configuration.show_legend,
     )
     figure = plot(traces, layout)
-    write_graph(figure, configuration.graph)
-    return nothing
+    write_figure_to_file(figure, configuration.graph, output_file)
+
+    return figure
 end
 
 function distribution_trace(
@@ -678,7 +687,11 @@ function Validations.validate_object(data::LineGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(data::LineGraphData, configuration::LineGraphConfiguration = LineGraphConfiguration())::Nothing
+function render(
+    data::LineGraphData,
+    configuration::LineGraphConfiguration = LineGraphConfiguration(),
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
@@ -717,8 +730,9 @@ function render(data::LineGraphData, configuration::LineGraphConfiguration = Lin
 
     layout = lines_layout(data, configuration; show_legend = false)
     figure = plot(traces, layout)
-    write_graph(figure, configuration.graph)
-    return nothing
+    write_figure_to_file(figure, configuration.graph, output_file)
+
+    return figure
 end
 
 function line_trace(data::LineGraphData, line_style::LineStyleConfiguration)::GenericTrace
@@ -891,7 +905,11 @@ function Validations.validate_object(data::LinesGraphData)::Maybe{AbstractString
     return nothing
 end
 
-function render(data::LinesGraphData, configuration::LinesGraphConfiguration = LinesGraphConfiguration())::Nothing
+function render(
+    data::LinesGraphData,
+    configuration::LinesGraphConfiguration = LinesGraphConfiguration(),
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
     if configuration.stacking == StackPercents || configuration.stacking == StackFractions
@@ -927,8 +945,9 @@ function render(data::LinesGraphData, configuration::LinesGraphConfiguration = L
 
     layout = lines_layout(data, configuration; show_legend = configuration.show_legend)
     figure = plot(traces, layout)
-    write_graph(figure, configuration.graph)
-    return nothing
+    write_figure_to_file(figure, configuration.graph, output_file)
+
+    return figure
 end
 
 function unify_xs(
@@ -1136,14 +1155,17 @@ function Validations.validate_object(data::CdfGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(data::CdfGraphData, configuration::CdfGraphConfiguration = CdfGraphConfiguration())::Nothing
+function render(
+    data::CdfGraphData,
+    configuration::CdfGraphConfiguration = CdfGraphConfiguration(),
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
     line_data = cdf_data_as_line_data(data, configuration)
     line_configuration = cdf_configuration_as_line_configuration(configuration)
-    render(line_data, line_configuration)
-    return nothing
+    return render(line_data, line_configuration, output_file)
 end
 
 function cdf_data_as_line_data(data::CdfGraphData, configuration::CdfGraphConfiguration)::LineGraphData
@@ -1287,14 +1309,17 @@ function Validations.validate_object(data::CdfsGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(data::CdfsGraphData, configuration::CdfsGraphConfiguration = CdfsGraphConfiguration())::Nothing
+function render(
+    data::CdfsGraphData,
+    configuration::CdfsGraphConfiguration = CdfsGraphConfiguration(),
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
     lines_data = cdfs_data_as_lines_data(data, configuration)
     lines_configuration = cdfs_configuration_as_lines_configuration(configuration)
-    render(lines_data, lines_configuration)
-    return nothing
+    return render(lines_data, lines_configuration, output_file)
 end
 
 function cdfs_data_as_lines_data(data::CdfsGraphData, configuration::CdfsGraphConfiguration)::LinesGraphData
@@ -1448,7 +1473,11 @@ function Validations.validate_object(data::BarGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(data::BarGraphData, configuration::BarGraphConfiguration)::Nothing
+function render(
+    data::BarGraphData,
+    configuration::BarGraphConfiguration = BarGraphConfiguration(),
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
@@ -1460,11 +1489,12 @@ function render(data::BarGraphData, configuration::BarGraphConfiguration)::Nothi
         hover = data.hovers,
         names = data.names,
     )
+
     layout = bar_layout(data, configuration; has_tick_names = data.names !== nothing, show_legend = false)
     figure = plot(trace, layout)
-    write_graph(figure, configuration.graph)
+    write_figure_to_file(figure, configuration.graph, output_file)
 
-    return nothing
+    return figure
 end
 
 """
@@ -1577,7 +1607,11 @@ function Validations.validate_object(data::BarsGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(data::BarsGraphData, configuration::BarsGraphConfiguration)::Nothing
+function render(
+    data::BarsGraphData,
+    configuration::BarsGraphConfiguration = BarsGraphConfiguration(),
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
@@ -1609,6 +1643,7 @@ function render(data::BarsGraphData, configuration::BarsGraphConfiguration)::Not
             ),
         )
     end
+
     layout = bar_layout(
         data,
         configuration;
@@ -1617,9 +1652,9 @@ function render(data::BarsGraphData, configuration::BarsGraphConfiguration)::Not
         stacked = configuration.stacking !== nothing,
     )
     figure = plot(traces, layout)
-    write_graph(figure, configuration.graph)
+    write_figure_to_file(figure, configuration.graph, output_file)
 
-    return nothing
+    return figure
 end
 
 function stacked_values(stacking::Stacking, values::T)::T where {(T <: AbstractVector{<:AbstractVector{<:Real}})}
@@ -2000,7 +2035,11 @@ function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractStrin
     return nothing
 end
 
-function render(data::PointsGraphData, configuration::PointsGraphConfiguration = PointsGraphConfiguration())::Nothing
+function render(
+    data::PointsGraphData,
+    configuration::PointsGraphConfiguration = PointsGraphConfiguration(),
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
     if configuration.x_axis.log_scale
@@ -2185,9 +2224,9 @@ function render(data::PointsGraphData, configuration::PointsGraphConfiguration =
 
     layout = points_layout(data, configuration)
     figure = plot(traces, layout)
-    write_graph(figure, configuration.graph)
+    write_figure_to_file(figure, configuration.graph, output_file)
 
-    return nothing
+    return figure
 end
 
 function push_fill_vertical_bands_traces(
@@ -2723,13 +2762,12 @@ function highest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:Abstr
     return maximum([value for (value, _) in color_scale])
 end
 
-function write_graph(figure, configuration::GraphConfiguration)::Nothing
-    output_file = configuration.output_file
-    if output_file !== nothing
-        savefig(figure, output_file; height = configuration.height, width = configuration.width)  # NOJET
-    else
-        @assert false
-    end
+function write_figure_to_file(::Figure, ::GraphConfiguration, ::Nothing)::Nothing  # untested
+    return nothing
+end
+
+function write_figure_to_file(figure::Figure, configuration::GraphConfiguration, output_file::AbstractString)::Nothing
+    savefig(figure, output_file; height = configuration.height, width = configuration.width)  # NOJET
     return nothing
 end
 

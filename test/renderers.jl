@@ -53,8 +53,7 @@ function Base.:(==)(left_file::ResultFile, right_file::ResultFile)::Bool
 end
 
 function test_svg(data::AbstractGraphData, configuration::AbstractGraphConfiguration, path::AbstractString)::Nothing
-    configuration.graph.output_file = "actual.svg"
-    render(data, configuration)
+    render(data, configuration, "actual.svg")
     actual_svg = open("actual.svg", "r") do file
         return read(file, String)
     end
@@ -79,8 +78,7 @@ function test_svg(data::AbstractGraphData, configuration::AbstractGraphConfigura
 end
 
 function test_html(data::AbstractGraphData, configuration::AbstractGraphConfiguration, path::AbstractString)::Nothing
-    configuration.graph.output_file = "actual.html"
-    render(data, configuration)
+    render(data, configuration, "actual.html")
     actual_html = open("actual.html", "r") do file
         return read(file, String)
     end
@@ -148,12 +146,6 @@ nested_test("renderers") do
         )
 
         nested_test("invalid") do
-            nested_test("!output_file") do
-                @test_throws "must specify at least one of: graph.output_file, graph.show_interactive" render(data)
-            end
-
-            configuration.graph.show_interactive = true
-
             nested_test("!style") do
                 configuration.style.show_box = false
                 @test_throws "must specify at least one of: distribution style.show_box, style.show_violin, style.show_curve" render(
@@ -355,8 +347,6 @@ nested_test("renderers") do
         )
 
         nested_test("invalid") do
-            configuration.graph.show_interactive = true
-
             nested_test("!values") do
                 empty!(data.values)
                 @test_throws "empty values vector" render(data, configuration)
@@ -434,8 +424,6 @@ nested_test("renderers") do
         data = LineGraphData(; xs = [0.0, 1.0, 2.0], ys = [-0.2, 1.2, 1.8])
 
         nested_test("invalid") do
-            configuration.graph.show_interactive = true
-
             nested_test("!line_width") do
                 configuration.style.line_width = 0
                 @test_throws "non-positive line_width: 0" render(data, configuration)
@@ -561,8 +549,6 @@ nested_test("renderers") do
         end
 
         nested_test("invalid") do
-            configuration.graph.show_interactive = true
-
             nested_test("!lines") do
                 empty!(data.xs)
                 empty!(data.ys)
@@ -766,7 +752,6 @@ nested_test("renderers") do
         end
 
         nested_test("~values") do
-            configuration.graph.show_interactive = true
             empty!(data.values)
             @test_throws "too few values: 0" render(data, configuration)
         end
@@ -820,8 +805,6 @@ nested_test("renderers") do
         end
 
         nested_test("invalid") do
-            configuration.graph.show_interactive = true
-
             nested_test("~values") do
                 empty!(data.values)
                 @test_throws "empty values vector" render(data, configuration)
@@ -866,8 +849,6 @@ nested_test("renderers") do
         end
 
         nested_test("invalid") do
-            configuration.graph.show_interactive = true
-
             nested_test("!bar_gap") do
                 configuration.bar_gap = -1
                 @test_throws "non-positive bar_gap: -1" render(data, configuration)
@@ -971,8 +952,6 @@ nested_test("renderers") do
         end
 
         nested_test("invalid") do
-            configuration.graph.show_interactive = true
-
             nested_test("!values") do
                 empty!(data.values)
                 @test_throws "empty values vector" render(data, configuration)
@@ -1130,8 +1109,6 @@ nested_test("renderers") do
         end
 
         nested_test("invalid") do
-            configuration.graph.show_interactive = true
-
             nested_test("!size") do
                 configuration.style.size = 0
                 @test_throws "non-positive points style.size: 0" render(data, configuration)
@@ -1223,8 +1200,6 @@ nested_test("renderers") do
             configuration.y_axis.log_scale = true
 
             nested_test("invalid") do
-                configuration.graph.show_interactive = true
-
                 nested_test("!minimum") do
                     configuration.x_axis.minimum = 0.0
                     @test_throws "non-positive x log axis minimum: 0.0" render(data, configuration)
@@ -1264,8 +1239,6 @@ nested_test("renderers") do
                 end
 
                 nested_test("invalid") do
-                    configuration.graph.show_interactive = true
-
                     nested_test("!line_offset") do
                         configuration.x_axis.log_scale = true
                         configuration.y_axis.log_scale = true
@@ -1329,8 +1302,6 @@ nested_test("renderers") do
         end
 
         nested_test("invalid") do
-            configuration.graph.show_interactive = true
-
             nested_test("!low") do
                 configuration.diagonal_bands.middle.line_offset = 0
                 configuration.diagonal_bands.low.line_offset = 0.1
@@ -1474,7 +1445,6 @@ nested_test("renderers") do
             end
 
             nested_test("!legend") do
-                configuration.graph.show_interactive = true
                 configuration.style.show_scale = true
                 @test_throws "explicit data.colors specified for points style.show_scale" render(data, configuration)
             end
@@ -1490,7 +1460,6 @@ nested_test("renderers") do
             end
 
             nested_test("!reversed") do
-                configuration.graph.show_interactive = true
                 configuration.style.reverse_scale = true
                 @test_throws "reversed categorical points style.color_scale" render(data, configuration)
             end
@@ -1513,8 +1482,6 @@ nested_test("renderers") do
             end
 
             nested_test("invalid") do
-                configuration.graph.show_interactive = true
-
                 nested_test("!colorscale") do
                     configuration.style.color_scale = Vector{Tuple{Real, String}}()
                     @test_throws "empty points style.color_scale" render(data, configuration)
@@ -1623,7 +1590,6 @@ nested_test("renderers") do
                 end
 
                 nested_test("!legend") do
-                    configuration.graph.show_interactive = true
                     configuration.border_style.show_scale = true
                     @test_throws "no data.border_colors specified for points border_style.show_scale" render(
                         data,
@@ -1647,7 +1613,6 @@ nested_test("renderers") do
                 end
 
                 nested_test("!legend") do
-                    configuration.graph.show_interactive = true
                     configuration.border_style.show_scale = true
                     @test_throws "explicit data.border_colors specified for points border_style.show_scale" render(
                         data,
@@ -1736,8 +1701,6 @@ nested_test("renderers") do
             end
 
             nested_test("invalid") do
-                configuration.graph.show_interactive = true
-
                 nested_test("!from") do
                     data.edges[1] = (-1, 2)
                     @test_throws "edge#1 from invalid point: -1" render(data, configuration)
