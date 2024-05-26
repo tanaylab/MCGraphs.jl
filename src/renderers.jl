@@ -1772,14 +1772,17 @@ end
             AbstractVector{<:Tuple{<:Real, <:AbstractString}},
             AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         }} = nothing
-        reverse_scale::Bool = false
-        show_scale::Bool = false
+        log_color_scale_regularization::Maybe{AbstractFloat} = nothing
+        reverse_color_scale::Bool = false
+        show_color_scale::Bool = false
     end
 
 Configure points in a graph. By default, the point `size` and `color` is chosen automatically (when this is applied to
 edges, the `size` is the width of the line). You can also override this by specifying sizes and colors in the
-[`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale` will be used instead; you
-can set `reverse_scale` to reverse it. You need to explicitly set `show_scale` to show its legend.
+[`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale` will be used instead; if
+so, if `log_color_scale_regularization` is set, then the values are converted to log (base 10) of the value, and if the
+`color_scale` is named, `reverse_color_scale` will reverse the colors order in it. You need to explicitly set
+`show_color_scale` to show its legend.
 
 The `color_scale` can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the
 values are numbers, the scale is continuous; if they are strings, this is a categorical scale. A categorical scale can't
@@ -1795,8 +1798,9 @@ be reversed.
             AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
         },
     } = nothing
-    reverse_scale::Bool = false
-    show_scale::Bool = false
+    log_color_scale_regularization::Maybe{AbstractFloat} = nothing
+    reverse_color_scale::Bool = false
+    show_color_scale::Bool = false
 end
 
 function Validations.validate_object(
@@ -1806,6 +1810,10 @@ function Validations.validate_object(
     size = configuration.size
     if size !== nothing && size <= 0
         return "non-positive $(of_what) style.size: $(size)"
+    end
+    log_color_scale_regularization = configuration.log_color_scale_regularization
+    if log_color_scale_regularization !== nothing && log_color_scale_regularization < 0
+        return "negative log_color_scale_regularization: $(log_color_scale_regularization)"
     end
     color_scale = configuration.color_scale
     if color_scale isa AbstractVector
@@ -1818,7 +1826,11 @@ function Validations.validate_object(
             if cmin == cmax
                 return "single $(of_what) style.color_scale value: $(cmax)"
             end
-        elseif configuration.reverse_scale
+            if log_color_scale_regularization !== nothing && cmin + log_color_scale_regularization <= 0
+                index = argmin(color_scale)
+                return "non-positive log scale color#$(index): $(cmin + log_color_scale_regularization)"
+            end
+        elseif configuration.reverse_color_scale
             return "reversed categorical $(of_what) style.color_scale"
         end
     end
@@ -1832,7 +1844,7 @@ end
         y_axis::AxisConfiguration = AxisConfiguration()
         style::PointsStyleConfiguration = PointsStyleConfiguration()
         border_style::PointsStyleConfiguration = PointsStyleConfiguration()
-        edges_style::PointsConfiguration = PointsStyleConfiguration()
+        edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
         diagonal_bands::BandsConfiguration = BandsConfiguration()
@@ -1851,7 +1863,7 @@ This allows displaying some additional data per point.
 !!! note
 
     There is no `show_legend` for a [`GraphConfiguration`](@ref) of a points graph. Instead you probably want to set the
-    `show_scale` of the `style` (and/or of the `border_style` and/or `edges_style`). In addition, the color scale
+    `show_color_scale` of the `style` (and/or of the `border_style` and/or `edges_style`). In addition, the color scale
     options of the `edges_style` must not be set, as the `edges_colors` of [`PointsGraphData`](@ref) is restricted to
     explicit colors.
 """
@@ -1869,8 +1881,8 @@ end
 
 function Validations.validate_object(configuration::PointsGraphConfiguration)::Maybe{AbstractString}
     @assert configuration.edges_style.color_scale === nothing "not implemented: points edges_style color_scale"
-    @assert !configuration.edges_style.reverse_scale "not implemented: points edges_style reverse_scale"
-    @assert !configuration.edges_style.show_scale "not implemented: points edges_style show_scale"
+    @assert !configuration.edges_style.reverse_color_scale "not implemented: points edges_style reverse_color_scale"
+    @assert !configuration.edges_style.show_color_scale "not implemented: points edges_style show_color_scale"
 
     message = validate_object(configuration.graph)
     if message === nothing
@@ -1941,8 +1953,8 @@ be of the same size. The `colors` can be either color names or a numeric value; 
 The `border_colors` and `border_sizes` can be used to display additional data per point. The border size is in addition
 to the point size.
 
-The `scale_title` and `border_scale_title` are only used if `show_scale` is set for the relevant color scales. You can't
-specify `show_scale` if there is no `colors` data or if the `colors` contain explicit color names.
+The `scale_title` and `border_scale_title` are only used if `show_color_scale` is set for the relevant color scales. You
+can't specify `show_color_scale` if there is no `colors` data or if the `colors` contain explicit color names.
 
 It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
 [`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
@@ -2060,22 +2072,36 @@ function render(
             "categorical borders_style.color_scale for non-string points data.border_colors"
         )
     end
-    if configuration.style.show_scale
-        @assert data.colors !== nothing "no data.colors specified for points style.show_scale"
+    if configuration.style.show_color_scale
+        @assert data.colors !== nothing "no data.colors specified for points style.show_color_scale"
         @assert !(data.colors isa AbstractStringVector) ||
                 configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.colors specified for points style.show_scale"
+            "explicit data.colors specified for points style.show_color_scale"
         )
     end
     if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         @assert data.border_colors isa AbstractStringVector "categorical color_scale for non-string points border_colors data"
     end
-    if configuration.border_style.show_scale
-        @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_scale"
+    if configuration.border_style.show_color_scale
+        @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_color_scale"
         @assert !(data.border_colors isa AbstractStringVector) ||
                 configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.border_colors specified for points border_style.show_scale"
+            "explicit data.border_colors specified for points border_style.show_color_scale"
         )
+    end
+    if configuration.style.log_color_scale_regularization !== nothing
+        colors = data.colors
+        @assert colors isa AbstractVector{<:Real} "non-real colors with log scale"
+        index = argmin(colors)
+        minimal_color = colors[index] + configuration.style.log_color_scale_regularization
+        @assert minimal_color > 0 "non-positive log color#$(index): $(minimal_color)"
+    end
+    if configuration.border_style.log_color_scale_regularization !== nothing
+        border_colors = data.border_colors
+        @assert border_colors isa AbstractVector{<:Real} "non-real border colors with log scale"
+        index = argmin(border_colors)
+        minimal_color = border_colors[index] + configuration.style.log_color_scale_regularization
+        @assert minimal_color > 0 "non-positive log border color#$(index): $(minimal_color)"
     end
 
     traces = Vector{GenericTrace}()
@@ -2131,11 +2157,11 @@ function render(
             end
         else
             marker_size = border_marker_size(data, configuration)
-            push!(
+            push!(  # NOJET
                 traces,
                 points_trace(
                     data;
-                    color = data.border_colors,
+                    color = fix_colors(data.border_colors, configuration.border_style.log_color_scale_regularization),
                     marker_size = marker_size,
                     coloraxis = "coloraxis2",
                     points_style = configuration.border_style,
@@ -2170,11 +2196,11 @@ function render(
             end
         end
     else
-        push!(
+        push!(  # NOJET
             traces,
             points_trace(
                 data;
-                color = data.colors,
+                color = fix_colors(data.colors, configuration.style.log_color_scale_regularization),
                 marker_size = data.sizes !== nothing ? data.sizes : configuration.style.size,
                 coloraxis = "coloraxis",
                 points_style = configuration.style,
@@ -2539,20 +2565,21 @@ function points_trace(
         y = masked_data(data.ys, mask),
         marker_size = masked_data(marker_size, mask),
         marker_color = color !== nothing ? masked_data(color, mask) : points_style.color,
-        marker_colorscale = if points_style.color_scale isa AbstractVector
+        marker_colorscale = if points_style.color_scale isa AbstractVector ||
+                               points_style.log_color_scale_regularization !== nothing
             nothing
         else
             points_style.color_scale
         end,
         marker_coloraxis = coloraxis,
-        marker_showscale = points_style.show_scale &&
+        marker_showscale = points_style.show_color_scale &&
                            !(points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}),
-        marker_reversescale = points_style.reverse_scale,
-        showlegend = points_style.show_scale &&
+        marker_reversescale = points_style.reverse_color_scale,
+        showlegend = points_style.show_color_scale &&
                      points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
         legendgroup = legend_group,
         legendgrouptitle_text = scale_title,
-        name = name !== nothing ? name : points_style.show_scale ? "Trace" : "",
+        name = name !== nothing ? name : points_style.show_color_scale ? "Trace" : "",
         text = data.hovers,
         hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
@@ -2669,6 +2696,8 @@ function band_operations(log_scale::Bool)::Tuple{Real, Function, Function}
 end
 
 function points_layout(data::PointsGraphData, configuration::PointsGraphConfiguration)::Layout
+    color_tickvals, color_ticktext = log_color_scale_ticks(data.colors, configuration.style)
+    border_color_tickvals, border_color_ticktext = log_color_scale_ticks(data.border_colors, configuration.border_style)
     return Layout(;  # NOJET
         title = data.graph_title,
         template = configuration.graph.template,
@@ -2683,83 +2712,214 @@ function points_layout(data::PointsGraphData, configuration::PointsGraphConfigur
         yaxis_range = (configuration.y_axis.minimum, configuration.y_axis.maximum),
         yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
         showlegend = (
-            configuration.style.show_scale &&
+            configuration.style.show_color_scale &&
             configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ) || (
-            configuration.border_style.show_scale &&
+            configuration.border_style.show_color_scale &&
             configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        legend_x = if configuration.style.show_scale &&
-                      configuration.border_style.show_scale &&
+        legend_x = if configuration.style.show_color_scale &&
+                      configuration.border_style.show_color_scale &&
                       configuration.border_style.color_scale isa
                       AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
             1.2
         else
             nothing
         end,
-        coloraxis2_colorbar_x = if (configuration.border_style.show_scale && configuration.style.show_scale)
+        coloraxis2_colorbar_x = if (
+            configuration.border_style.show_color_scale && configuration.style.show_color_scale
+        )
             1.2
         else
-            nothing
+            nothing  # NOJET
         end,
-        coloraxis_showscale = configuration.style.show_scale && !(
+        coloraxis_showscale = configuration.style.show_color_scale && !(
             configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        coloraxis_reversescale = configuration.style.reverse_scale,
-        coloraxis_colorscale = normalized_color_scale(configuration.style.color_scale),
-        coloraxis_cmin = lowest_color_scale(configuration.style.color_scale),
-        coloraxis_cmax = highest_color_scale(configuration.style.color_scale),
+        coloraxis_reversescale = configuration.style.reverse_color_scale,
+        coloraxis_colorscale = normalized_color_scale(
+            configuration.style.color_scale,
+            configuration.style.log_color_scale_regularization,
+        ),
+        coloraxis_cmin = lowest_color_scale(
+            configuration.style.color_scale,
+            configuration.style.log_color_scale_regularization,
+        ),
+        coloraxis_cmax = highest_color_scale(
+            configuration.style.color_scale,
+            configuration.style.log_color_scale_regularization,
+        ),
         coloraxis_colorbar_title_text = data.scale_title,
+        coloraxis_colorbar_tickvals = color_tickvals,
+        coloraxis_colorbar_ticktext = color_ticktext,
         coloraxis2_showscale = (data.border_colors !== nothing || data.border_sizes !== nothing) &&
-                               configuration.border_style.show_scale &&
+                               configuration.border_style.show_color_scale &&
                                !(
                                    configuration.border_style.color_scale isa
                                    AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
                                ),
-        coloraxis2_reversescale = configuration.border_style.reverse_scale,
-        coloraxis2_colorscale = normalized_color_scale(configuration.border_style.color_scale),
-        coloraxis2_cmin = lowest_color_scale(configuration.border_style.color_scale),
-        coloraxis2_cmax = highest_color_scale(configuration.border_style.color_scale),
+        coloraxis2_reversescale = configuration.border_style.reverse_color_scale,
+        coloraxis2_colorscale = normalized_color_scale(
+            configuration.border_style.color_scale,
+            configuration.border_style.log_color_scale_regularization,
+        ),
+        coloraxis2_cmin = lowest_color_scale(
+            configuration.border_style.color_scale,
+            configuration.border_style.log_color_scale_regularization,
+        ),
+        coloraxis2_cmax = highest_color_scale(
+            configuration.border_style.color_scale,
+            configuration.border_style.log_color_scale_regularization,
+        ),
         coloraxis2_colorbar_title_text = data.border_scale_title,
+        coloraxis2_colorbar_tickvals = border_color_tickvals,
+        coloraxis2_colorbar_ticktext = border_color_ticktext,
     )
 end
 
-function normalized_color_scale(color_scale::Maybe{AbstractString})::Maybe{AbstractString}
+function fix_colors(
+    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}},
+    ::Nothing,
+)::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}}
+    return colors
+end
+
+function fix_colors(
+    colors::AbstractVector{<:Real},
+    log_color_scale_regularization::AbstractFloat,
+)::AbstractVector{<:Real}
+    return log10.(colors .+ log_color_scale_regularization)
+end
+
+function log_color_scale_ticks(
+    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}},
+    points_style::PointsStyleConfiguration,
+)::Tuple{Maybe{Vector{Float32}}, Maybe{Vector{String}}}
+    log_color_scale_regularization = points_style.log_color_scale_regularization
+    if log_color_scale_regularization === nothing || !points_style.show_color_scale
+        return nothing, nothing
+    else
+        @assert colors isa AbstractVector{<:Real}
+        cmin = lowest_color_scale(points_style.color_scale, log_color_scale_regularization)  # NOJET
+        if cmin === nothing
+            cmin = log10(minimum(colors) + log_color_scale_regularization)
+        end
+        cmax = highest_color_scale(points_style.color_scale, log_color_scale_regularization)  # NOJET
+        if cmax === nothing
+            cmax = log10(maximum(colors) + log_color_scale_regularization)
+        end
+        int_cmin = Int(floor(cmin))
+        int_cmax = Int(ceil(cmax))
+        if int_cmin == int_cmax
+            return nothing, nothing  # untested
+        end
+        tickvals = Vector{Float32}(undef, (int_cmax - int_cmin) * 3 + 1)
+        tick_index = 1
+        for at in int_cmin:(int_cmax - 1)
+            tickvals[tick_index] = at
+            tickvals[tick_index + 1] = at + log10(2.0)
+            tickvals[tick_index + 2] = at + log10(5.0)
+            tick_index += 3
+        end
+        first_int_index = 1
+        tickvals[tick_index] = int_cmax
+        while length(tickvals) > 1 && tickvals[1] < cmin
+            @views tickvals = tickvals[2:end]
+            first_int_index = (first_int_index + 2) % 3
+        end
+        while length(tickvals) > 1 && tickvals[end] > cmax
+            @views tickvals = tickvals[1:(end - 1)]
+        end
+        return tickvals, log_tick_text_for_vals(tickvals, first_int_index)
+    end
+end
+
+function log_tick_text_for_vals(tickvals::AbstractVector{Float32}, first_int_index::Int)::Vector{String}
+    show_middle_ticks = length(tickvals) <= 7
+    ticktext = fill("", length(tickvals))
+    for (index, tickval) in enumerate(tickvals)
+        offset = (3 + index - first_int_index) % 3
+        if offset == 0
+            ticktext[index] = "1e$(Int(round(tickval)))"
+        elseif !show_middle_ticks
+            ticktext[index] = ""
+        elseif offset == 1
+            ticktext[index] = "2e$(Int(floor(tickval)))"
+        elseif offset == 2
+            ticktext[index] = "5e$(Int(floor(tickval)))"
+        else
+            @assert false
+        end
+    end
+    return ticktext
+end
+
+function normalized_color_scale(color_scale::Maybe{AbstractString}, ::Maybe{<:AbstractFloat})::Maybe{AbstractString}
     return color_scale
 end
 
 function normalized_color_scale(
     color_scale::AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+    ::Nothing,
 )::AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
     return color_scale
 end
 
 function normalized_color_scale(
     color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+    ::Nothing,
 )::AbstractVector{<:Tuple{<:Real, <:AbstractString}}
-    cmin = lowest_color_scale(color_scale)
-    cmax = highest_color_scale(color_scale)
+    cmin = lowest_color_scale(color_scale, nothing)
+    cmax = highest_color_scale(color_scale, nothing)
     return [((value - cmin) / (cmax - cmin), color) for (value, color) in color_scale]
+end
+
+function normalized_color_scale(
+    color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+    log_color_scale_regularization::AbstractFloat,
+)::AbstractVector{<:Tuple{<:Real, <:AbstractString}}
+    cmin = lowest_color_scale(color_scale, log_color_scale_regularization)
+    cmax = highest_color_scale(color_scale, log_color_scale_regularization)
+    return [
+        ((log10(value + log_color_scale_regularization) - cmin) / (cmax - cmin), color) for
+        (value, color) in color_scale
+    ]
 end
 
 function lowest_color_scale(
     ::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}}},
+    ::Maybe{<:Real},
 )::Nothing
     return nothing
 end
 
-function lowest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}})::Real
+function lowest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}}, ::Nothing)::Real
     return minimum([value for (value, _) in color_scale])
+end
+
+function lowest_color_scale(
+    color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+    log_color_scale_regularization::Real,
+)::Real
+    return log10(minimum([value for (value, _) in color_scale]) + log_color_scale_regularization)
 end
 
 function highest_color_scale(
     ::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}}},
+    ::Maybe{<:Real},
 )::Nothing
     return nothing
 end
 
-function highest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}})::Real
+function highest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}}, ::Nothing)::Real
     return maximum([value for (value, _) in color_scale])
+end
+
+function highest_color_scale(
+    color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+    log_color_scale_regularization::Real,
+)::Real
+    return log10(maximum([value for (value, _) in color_scale]) + log_color_scale_regularization)
 end
 
 function write_figure_to_file(::Figure, ::GraphConfiguration, ::Nothing)::Nothing  # untested

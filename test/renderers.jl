@@ -25,6 +25,24 @@ function normalize_ids(
     return replace(text, replacements...)
 end
 
+function strip_nulls(text::AbstractString)::AbstractString
+    while true
+        next_text = replace(
+            text,
+            r",\"[^\"]+\":null" => "",
+            r"{\"[^\"]+\":null," => "{",
+            r"{\"[^\"]+\":null}" => "{}",
+            r",\"[^\"]+\":{}" => "",
+            r"{\"[^\"]+\":{}," => "{",
+            r"{\"[^\"]+\":{}}" => "{}",
+        )
+        if next_text == text
+            return next_text
+        end
+        text = next_text
+    end
+end
+
 function normalize_svg(svg::AbstractString)::AbstractString
     svg = normalize_ids(svg, "id-", CSS_ID_REGEX, "")
     svg = normalize_ids(svg, "class-", CLASS_REGEX, "")
@@ -35,6 +53,7 @@ end
 
 function normalize_html(html::AbstractString)::AbstractString
     html = normalize_ids(html, "id-", HTML_ID_REGEX, "")
+    html = strip_nulls(html)
     return html
 end
 
@@ -1128,8 +1147,8 @@ nested_test("renderers") do
             end
 
             nested_test("!colors") do
-                configuration.style.show_scale = true
-                @test_throws "no data.colors specified for points style.show_scale" render(data, configuration)
+                configuration.style.show_color_scale = true
+                @test_throws "no data.colors specified for points style.show_color_scale" render(data, configuration)
             end
 
             nested_test("~colors") do
@@ -1141,8 +1160,8 @@ nested_test("renderers") do
             end
 
             nested_test("!border_colors") do
-                configuration.border_style.show_scale = true
-                @test_throws "no data.border_colors specified for points border_style.show_scale" render(
+                configuration.border_style.show_color_scale = true
+                @test_throws "no data.border_colors specified for points border_style.show_color_scale" render(
                     data,
                     configuration,
                 )
@@ -1445,8 +1464,11 @@ nested_test("renderers") do
             end
 
             nested_test("!legend") do
-                configuration.style.show_scale = true
-                @test_throws "explicit data.colors specified for points style.show_scale" render(data, configuration)
+                configuration.style.show_color_scale = true
+                @test_throws "explicit data.colors specified for points style.show_color_scale" render(
+                    data,
+                    configuration,
+                )
             end
         end
 
@@ -1460,12 +1482,12 @@ nested_test("renderers") do
             end
 
             nested_test("!reversed") do
-                configuration.style.reverse_scale = true
+                configuration.style.reverse_color_scale = true
                 @test_throws "reversed categorical points style.color_scale" render(data, configuration)
             end
 
             nested_test("legend") do
-                configuration.style.show_scale = true
+                configuration.style.show_color_scale = true
                 test_legend(data, configuration, "points.categorical") do
                     return data.scale_title = "Points"
                 end
@@ -1476,65 +1498,158 @@ nested_test("renderers") do
         nested_test("continuous") do
             data.colors = [0.0, 1.0, 2.0]
 
-            nested_test("()") do
-                test_html(data, configuration, "points.continuous.html")
-                return nothing
-            end
-
-            nested_test("invalid") do
-                nested_test("!colorscale") do
-                    configuration.style.color_scale = Vector{Tuple{Real, String}}()
-                    @test_throws "empty points style.color_scale" render(data, configuration)
-                    return nothing
-                end
-
-                nested_test("~colorscale") do
-                    configuration.style.color_scale = [(-1.0, "blue"), (-1.0, "red")]
-                    @test_throws "single points style.color_scale value: -1.0" render(data, configuration)
-                    return nothing
-                end
-            end
-
-            nested_test("viridis") do
-                configuration.style.color_scale = "Viridis"
-                test_html(data, configuration, "points.continuous.viridis.html")
-                return nothing
-            end
-
-            nested_test("reversed") do
-                configuration.style.reverse_scale = true
-                test_html(data, configuration, "points.continuous.reversed.html")
-                return nothing
-            end
-
-            nested_test("legend") do
-                configuration.style.show_scale = true
-                test_legend(data, configuration, "points.continuous") do
-                    return data.scale_title = "Points"
-                end
-                return nothing
-            end
-
-            nested_test("gradient") do
-                configuration.style.color_scale = [(-1.0, "blue"), (3.0, "red")]
-
+            nested_test("linear") do
                 nested_test("()") do
-                    test_html(data, configuration, "points.continuous.gradient.html")
+                    test_html(data, configuration, "points.continuous.html")
+                    return nothing
+                end
+
+                nested_test("invalid") do
+                    nested_test("!colorscale") do
+                        configuration.style.color_scale = Vector{Tuple{Real, String}}()
+                        @test_throws "empty points style.color_scale" render(data, configuration)
+                        return nothing
+                    end
+
+                    nested_test("~colorscale") do
+                        configuration.style.color_scale = [(-1.0, "blue"), (-1.0, "red")]
+                        @test_throws "single points style.color_scale value: -1.0" render(data, configuration)
+                        return nothing
+                    end
+                end
+
+                nested_test("viridis") do
+                    configuration.style.color_scale = "Viridis"
+                    test_html(data, configuration, "points.continuous.viridis.html")
                     return nothing
                 end
 
                 nested_test("reversed") do
-                    configuration.style.reverse_scale = true
-                    test_html(data, configuration, "points.continuous.gradient.reversed.html")
+                    configuration.style.reverse_color_scale = true
+                    test_html(data, configuration, "points.continuous.reversed.html")
                     return nothing
                 end
 
                 nested_test("legend") do
-                    configuration.style.show_scale = true
-                    test_legend(data, configuration, "points.gradient") do
+                    configuration.style.show_color_scale = true
+                    test_legend(data, configuration, "points.continuous") do
                         return data.scale_title = "Points"
                     end
                     return nothing
+                end
+
+                nested_test("gradient") do
+                    configuration.style.color_scale = [(-1.0, "blue"), (3.0, "red")]
+
+                    nested_test("()") do
+                        test_html(data, configuration, "points.continuous.gradient.html")
+                        return nothing
+                    end
+
+                    nested_test("reversed") do
+                        configuration.style.reverse_color_scale = true
+                        test_html(data, configuration, "points.continuous.gradient.reversed.html")
+                        return nothing
+                    end
+
+                    nested_test("legend") do
+                        configuration.style.show_color_scale = true
+                        test_legend(data, configuration, "points.gradient") do
+                            return data.scale_title = "Points"
+                        end
+                        return nothing
+                    end
+                end
+            end
+
+            nested_test("log") do
+                data.colors = [0.0, 5.0, 10.0]
+                configuration.style.log_color_scale_regularization = 1.0
+
+                nested_test("invalid") do
+                    nested_test("!log_color_scale_regularization") do
+                        configuration.style.log_color_scale_regularization = -1.0
+                        @test_throws "negative log_color_scale_regularization: -1.0" render(data, configuration)
+                    end
+
+                    nested_test("!cmin") do
+                        configuration.style.color_scale = [(-1.0, "blue"), (1.0, "red")]
+                        @test_throws "non-positive log scale color#1: 0.0" render(data, configuration)
+                    end
+
+                    nested_test("!colors") do
+                        data.colors[1] = -2.0
+                        @test_throws "non-positive log color#1: -1.0" render(data, configuration)
+                    end
+                end
+
+                nested_test("()") do
+                    test_html(data, configuration, "points.log.continuous.html")
+                    return nothing
+                end
+
+                nested_test("viridis") do
+                    configuration.style.color_scale = "Viridis"
+                    test_html(data, configuration, "points.log.continuous.viridis.html")
+                    return nothing
+                end
+
+                nested_test("reversed") do
+                    configuration.style.reverse_color_scale = true
+                    test_html(data, configuration, "points.log.continuous.reversed.html")
+                    return nothing
+                end
+
+                nested_test("legend") do
+                    nested_test("small") do
+                        configuration.style.show_color_scale = true
+                        test_legend(data, configuration, "points.log.continuous.small") do
+                            return data.scale_title = "Points"
+                        end
+                        return nothing
+                    end
+
+                    nested_test("large") do
+                        data.colors .*= 10
+                        data.colors[1] += 6
+                        configuration.style.show_color_scale = true
+                        test_legend(data, configuration, "points.log.continuous.large") do
+                            return data.scale_title = "Points"
+                        end
+                        return nothing
+                    end
+
+                    nested_test("huge") do
+                        data.colors .*= 100
+                        configuration.style.show_color_scale = true
+                        test_legend(data, configuration, "points.log.continuous.huge") do
+                            return data.scale_title = "Points"
+                        end
+                        return nothing
+                    end
+                end
+
+                nested_test("gradient") do
+                    configuration.style.color_scale = [(0.0, "blue"), (10.0, "red")]
+
+                    nested_test("()") do
+                        test_html(data, configuration, "points.log.continuous.gradient.html")
+                        return nothing
+                    end
+
+                    nested_test("reversed") do
+                        configuration.style.reverse_color_scale = true
+                        test_html(data, configuration, "points.log.continuous.gradient.reversed.html")
+                        return nothing
+                    end
+
+                    nested_test("legend") do
+                        configuration.style.show_color_scale = true
+                        test_legend(data, configuration, "points.log.gradient") do
+                            return data.scale_title = "Points"
+                        end
+                        return nothing
+                    end
                 end
             end
         end
@@ -1590,8 +1705,8 @@ nested_test("renderers") do
                 end
 
                 nested_test("!legend") do
-                    configuration.border_style.show_scale = true
-                    @test_throws "no data.border_colors specified for points border_style.show_scale" render(
+                    configuration.border_style.show_color_scale = true
+                    @test_throws "no data.border_colors specified for points border_style.show_color_scale" render(
                         data,
                         configuration,
                     )
@@ -1613,8 +1728,8 @@ nested_test("renderers") do
                 end
 
                 nested_test("!legend") do
-                    configuration.border_style.show_scale = true
-                    @test_throws "explicit data.border_colors specified for points border_style.show_scale" render(
+                    configuration.border_style.show_color_scale = true
+                    @test_throws "explicit data.border_colors specified for points border_style.show_color_scale" render(
                         data,
                         configuration,
                     )
@@ -1636,7 +1751,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("legend") do
-                    configuration.border_style.show_scale = true
+                    configuration.border_style.show_color_scale = true
                     test_legend(data, configuration, "points.border.continuous") do
                         return data.border_scale_title = "Borders"
                     end
@@ -1644,7 +1759,7 @@ nested_test("renderers") do
                     nested_test("legend") do
                         data.colors = [20.0, 10.0, 0.0]
                         configuration.style.color_scale = "Viridis"
-                        configuration.style.show_scale = true
+                        configuration.style.show_color_scale = true
                         test_legend(data, configuration, "points.border.continuous.legend") do
                             return data.scale_title = "Points"
                         end
@@ -1669,7 +1784,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("legend") do
-                    configuration.border_style.show_scale = true
+                    configuration.border_style.show_color_scale = true
                     test_legend(data, configuration, "points.border.categorical.colors") do
                         return data.border_scale_title = "Borders"
                     end
@@ -1677,7 +1792,7 @@ nested_test("renderers") do
                     nested_test("legend") do
                         data.colors = ["X", "Y", "Z"]
                         configuration.style.color_scale = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
-                        configuration.style.show_scale = true
+                        configuration.style.show_color_scale = true
                         test_legend(data, configuration, "points.border.categorical.legend") do
                             return data.scale_title = "Points"
                         end

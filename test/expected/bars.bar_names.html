@@ -20,8 +20,8 @@ window.PlotlyConfig = {MathJaxConfig: 'local'};
         if (document.getElementById('id-1')) {
     Plotly.newPlot(
         'id-1',
-        [{"legendgrouptitle":{"text":null},"x":["Foo","Bar","Baz"],"y":[0.0,1.0,2.0],"type":"bar","name":"Series 1","customdata":null,"legendgroup":"series","orientation":"v","hovertemplate":null,"marker":{"color":null}},{"legendgrouptitle":{"text":null},"x":["Foo","Bar","Baz"],"y":[0.2,1.2,1.8],"type":"bar","name":"Series 2","customdata":null,"legendgroup":"series","orientation":"v","hovertemplate":null,"marker":{"color":null}}],
-        {"showlegend":false,"xaxis":{"showgrid":false,"showticklabels":true,"type":null,"title":null,"range":null},"bargap":null,"template":"simple_white","barmode":null,"margin":{"l":50,"b":50,"r":50,"t":60},"title":null,"yaxis":{"showgrid":true,"showticklabels":true,"type":null,"title":null,"range":[null,null]}},
+        [{"x":["Foo","Bar","Baz"],"y":[0.0,1.0,2.0],"type":"bar","name":"Series 1","legendgroup":"series","orientation":"v"},{"x":["Foo","Bar","Baz"],"y":[0.2,1.2,1.8],"type":"bar","name":"Series 2","legendgroup":"series","orientation":"v"}],
+        {"showlegend":false,"xaxis":{"showgrid":false,"showticklabels":true},"template":"simple_white","margin":{"l":50,"b":50,"r":50,"t":60},"yaxis":{"showgrid":true,"showticklabels":true,"range":[null,null]}},
         {"editable":false,"responsive":true,"staticPlot":false,"scrollZoom":true},
     )
 }

@@ -1534,9 +1534,9 @@ end
 </code> and 
 <code>border_scale_title
 </code> are only used if 
-<code>show_scale
+<code>show_color_scale
 </code> is set for the relevant color scales. You can&#39;t specify 
-<code>show_scale
+<code>show_color_scale
 </code> if there is no 
 <code>colors
 </code> data or if the 
@@ -1582,7 +1582,7 @@ end
     y_axis::AxisConfiguration = AxisConfiguration()
     style::PointsStyleConfiguration = PointsStyleConfiguration()
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    edges_style::PointsConfiguration = PointsStyleConfiguration()
+    edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     diagonal_bands::BandsConfiguration = BandsConfiguration()
@@ -1632,7 +1632,7 @@ end
 <code>GraphConfiguration
 </code>
 </a> of a points graph. Instead you probably want to set the 
-<code>show_scale
+<code>show_color_scale
 </code> of the 
 <code>style
 </code> (and/or of the 
@@ -1676,8 +1676,9 @@ end
         AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}},
         AbstractVector{&lt;:Tuple{&lt;:AbstractString, &lt;:AbstractString}}
     }} = nothing
-    reverse_scale::Bool = false
-    show_scale::Bool = false
+    log_color_scale_regularization::Maybe{AbstractFloat} = nothing
+    reverse_color_scale::Bool = false
+    show_color_scale::Bool = false
 end
 </code>
 </pre>
@@ -1693,10 +1694,14 @@ end
 </code>
 </a>. If the data contains numeric color values, then the 
 <code>color_scale
-</code> will be used instead; you can set 
-<code>reverse_scale
-</code> to reverse it. You need to explicitly set 
-<code>show_scale
+</code> will be used instead; if so, if 
+<code>log_color_scale_regularization
+</code> is set, then the values are converted to log (base 10) of the value, and if the 
+<code>color_scale
+</code> is named, 
+<code>reverse_color_scale
+</code> will reverse the colors order in it. You need to explicitly set 
+<code>show_color_scale
 </code> to show its legend.
 </p>
 <p>The 
