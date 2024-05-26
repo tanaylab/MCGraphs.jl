@@ -391,11 +391,44 @@ nested_test("renderers") do
                     is different from the number of values: 2
                 """) render(data, configuration)
             end
+
+            nested_test("!distributions_gap") do
+                configuration.distributions_gap = -1
+                @test_throws "non-positive distributions_gap: -1" render(data, configuration)
+            end
+
+            nested_test("~distributions_gap") do
+                configuration.distributions_gap = 1
+                @test_throws "too-large distributions_gap: 1" render(data, configuration)
+            end
+        end
+
+        nested_test("violin") do
+            configuration.style.show_box = false
+            configuration.style.show_violin = true
+            nested_test("()") do
+                test_html(data, configuration, "distributions.violin.html")
+                return nothing
+            end
+
+            nested_test("!distributions_gap") do
+                configuration.distributions_gap = 0
+                test_html(data, configuration, "distributions.violin.!distributions_gap.html")
+                return nothing
+            end
         end
 
         nested_test("box") do
-            test_html(data, configuration, "distributions.box.html")
-            return nothing
+            nested_test("()") do
+                test_html(data, configuration, "distributions.box.html")
+                return nothing
+            end
+
+            nested_test("!distributions_gap") do
+                configuration.distributions_gap = 0
+                test_html(data, configuration, "distributions.box.!distributions_gap.html")
+                return nothing
+            end
         end
 
         nested_test("log") do
@@ -868,14 +901,14 @@ nested_test("renderers") do
         end
 
         nested_test("invalid") do
-            nested_test("!bar_gap") do
-                configuration.bar_gap = -1
-                @test_throws "non-positive bar_gap: -1" render(data, configuration)
+            nested_test("!bars_gap") do
+                configuration.bars_gap = -1
+                @test_throws "non-positive bars_gap: -1" render(data, configuration)
             end
 
-            nested_test("~bar_gap") do
-                configuration.bar_gap = 1
-                @test_throws "too-large bar_gap: 1" render(data, configuration)
+            nested_test("~bars_gap") do
+                configuration.bars_gap = 1
+                @test_throws "too-large bars_gap: 1" render(data, configuration)
             end
 
             nested_test("~values") do
@@ -940,9 +973,9 @@ nested_test("renderers") do
             end
         end
 
-        nested_test("!bar_gap") do
-            configuration.bar_gap = 0
-            return test_html(data, configuration, "bar.!bar_gap.html")
+        nested_test("!bars_gap") do
+            configuration.bars_gap = 0
+            return test_html(data, configuration, "bar.!bars_gap.html")
         end
 
         nested_test("color") do
@@ -1043,9 +1076,9 @@ nested_test("renderers") do
             end
         end
 
-        nested_test("!bar_gap") do
-            configuration.bar_gap = 0
-            return test_html(data, configuration, "bars.!bar_gap.html")
+        nested_test("!bars_gap") do
+            configuration.bars_gap = 0
+            return test_html(data, configuration, "bars.!bars_gap.html")
         end
 
         nested_test("legend") do

@@ -642,7 +642,7 @@ end
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
     orientation::ValuesOrientation = VerticalValues
-    bar_gap::Maybe{&lt;:Real} = nothing
+    bars_gap::Maybe{&lt;:Real} = nothing
 end
 </code>
 </pre>
@@ -655,7 +655,7 @@ end
 </a>. By default, the X axis is used for the bars and the Y axis for the values; this can be switched using the 
 <code>orientation
 </code>. The 
-<code>bar_gap
+<code>bars_gap
 </code> is the fraction of white space between bars.
 </p>
 </div>
@@ -740,7 +740,7 @@ end
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
     orientation::ValuesOrientation = VerticalValues
-    bar_gap::Maybe{&lt;:Real} = nothing
+    bars_gap::Maybe{&lt;:Real} = nothing
     show_legend::Bool = false
     stacking::Maybe{Stacking} = nothing
 end
@@ -1112,6 +1112,7 @@ end
     style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
+    distributions_gap::Maybe{&lt;:Real} = nothing
     overlay::Bool = false
 end
 </code>
@@ -1126,10 +1127,24 @@ end
 <code>show_legend
 </code> to show a legend. This is not set by default as it makes little sense unless 
 <code>overlay
-</code> is also set. TODO: Implement 
+</code> is also set. The 
+<code>distributions_gap
+</code> is the fraction of white space between the distributions. TODO: Implement 
 <code>overlay
 </code>.
 </p>
+<div class="admonition is-info">
+<header class="admonition-header">Note
+</header>
+<div class="admonition-body">
+<p>Specifying a 
+<code>distributions_gap
+</code> will end badly if using 
+<code>show_curve
+</code> because Plotly.
+</p>
+</div>
+</div>
 </div>
 </section>
 </article>

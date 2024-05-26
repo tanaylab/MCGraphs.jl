@@ -225,37 +225,63 @@ possible to specify the color of each one in the [`DistributionsGraphData`](@ref
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 
-"""
-    @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
-        style::DistributionStyleConfiguration = DistributionStyleConfiguration()
-        value_axis::AxisConfiguration = AxisConfiguration()
-        show_legend::Bool = false
-        overlay::Bool = false
-    end
-
-Configure a graph for showing several distributions several distributions.
-
-This is identical to [`DistributionGraphConfiguration`](@ref) with the addition of `show_legend` to show a legend. This
-is not set by default as it makes little sense unless `overlay` is also set. TODO: Implement `overlay`.
-"""
-@kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
-    value_axis::AxisConfiguration = AxisConfiguration()
-    show_legend::Bool = false
-    overlay::Bool = false
-end
-
-function Validations.validate_object(
-    configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration},
-)::Maybe{AbstractString}
+function Validations.validate_object(configuration::DistributionGraphConfiguration)::Maybe{AbstractString}
     message = validate_object(configuration.graph)
     if message === nothing
         message = validate_object(configuration.style)
     end
     if message === nothing
         message = validate_object("value", configuration.value_axis)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+        value_axis::AxisConfiguration = AxisConfiguration()
+        show_legend::Bool = false
+        distributions_gap::Maybe{<:Real} = nothing
+        overlay::Bool = false
+    end
+
+Configure a graph for showing several distributions several distributions.
+
+This is identical to [`DistributionGraphConfiguration`](@ref) with the addition of `show_legend` to show a legend. This
+is not set by default as it makes little sense unless `overlay` is also set. The `distributions_gap` is the fraction of
+white space between the distributions. TODO: Implement `overlay`.
+
+!!! note
+
+    Specifying a `distributions_gap` will end badly if using `show_curve` because Plotly.
+"""
+@kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    show_legend::Bool = false
+    distributions_gap::Maybe{<:Real} = nothing
+    overlay::Bool = false
+end
+
+function Validations.validate_object(configuration::DistributionsGraphConfiguration)::Maybe{AbstractString}
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object(configuration.style)
+    end
+    if message === nothing
+        message = validate_object("value", configuration.value_axis)
+    end
+    if message === nothing
+        distributions_gap = configuration.distributions_gap
+        if distributions_gap !== nothing
+            if distributions_gap < 0
+                message = "non-positive distributions_gap: $(distributions_gap)"
+            elseif distributions_gap >= 1
+                message = "too-large distributions_gap: $(distributions_gap)"
+            end
+        end
     end
     return message
 end
@@ -383,7 +409,13 @@ function render(
         configuration,
     )
 
-    layout = distribution_layout(data, configuration; has_tick_names = data.name !== nothing, show_legend = false)
+    layout = distribution_layout(
+        data,
+        configuration;
+        has_tick_names = data.name !== nothing,
+        show_legend = false,
+        distributions_gap = nothing,
+    )
     figure = plot(trace, layout)
     write_figure_to_file(figure, configuration.graph, output_file)
 
@@ -415,6 +447,7 @@ function render(
         configuration;
         has_tick_names = data.names !== nothing,
         show_legend = configuration.show_legend,
+        distributions_gap = configuration.distributions_gap,
     )
     figure = plot(traces, layout)
     write_figure_to_file(figure, configuration.graph, output_file)
@@ -466,6 +499,7 @@ function distribution_layout(
     configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration};
     has_tick_names::Bool,
     show_legend::Bool,
+    distributions_gap::Maybe{Real},
 )::Layout
     if configuration.style.orientation == VerticalValues
         xaxis_showticklabels = has_tick_names
@@ -507,6 +541,10 @@ function distribution_layout(
         yaxis_range = yaxis_range,
         yaxis_type = yaxis_type,
         showlegend = show_legend,
+        violingroupgap = distributions_gap === nothing ? nothing : 0,
+        boxgroupgap = distributions_gap === nothing ? nothing : 0,
+        boxgap = distributions_gap,
+        violingap = distributions_gap,
     )
 end
 
@@ -1407,19 +1445,19 @@ end
         value_axis::AxisConfiguration = AxisConfiguration()
         color::Maybe{AbstractString} = nothing
         orientation::ValuesOrientation = VerticalValues
-        bar_gap::Maybe{<:Real} = nothing
+        bars_gap::Maybe{<:Real} = nothing
     end
 
 Configure a graph for showing a single bar (histogram) graph. The `color` is chosen automatically. You can override it
 globally, or per-bar in the [`BarGraphData`](@ref). By default, the X axis is used for the bars and the Y axis for the
-values; this can be switched using the `orientation`. The `bar_gap` is the fraction of white space between bars.
+values; this can be switched using the `orientation`. The `bars_gap` is the fraction of white space between bars.
 """
 @kwdef mutable struct BarGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
     orientation::ValuesOrientation = VerticalValues
-    bar_gap::Maybe{<:Real} = nothing
+    bars_gap::Maybe{<:Real} = nothing
 end
 
 """
@@ -1503,7 +1541,7 @@ end
         value_axis::AxisConfiguration = AxisConfiguration()
         color::Maybe{AbstractString} = nothing
         orientation::ValuesOrientation = VerticalValues
-        bar_gap::Maybe{<:Real} = nothing
+        bars_gap::Maybe{<:Real} = nothing
         show_legend::Bool = false
         stacking::Maybe{Stacking} = nothing
     end
@@ -1516,7 +1554,7 @@ without the `color` field (which makes no sense when multiple series are shown),
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     orientation::ValuesOrientation = VerticalValues
-    bar_gap::Maybe{<:Real} = nothing
+    bars_gap::Maybe{<:Real} = nothing
     show_legend::Bool = false
     stacking::Maybe{Stacking} = nothing
 end
@@ -1529,12 +1567,12 @@ function Validations.validate_object(
         message = validate_object("value", configuration.value_axis)
     end
     if message === nothing
-        bar_gap = configuration.bar_gap
-        if bar_gap !== nothing
-            if bar_gap < 0
-                message = "non-positive bar_gap: $(bar_gap)"
-            elseif bar_gap >= 1
-                message = "too-large bar_gap: $(bar_gap)"
+        bars_gap = configuration.bars_gap
+        if bars_gap !== nothing
+            if bars_gap < 0
+                message = "non-positive bars_gap: $(bars_gap)"
+            elseif bars_gap >= 1
+                message = "too-large bars_gap: $(bars_gap)"
             end
         end
     end
@@ -1759,7 +1797,7 @@ function bar_layout(
         yaxis_type = yaxis_type,
         showlegend = show_legend,
         barmode = stacked ? "stack" : nothing,
-        bargap = configuration.bar_gap,
+        bargap = configuration.bars_gap,
     )
 end
 
