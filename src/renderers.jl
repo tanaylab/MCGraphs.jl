@@ -401,12 +401,13 @@ function render(
     assert_valid_object(data)
     assert_valid_object(configuration)
 
-    trace = distribution_trace(  # NOJET
-        data.values,
-        data.name === nothing ? "Trace" : data.name,
-        configuration.style.color,
-        nothing,
-        configuration,
+    trace = distribution_trace(  # NOJET;;;
+        values = data.values,
+        name = data.name === nothing ? "Trace" : data.name,
+        color = configuration.style.color,
+        legend_title = nothing,
+        configuration = configuration,
+        overlay = false,
     )
 
     layout = distribution_layout(
@@ -427,18 +428,21 @@ function render(
     configuration::DistributionsGraphConfiguration = DistributionsGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
 )::Figure
-    @assert !configuration.overlay "not implemented: overlay"
     assert_valid_object(data)
     assert_valid_object(configuration)
+    if configuration.distributions_gap !== nothing && configuration.style.show_curve
+        @warn "setting the distributions_gap for curve is buggy in plotly"
+    end
 
     n_values = length(data.values)
     traces = [
-        distribution_trace(
-            data.values[index],
-            data.names === nothing ? "Trace $(index)" : data.names[index],
-            data.colors === nothing ? configuration.style.color : data.colors[index],
-            data.legend_title,
-            configuration,
+        distribution_trace(;
+            values = data.values[index],
+            name = data.names === nothing ? "Trace $(index)" : data.names[index],
+            color = data.colors === nothing ? configuration.style.color : data.colors[index],
+            legend_title = data.legend_title,
+            configuration = configuration,
+            overlay = configuration.overlay,
         ) for index in 1:n_values
     ]
 
@@ -455,12 +459,13 @@ function render(
     return figure
 end
 
-function distribution_trace(
+function distribution_trace(;
     values::AbstractVector{<:Real},
     name::AbstractString,
     color::Maybe{AbstractString},
     legend_title::Maybe{AbstractString},
     configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration},
+    overlay::Bool,
 )::GenericTrace
     style = (
         (configuration.style.show_box ? BOX : 0) |
@@ -469,11 +474,15 @@ function distribution_trace(
     )
 
     if configuration.style.orientation == VerticalValues
-        y = values
         x = nothing
+        y = values
+        x0 = overlay ? " " : nothing
+        y0 = nothing
     elseif configuration.style.orientation == HorizontalValues
         x = values
         y = nothing
+        x0 = nothing
+        y0 = overlay ? " " : nothing
     else
         @assert false
     end
@@ -484,6 +493,8 @@ function distribution_trace(
     return tracer(;
         x = x,
         y = y,
+        x0 = x0,
+        y0 = y0,
         side = configuration.style.show_curve ? "positive" : nothing,
         box_visible = configuration.style.show_box,
         boxpoints = points,

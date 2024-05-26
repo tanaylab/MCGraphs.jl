@@ -403,21 +403,6 @@ nested_test("renderers") do
             end
         end
 
-        nested_test("violin") do
-            configuration.style.show_box = false
-            configuration.style.show_violin = true
-            nested_test("()") do
-                test_html(data, configuration, "distributions.violin.html")
-                return nothing
-            end
-
-            nested_test("!distributions_gap") do
-                configuration.distributions_gap = 0
-                test_html(data, configuration, "distributions.violin.!distributions_gap.html")
-                return nothing
-            end
-        end
-
         nested_test("box") do
             nested_test("()") do
                 test_html(data, configuration, "distributions.box.html")
@@ -428,6 +413,120 @@ nested_test("renderers") do
                 configuration.distributions_gap = 0
                 test_html(data, configuration, "distributions.box.!distributions_gap.html")
                 return nothing
+            end
+
+            nested_test("horizontal") do
+                configuration.style.orientation = HorizontalValues
+                test_html(data, configuration, "distributions.box.horizontal.html")
+                return nothing
+            end
+
+            nested_test("overlay") do
+                configuration.overlay = true
+
+                nested_test("()") do
+                    test_html(data, configuration, "distributions.box.overlay.html")
+                    return nothing
+                end
+
+                nested_test("horizontal") do
+                    configuration.style.orientation = HorizontalValues
+                    test_html(data, configuration, "distributions.box.overlay.horizontal.html")
+                    return nothing
+                end
+
+                nested_test("legend") do
+                    configuration.show_legend = true
+                    test_html(data, configuration, "distributions.box.overlay.legend.html")
+                    return nothing
+                end
+            end
+        end
+
+        nested_test("violin") do
+            configuration.style.show_box = false
+            configuration.style.show_violin = true
+
+            nested_test("()") do
+                test_html(data, configuration, "distributions.violin.html")
+                return nothing
+            end
+
+            nested_test("!distributions_gap") do
+                configuration.distributions_gap = 0
+                test_html(data, configuration, "distributions.violin.!distributions_gap.html")
+                return nothing
+            end
+
+            nested_test("horizontal") do
+                configuration.style.orientation = HorizontalValues
+                test_html(data, configuration, "distributions.violin.horizontal.html")
+                return nothing
+            end
+
+            nested_test("overlay") do
+                configuration.overlay = true
+
+                nested_test("()") do
+                    test_html(data, configuration, "distributions.violin.overlay.html")
+                    return nothing
+                end
+
+                nested_test("horizontal") do
+                    configuration.style.orientation = HorizontalValues
+                    test_html(data, configuration, "distributions.violin.overlay.horizontal.html")
+                    return nothing
+                end
+
+                nested_test("legend") do
+                    configuration.show_legend = true
+                    test_html(data, configuration, "distributions.violin.overlay.legend.html")
+                    return nothing
+                end
+            end
+        end
+
+        nested_test("curve") do
+            configuration.style.show_box = false
+            configuration.style.show_curve = true
+
+            nested_test("()") do
+                test_html(data, configuration, "distributions.curve.html")
+                return nothing
+            end
+
+            nested_test("!distributions_gap") do
+                configuration.distributions_gap = 0
+                println("Ignore the following warning:")
+                test_html(data, configuration, "distributions.curve.!distributions_gap.html")
+                return nothing
+            end
+
+            nested_test("horizontal") do
+                configuration.style.orientation = HorizontalValues
+                test_html(data, configuration, "distributions.curve.horizontal.html")
+                return nothing
+            end
+
+            nested_test("overlay") do
+                configuration.overlay = true
+
+                nested_test("()") do
+                    test_html(data, configuration, "distributions.curve.overlay.html")
+                    return nothing
+                end
+
+                nested_test("horizontal") do
+                    configuration.style.orientation = HorizontalValues
+                    test_html(data, configuration, "distributions.curve.overlay.horizontal.html")
+                    return nothing
+                end
+
+                nested_test("legend") do
+                    configuration.show_legend = true
+                    test_html(data, configuration, "distributions.curve.overlay.legend.html")
+                    return nothing
+                end
             end
         end
 
