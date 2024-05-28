@@ -633,7 +633,8 @@ nested_test("renderers") do
         nested_test("!grid") do
             configuration.graph.show_grid = false
             configuration.graph.show_ticks = false
-            return test_html(data, configuration, "line.!grid.html")
+            test_html(data, configuration, "line.!grid.html")
+            return nothing
         end
 
         nested_test("vertical_lines") do
@@ -863,7 +864,8 @@ nested_test("renderers") do
 
             nested_test("()") do
                 test_legend(data, configuration, "lines") do
-                    return data.legend_title = "Lines"
+                    data.legend_title = "Lines"
+                    return nothing
                 end
                 return nothing
             end
@@ -871,7 +873,8 @@ nested_test("renderers") do
             nested_test("names") do
                 data.names = ["Foo", "Bar"]
                 test_legend(data, configuration, "lines.names") do
-                    return data.legend_title = "Lines"
+                    data.legend_title = "Lines"
+                    return nothing
                 end
                 return nothing
             end
@@ -899,7 +902,8 @@ nested_test("renderers") do
         )
 
         nested_test("()") do
-            return test_html(data, configuration, "cdf.html")
+            test_html(data, configuration, "cdf.html")
+            return nothing
         end
 
         nested_test("~values") do
@@ -909,17 +913,20 @@ nested_test("renderers") do
 
         nested_test("vertical") do
             configuration.orientation = VerticalValues
-            return test_html(data, configuration, "cdf.vertical.html")
+            test_html(data, configuration, "cdf.vertical.html")
+            return nothing
         end
 
         nested_test("percent") do
             configuration.show_percent = true
-            return test_html(data, configuration, "cdf.percent.html")
+            test_html(data, configuration, "cdf.percent.html")
+            return nothing
         end
 
         nested_test("downto") do
             configuration.direction = DownToValue
-            return test_html(data, configuration, "cdf.downto.html")
+            test_html(data, configuration, "cdf.downto.html")
+            return nothing
         end
     end
 
@@ -952,7 +959,8 @@ nested_test("renderers") do
         )
 
         nested_test("()") do
-            return test_html(data, configuration, "cdfs.html")
+            test_html(data, configuration, "cdfs.html")
+            return nothing
         end
 
         nested_test("invalid") do
@@ -969,23 +977,27 @@ nested_test("renderers") do
 
         nested_test("vertical") do
             configuration.orientation = VerticalValues
-            return test_html(data, configuration, "cdfs.vertical.html")
+            test_html(data, configuration, "cdfs.vertical.html")
+            return nothing
         end
 
         nested_test("percent") do
             configuration.show_percent = true
-            return test_html(data, configuration, "cdfs.percent.html")
+            test_html(data, configuration, "cdfs.percent.html")
+            return nothing
         end
 
         nested_test("downto") do
             configuration.direction = DownToValue
-            return test_html(data, configuration, "cdfs.downto.html")
+            test_html(data, configuration, "cdfs.downto.html")
+            return nothing
         end
 
         nested_test("legend") do
             configuration.show_legend = true
             test_legend(data, configuration, "cdfs") do
-                return data.legend_title = "Traces"
+                data.legend_title = "Traces"
+                return nothing
             end
             return nothing
         end
@@ -996,7 +1008,8 @@ nested_test("renderers") do
         configuration = BarGraphConfiguration()
 
         nested_test("()") do
-            return test_html(data, configuration, "bar.html")
+            test_html(data, configuration, "bar.html")
+            return nothing
         end
 
         nested_test("invalid") do
@@ -1042,54 +1055,63 @@ nested_test("renderers") do
 
         nested_test("names") do
             data.names = ["Foo", "Bar", "Baz"]
-            return test_html(data, configuration, "bar.names.html")
+            test_html(data, configuration, "bar.names.html")
+            return nothing
         end
 
         nested_test("titles") do
             data.graph_title = "Graph"
             data.bar_axis_title = "Bars"
             data.value_axis_title = "Values"
-            return test_html(data, configuration, "bar.titles.html")
+            test_html(data, configuration, "bar.titles.html")
+            return nothing
         end
 
         nested_test("horizontal") do
             configuration.orientation = HorizontalValues
 
             nested_test("()") do
-                return test_html(data, configuration, "bar.horizontal.html")
+                test_html(data, configuration, "bar.horizontal.html")
+                return nothing
             end
 
             nested_test("names") do
                 data.names = ["Foo", "Bar", "Baz"]
-                return test_html(data, configuration, "bar.horizontal.names.html")
+                test_html(data, configuration, "bar.horizontal.names.html")
+                return nothing
             end
 
             nested_test("titles") do
                 data.graph_title = "Graph"
                 data.bar_axis_title = "Bars"
                 data.value_axis_title = "Values"
-                return test_html(data, configuration, "bar.horizontal.titles.html")
+                test_html(data, configuration, "bar.horizontal.titles.html")
+                return nothing
             end
         end
 
         nested_test("!bars_gap") do
             configuration.bars_gap = 0
-            return test_html(data, configuration, "bar.!bars_gap.html")
+            test_html(data, configuration, "bar.!bars_gap.html")
+            return nothing
         end
 
         nested_test("color") do
             configuration.color = "red"
-            return test_html(data, configuration, "bar.color.html")
+            test_html(data, configuration, "bar.color.html")
+            return nothing
         end
 
         nested_test("colors") do
             data.colors = ["red", "green", "blue"]
-            return test_html(data, configuration, "bar.colors.html")
+            test_html(data, configuration, "bar.colors.html")
+            return nothing
         end
 
         nested_test("hovers") do
             data.hovers = ["Foo", "Bar", "Baz"]
-            return test_html(data, configuration, "bar.hovers.html")
+            test_html(data, configuration, "bar.hovers.html")
+            return nothing
         end
     end
 
@@ -1177,13 +1199,15 @@ nested_test("renderers") do
 
         nested_test("!bars_gap") do
             configuration.bars_gap = 0
-            return test_html(data, configuration, "bars.!bars_gap.html")
+            test_html(data, configuration, "bars.!bars_gap.html")
+            return nothing
         end
 
         nested_test("legend") do
             configuration.show_legend = true
             test_legend(data, configuration, "bars") do
-                return data.legend_title = "Series"
+                data.legend_title = "Series"
+                return nothing
             end
         end
 
@@ -1191,62 +1215,72 @@ nested_test("renderers") do
             data.names = ["Foo", "Bar"]
 
             nested_test("()") do
-                return test_html(data, configuration, "bars.names.html")
+                test_html(data, configuration, "bars.names.html")
+                return nothing
             end
 
             nested_test("legend") do
                 configuration.show_legend = true
                 test_legend(data, configuration, "bars.names") do
-                    return data.legend_title = "Series"
+                    data.legend_title = "Series"
+                    return nothing
                 end
             end
         end
 
         nested_test("bar_names") do
             data.bar_names = ["Foo", "Bar", "Baz"]
-            return test_html(data, configuration, "bars.bar_names.html")
+            test_html(data, configuration, "bars.bar_names.html")
+            return nothing
         end
 
         nested_test("titles") do
             data.graph_title = "Graph"
             data.bar_axis_title = "Bars"
             data.value_axis_title = "Values"
-            return test_html(data, configuration, "bars.titles.html")
+            test_html(data, configuration, "bars.titles.html")
+            return nothing
         end
 
         nested_test("horizontal") do
             configuration.orientation = HorizontalValues
 
             nested_test("()") do
-                return test_html(data, configuration, "bars.horizontal.html")
+                test_html(data, configuration, "bars.horizontal.html")
+                return nothing
             end
 
             nested_test("names") do
                 data.names = ["Foo", "Bar"]
-                return test_html(data, configuration, "bars.horizontal.names.html")
+                test_html(data, configuration, "bars.horizontal.names.html")
+                return nothing
             end
 
             nested_test("bar_names") do
                 data.bar_names = ["Foo", "Bar", "Baz"]
-                return test_html(data, configuration, "bars.horizontal.bar_names.html")
+                test_html(data, configuration, "bars.horizontal.bar_names.html")
+                return nothing
             end
 
             nested_test("titles") do
                 data.graph_title = "Graph"
                 data.bar_axis_title = "Bars"
                 data.value_axis_title = "Values"
-                return test_html(data, configuration, "bars.horizontal.titles.html")
+                test_html(data, configuration, "bars.horizontal.titles.html")
+                return nothing
             end
         end
 
         nested_test("colors") do
             data.colors = ["red", "green"]
-            return test_html(data, configuration, "bars.colors.html")
+            test_html(data, configuration, "bars.colors.html")
+            return nothing
         end
 
         nested_test("hovers") do
             data.hovers = ["Foo", "Bar"]
-            return test_html(data, configuration, "bars.hovers.html")
+            test_html(data, configuration, "bars.hovers.html")
+            return nothing
         end
     end
 
@@ -1621,7 +1655,8 @@ nested_test("renderers") do
             nested_test("legend") do
                 configuration.style.show_color_scale = true
                 test_legend(data, configuration, "points.categorical") do
-                    return data.scale_title = "Points"
+                    data.scale_title = "Points"
+                    return nothing
                 end
                 return nothing
             end
@@ -1665,7 +1700,8 @@ nested_test("renderers") do
                 nested_test("legend") do
                     configuration.style.show_color_scale = true
                     test_legend(data, configuration, "points.continuous") do
-                        return data.scale_title = "Points"
+                        data.scale_title = "Points"
+                        return nothing
                     end
                     return nothing
                 end
@@ -1687,7 +1723,8 @@ nested_test("renderers") do
                     nested_test("legend") do
                         configuration.style.show_color_scale = true
                         test_legend(data, configuration, "points.gradient") do
-                            return data.scale_title = "Points"
+                            data.scale_title = "Points"
+                            return nothing
                         end
                         return nothing
                     end
@@ -1733,10 +1770,12 @@ nested_test("renderers") do
                 end
 
                 nested_test("legend") do
+                    configuration.style.show_color_scale = true
+
                     nested_test("small") do
-                        configuration.style.show_color_scale = true
                         test_legend(data, configuration, "points.log.continuous.small") do
-                            return data.scale_title = "Points"
+                            data.scale_title = "Points"
+                            return nothing
                         end
                         return nothing
                     end
@@ -1744,18 +1783,18 @@ nested_test("renderers") do
                     nested_test("large") do
                         data.colors .*= 10
                         data.colors[1] += 6
-                        configuration.style.show_color_scale = true
                         test_legend(data, configuration, "points.log.continuous.large") do
-                            return data.scale_title = "Points"
+                            data.scale_title = "Points"
+                            return nothing
                         end
                         return nothing
                     end
 
                     nested_test("huge") do
                         data.colors .*= 100
-                        configuration.style.show_color_scale = true
                         test_legend(data, configuration, "points.log.continuous.huge") do
-                            return data.scale_title = "Points"
+                            data.scale_title = "Points"
+                            return nothing
                         end
                         return nothing
                     end
@@ -1778,7 +1817,8 @@ nested_test("renderers") do
                     nested_test("legend") do
                         configuration.style.show_color_scale = true
                         test_legend(data, configuration, "points.log.gradient") do
-                            return data.scale_title = "Points"
+                            data.scale_title = "Points"
+                            return nothing
                         end
                         return nothing
                     end
@@ -1884,21 +1924,29 @@ nested_test("renderers") do
 
                 nested_test("legend") do
                     configuration.border_style.show_color_scale = true
+
                     test_legend(data, configuration, "points.border.continuous") do
-                        return data.border_scale_title = "Borders"
+                        data.border_scale_title = "Borders"
+                        return nothing
                     end
 
                     nested_test("legend") do
                         data.colors = [20.0, 10.0, 0.0]
                         configuration.style.color_scale = "Viridis"
                         configuration.style.show_color_scale = true
-                        test_legend(data, configuration, "points.border.continuous.legend") do
-                            return data.scale_title = "Points"
+
+                        nested_test("()") do
+                            test_legend(data, configuration, "points.border.continuous.legend") do
+                                data.scale_title = "Points"
+                                return nothing
+                            end
                         end
+
                         nested_test("title") do
                             data.border_scale_title = "Borders"
                             test_legend(data, configuration, "points.border.continuous.legend.title") do
-                                return data.scale_title = "Points"
+                                data.scale_title = "Points"
+                                return nothing
                             end
                         end
                     end
@@ -1917,21 +1965,31 @@ nested_test("renderers") do
 
                 nested_test("legend") do
                     configuration.border_style.show_color_scale = true
-                    test_legend(data, configuration, "points.border.categorical.colors") do
-                        return data.border_scale_title = "Borders"
+
+                    nested_test("()") do
+                        test_legend(data, configuration, "points.border.categorical.colors") do
+                            data.border_scale_title = "Borders"
+                            return nothing
+                        end
                     end
 
                     nested_test("legend") do
                         data.colors = ["X", "Y", "Z"]
                         configuration.style.color_scale = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
                         configuration.style.show_color_scale = true
-                        test_legend(data, configuration, "points.border.categorical.legend") do
-                            return data.scale_title = "Points"
+
+                        nested_test("()") do
+                            test_legend(data, configuration, "points.border.categorical.legend") do
+                                data.scale_title = "Points"
+                                return nothing
+                            end
                         end
+
                         nested_test("title") do
                             data.border_scale_title = "Borders"
                             test_legend(data, configuration, "points.border.categorical.legend.title") do
-                                return data.scale_title = "Points"
+                                data.scale_title = "Points"
+                                return nothing
                             end
                         end
                     end
@@ -1986,6 +2044,244 @@ nested_test("renderers") do
                 data.edges_colors = ["red", "green"]
                 test_html(data, configuration, "points.edges.colors.html")
                 return nothing
+            end
+        end
+    end
+
+    nested_test("grid") do
+        configuration = GridGraphConfiguration()
+        data = GridGraphData(; colors = [1.0 2.0 3.0; 4.0 5.0 6.0])
+
+        nested_test("()") do
+            test_html(data, configuration, "grid.html")
+            return nothing
+        end
+
+        nested_test("invalid") do
+            nested_test("!sizes!colors") do
+                data.colors = nothing
+                @test_throws "neither colors nor sizes specified for grid points" render(data, configuration)
+            end
+        end
+
+        nested_test("legend") do
+            configuration.style.show_color_scale = true
+            test_legend(data, configuration, "grid") do
+                data.scale_title = "Grid"
+                return nor
+            end
+        end
+
+        nested_test("colors") do
+            data.colors = ["red" "green" "blue"; "blue" "green" "red"]
+            return test_html(data, configuration, "grid.colors.html")
+        end
+
+        nested_test("categorical") do
+            data.colors = ["A" "B" "C"; "C" "B" "A"]
+            configuration.style.color_scale = [("A", "red"), ("B", "green"), ("C", "blue")]
+
+            nested_test("!scale") do
+                return test_html(data, configuration, "grid.categorical.html")
+            end
+
+            nested_test("legend") do
+                configuration.style.show_color_scale = true
+                test_legend(data, configuration, "grid.categorical") do
+                    data.scale_title = "Grid"
+                    return nothing
+                end
+            end
+        end
+
+        nested_test("sizes") do
+            data.sizes = (data.colors .- 1) .* 10
+
+            nested_test("!sizes") do
+                data.sizes = transpose(data.sizes)
+                @test_throws dedent("""
+                    the colors matrix size: (2, 3)
+                    is different from the sizes matrix size: (3, 2)
+                """) render(data, configuration)
+            end
+
+            nested_test("~sizes") do
+                data.sizes[1, 2] = -1.5
+                @test_throws "negative size#1,2: -1.5" render(data, configuration)
+            end
+
+            nested_test("!colors") do
+                data.colors = nothing
+                return test_html(data, configuration, "grid.sizes.!colors.html")
+            end
+
+            nested_test("color") do
+                data.colors = nothing
+                configuration.style.color = "red"
+                return test_html(data, configuration, "grid.sizes.color.html")
+            end
+        end
+
+        nested_test("!grid") do
+            configuration.graph.show_grid = false
+            test_html(data, configuration, "grid.!grid.html")
+            return nothing
+        end
+
+        nested_test("titles") do
+            data.x_axis_title = "X"
+            data.y_axis_title = "Y"
+            data.graph_title = "Graph"
+            data.rows_names = ["A", "B"]
+            data.columns_names = ["C", "D", "E"]
+            test_html(data, configuration, "grid.titles.html")
+            return nothing
+        end
+
+        nested_test("hovers") do
+            data.hovers = ["A" "B" "C"; "D" "E" "F"]
+            test_html(data, configuration, "grid.hovers.html")
+            return nothing
+        end
+
+        nested_test("!hovers") do
+            data.hovers = transpose(["A" "B" "C"; "D" "E" "F"])
+            @test_throws dedent("""
+                the hovers matrix size: (3, 2)
+                is different from the grid matrix size: (2, 3)
+            """) render(data, configuration)
+        end
+
+        nested_test("border") do
+            data.border_sizes = (data.colors .- 1) .* 10
+
+            nested_test("!sizes") do
+                data.border_sizes = transpose(data.border_sizes)
+                @test_throws dedent("""
+                    the borders sizes matrix size: (3, 2)
+                    is different from the grid matrix size: (2, 3)
+                """) render(data, configuration)
+            end
+
+            nested_test("~sizes") do
+                data.border_sizes[1, 2] = -1.5
+                @test_throws "negative border_size#1,2: -1.5" render(data, configuration)
+            end
+
+            nested_test("sizes") do
+                nested_test("()") do
+                    test_html(data, configuration, "grid.border.sizes.html")
+                    return nothing
+                end
+
+                nested_test("color") do
+                    configuration.border_style.color = "black"
+                    test_html(data, configuration, "grid.border.color.html")
+                    return nothing
+                end
+            end
+
+            nested_test("!colors") do
+                data.border_colors = ["red" "green" "blue"; "red" "green" "blue"]
+                data.border_colors = transpose(data.border_colors)
+                @test_throws dedent("""
+                    the borders colors matrix size: (3, 2)
+                    is different from the grid matrix size: (2, 3)
+                """) render(data, configuration)
+            end
+
+            nested_test("colors") do
+                data.border_sizes = nothing
+                data.border_colors = ["red" "green" "blue"; "red" "green" "blue"]
+
+                nested_test("()") do
+                    return test_html(data, configuration, "grid.border.colors.html")
+                end
+
+                nested_test("!scale") do
+                    configuration.border_style.show_color_scale = true
+                    @test_throws "explicit data.border_colors specified for points border_style.show_color_scale" render(
+                        data,
+                        configuration,
+                    )
+                end
+            end
+
+            nested_test("categorical") do
+                data.border_colors = ["A" "B" "C"; "C" "B" "A"]
+                configuration.border_style.color_scale = [("A", "red"), ("B", "green"), ("C", "blue")]
+
+                nested_test("()") do
+                    return test_html(data, configuration, "grid.border.categorical.html")
+                end
+
+                nested_test("legend") do
+                    configuration.border_style.show_color_scale = true
+
+                    nested_test("()") do
+                        test_legend(data, configuration, "grid.border.categorical") do
+                            data.border_scale_title = "Grid"
+                            return nothing
+                        end
+                    end
+
+                    nested_test("legend") do
+                        data.colors = ["X" "Y" "Z"; "Z" "Y" "X"]
+                        configuration.style.color_scale = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
+                        configuration.style.show_color_scale = true
+
+                        nested_test("()") do
+                            test_legend(data, configuration, "grid.border.categorical.legend") do
+                                data.scale_title = "Points"
+                                return nothing
+                            end
+                        end
+
+                        nested_test("title") do
+                            data.border_scale_title = "Borders"
+                            test_legend(data, configuration, "grid.border.categorical.legend.title") do
+                                data.scale_title = "Grid"
+                                return nothing
+                            end
+                        end
+                    end
+                end
+            end
+
+            nested_test("continuous") do
+                data.border_colors = 0 .- data.colors
+                nested_test("()") do
+                    return test_html(data, configuration, "grid.border.continuous.html")
+                end
+
+                nested_test("legend") do
+                    configuration.border_style.show_color_scale = true
+
+                    nested_test("()") do
+                        test_legend(data, configuration, "grid.border.continuous") do
+                            data.border_scale_title = "Grid"
+                            return nothing
+                        end
+                    end
+
+                    nested_test("legend") do
+                        configuration.style.show_color_scale = true
+
+                        nested_test("()") do
+                            test_legend(data, configuration, "grid.border.continuous.legend") do
+                                data.scale_title = "Points"
+                                return nothing
+                            end
+                        end
+                        nested_test("title") do
+                            data.border_scale_title = "Borders"
+                            test_legend(data, configuration, "grid.border.continuous.legend.title") do
+                                data.scale_title = "Grid"
+                                return nothing
+                            end
+                        end
+                    end
+                end
             end
         end
     end

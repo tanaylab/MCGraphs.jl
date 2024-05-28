@@ -27,6 +27,8 @@ export DistributionsGraphConfiguration
 export DistributionsGraphData
 export DownToValue
 export GraphConfiguration
+export GridGraphConfiguration
+export GridGraphData
 export HorizontalValues
 export LineGraphConfiguration
 export LineGraphData
@@ -389,6 +391,7 @@ Render a graph given its data and configuration. The implementation depends on t
 | [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).     |
 | [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.       |
 | [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.   |
+| [`GridGraphData`](@ref)          | [`GridGraphConfiguration`](@ref)          | Graph of a grid of points (e.g. for correlations).   |
 
 This returns a [`Figure`](@ref) which can be displayed directly, or converted to JSON for transfer to other programming languages
 (Python or R)
@@ -401,7 +404,7 @@ function render(
     assert_valid_object(data)
     assert_valid_object(configuration)
 
-    trace = distribution_trace(  # NOJET;;;
+    trace = distribution_trace(  # NOJET;;;;;;;;;;;;;;;;;;;
         values = data.values,
         name = data.name === nothing ? "Trace" : data.name,
         color = configuration.style.color,
@@ -2103,55 +2106,7 @@ function render(
 )::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
-    if configuration.x_axis.log_scale
-        for (index, x) in enumerate(data.xs)
-            @assert x > 0 "non-positive log x#$(index): $(x)"
-        end
-    end
-    if configuration.y_axis.log_scale
-        for (index, y) in enumerate(data.ys)
-            @assert y > 0 "non-positive log y#$(index): $(y)"
-        end
-    end
-    if configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.colors isa AbstractStringVector "categorical style.color_scale for non-string points data.colors"
-    end
-    if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractStringVector (
-            "categorical borders_style.color_scale for non-string points data.border_colors"
-        )
-    end
-    if configuration.style.show_color_scale
-        @assert data.colors !== nothing "no data.colors specified for points style.show_color_scale"
-        @assert !(data.colors isa AbstractStringVector) ||
-                configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.colors specified for points style.show_color_scale"
-        )
-    end
-    if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractStringVector "categorical color_scale for non-string points border_colors data"
-    end
-    if configuration.border_style.show_color_scale
-        @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_color_scale"
-        @assert !(data.border_colors isa AbstractStringVector) ||
-                configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.border_colors specified for points border_style.show_color_scale"
-        )
-    end
-    if configuration.style.log_color_scale_regularization !== nothing
-        colors = data.colors
-        @assert colors isa AbstractVector{<:Real} "non-real colors with log scale"
-        index = argmin(colors)
-        minimal_color = colors[index] + configuration.style.log_color_scale_regularization
-        @assert minimal_color > 0 "non-positive log color#$(index): $(minimal_color)"
-    end
-    if configuration.border_style.log_color_scale_regularization !== nothing
-        border_colors = data.border_colors
-        @assert border_colors isa AbstractVector{<:Real} "non-real border colors with log scale"
-        index = argmin(border_colors)
-        minimal_color = border_colors[index] + configuration.style.log_color_scale_regularization
-        @assert minimal_color > 0 "non-positive log border color#$(index): $(minimal_color)"
-    end
+    assert_valid_render(data, configuration)
 
     traces = Vector{GenericTrace}()
 
@@ -2297,11 +2252,88 @@ function render(
         end
     end
 
-    layout = points_layout(data, configuration)
+    layout = points_layout(;
+        data = data,
+        configuration = configuration,
+        x_axis = configuration.x_axis,
+        y_axis = configuration.y_axis,
+    )
     figure = plot(traces, layout)
     write_figure_to_file(figure, configuration.graph, output_file)
 
     return figure
+end
+
+function assert_valid_render(data::PointsGraphData, configuration::PointsGraphConfiguration)::Nothing
+    if configuration.x_axis.log_scale
+        for (index, x) in enumerate(data.xs)
+            @assert x > 0 "non-positive log x#$(index): $(x)"
+        end
+    end
+
+    if configuration.y_axis.log_scale
+        for (index, y) in enumerate(data.ys)
+            @assert y > 0 "non-positive log y#$(index): $(y)"
+        end
+    end
+
+    color_scale = configuration.style.color_scale
+    if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.colors isa AbstractStringVector "categorical style.color_scale for non-string points data.colors"
+        scale_colors = Set{AbstractString}([value for (value, _) in color_scale])
+        for (index, color) in enumerate(data.colors)
+            @assert color in scale_colors "categorical style.color_scale does not contain color#$(index): $(color)"
+        end
+    end
+
+    border_color_scale = configuration.border_style.color_scale
+    if border_color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.border_colors isa AbstractStringVector (
+            "categorical borders_style.color_scale for non-string points data.border_colors"
+        )
+        border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_scale])
+        for (index, color) in enumerate(data.border_colors)
+            @assert color in border_scale_colors "categorical border_style.color_scale does not contain color#$(index): $(color)"
+        end
+    end
+
+    if configuration.style.show_color_scale
+        @assert data.colors !== nothing "no data.colors specified for points style.show_color_scale"
+        @assert !(data.colors isa AbstractStringVector) ||
+                configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.colors specified for points style.show_color_scale"
+        )
+    end
+
+    if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.border_colors isa AbstractStringVector "categorical color_scale for non-string points border_colors data"
+    end
+
+    if configuration.border_style.show_color_scale
+        @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_color_scale"
+        @assert !(data.border_colors isa AbstractStringVector) ||
+                configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.border_colors specified for points border_style.show_color_scale"
+        )
+    end
+
+    if configuration.style.log_color_scale_regularization !== nothing
+        colors = data.colors
+        @assert colors isa AbstractVector{<:Real} "non-real colors with log scale"
+        index = argmin(colors)
+        minimal_color = colors[index] + configuration.style.log_color_scale_regularization
+        @assert minimal_color > 0 "non-positive log color#$(index): $(minimal_color)"
+    end
+
+    if configuration.border_style.log_color_scale_regularization !== nothing
+        border_colors = data.border_colors
+        @assert border_colors isa AbstractVector{<:Real} "non-real border colors with log scale"
+        index = argmin(border_colors)
+        minimal_color = border_colors[index] + configuration.style.log_color_scale_regularization
+        @assert minimal_color > 0 "non-positive log border color#$(index): $(minimal_color)"
+    end
+
+    return nothing
 end
 
 function push_fill_vertical_bands_traces(
@@ -2572,32 +2604,6 @@ function fill_trace(xs::AbstractVector{<:Real}, ys::AbstractVector{<:Real}; colo
     return scatter(; x = xs, y = ys, fill = "toself", fillcolor = color, name = "", mode = "none")
 end
 
-function border_marker_size(
-    data::PointsGraphData,
-    configuration::PointsGraphConfiguration,
-    mask::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
-)::Union{Real, Vector{<:Real}}
-    sizes = masked_data(data.sizes, mask)
-    border_sizes = masked_data(data.border_sizes, mask)
-
-    if border_sizes === nothing
-        border_marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
-        if sizes === nothing
-            points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
-            return points_marker_size + 2 * border_marker_size
-        else
-            return sizes .+ 2 * border_marker_size  # untested
-        end
-    else
-        if sizes === nothing
-            points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
-            return 2 .* border_sizes .+ points_marker_size
-        else
-            return 2 .* border_sizes .+ sizes  # untested
-        end
-    end
-end
-
 function points_trace(
     data::PointsGraphData;
     color::Maybe{Union{AbstractString, AbstractStringVector, AbstractVector{<:Real}}},
@@ -2633,14 +2639,6 @@ function points_trace(
         hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
     )
-end
-
-function masked_data(data::Any, ::Any)::Any
-    return data
-end
-
-function masked_data(data::AbstractVector, mask::Union{AbstractVector{Bool}, BitVector})::AbstractVector
-    return data[mask]  # NOJET
 end
 
 function edge_trace(data::PointsGraphData, edges_style::PointsStyleConfiguration; index::Int)::GenericTrace
@@ -2744,104 +2742,30 @@ function band_operations(log_scale::Bool)::Tuple{Real, Function, Function}
     end
 end
 
-function points_layout(data::PointsGraphData, configuration::PointsGraphConfiguration)::Layout
-    color_tickvals, color_ticktext = log_color_scale_ticks(data.colors, configuration.style)
-    border_color_tickvals, border_color_ticktext = log_color_scale_ticks(data.border_colors, configuration.border_style)
-    return Layout(;  # NOJET
-        title = data.graph_title,
-        template = configuration.graph.template,
-        xaxis_showgrid = configuration.graph.show_grid,
-        xaxis_showticklabels = configuration.graph.show_ticks,
-        xaxis_title = data.x_axis_title,
-        xaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
-        xaxis_type = configuration.x_axis.log_scale ? "log" : nothing,
-        yaxis_showgrid = configuration.graph.show_grid,
-        yaxis_showticklabels = configuration.graph.show_ticks,
-        yaxis_title = data.y_axis_title,
-        yaxis_range = (configuration.y_axis.minimum, configuration.y_axis.maximum),
-        yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
-        showlegend = (
-            configuration.style.show_color_scale &&
-            configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        ) || (
-            configuration.border_style.show_color_scale &&
-            configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        ),
-        legend_x = if configuration.style.show_color_scale &&
-                      configuration.border_style.show_color_scale &&
-                      configuration.border_style.color_scale isa
-                      AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-            1.2
-        else
-            nothing
-        end,
-        coloraxis2_colorbar_x = if (
-            configuration.border_style.show_color_scale && configuration.style.show_color_scale
-        )
-            1.2
-        else
-            nothing  # NOJET
-        end,
-        coloraxis_showscale = configuration.style.show_color_scale && !(
-            configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        ),
-        coloraxis_reversescale = configuration.style.reverse_color_scale,
-        coloraxis_colorscale = normalized_color_scale(
-            configuration.style.color_scale,
-            configuration.style.log_color_scale_regularization,
-        ),
-        coloraxis_cmin = lowest_color_scale(
-            configuration.style.color_scale,
-            configuration.style.log_color_scale_regularization,
-        ),
-        coloraxis_cmax = highest_color_scale(
-            configuration.style.color_scale,
-            configuration.style.log_color_scale_regularization,
-        ),
-        coloraxis_colorbar_title_text = data.scale_title,
-        coloraxis_colorbar_tickvals = color_tickvals,
-        coloraxis_colorbar_ticktext = color_ticktext,
-        coloraxis2_showscale = (data.border_colors !== nothing || data.border_sizes !== nothing) &&
-                               configuration.border_style.show_color_scale &&
-                               !(
-                                   configuration.border_style.color_scale isa
-                                   AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-                               ),
-        coloraxis2_reversescale = configuration.border_style.reverse_color_scale,
-        coloraxis2_colorscale = normalized_color_scale(
-            configuration.border_style.color_scale,
-            configuration.border_style.log_color_scale_regularization,
-        ),
-        coloraxis2_cmin = lowest_color_scale(
-            configuration.border_style.color_scale,
-            configuration.border_style.log_color_scale_regularization,
-        ),
-        coloraxis2_cmax = highest_color_scale(
-            configuration.border_style.color_scale,
-            configuration.border_style.log_color_scale_regularization,
-        ),
-        coloraxis2_colorbar_title_text = data.border_scale_title,
-        coloraxis2_colorbar_tickvals = border_color_tickvals,
-        coloraxis2_colorbar_ticktext = border_color_ticktext,
-    )
-end
-
 function fix_colors(
-    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}},
+    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}, AbstractMatrix{<:Union{Real, AbstractString}}}},
     ::Nothing,
-)::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}}
+)::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}, AbstractMatrix{<:Union{Real, AbstractString}}}}
     return colors
 end
 
 function fix_colors(
-    colors::AbstractVector{<:Real},
+    colors::Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}},
     log_color_scale_regularization::AbstractFloat,
-)::AbstractVector{<:Real}
+)::Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}}
     return log10.(colors .+ log_color_scale_regularization)
 end
 
+function xy_ticks(::Nothing)::Tuple{Nothing, Nothing}
+    return (nothing, nothing)
+end
+
+function xy_ticks(names::AbstractStringVector)::Tuple{Vector{<:Integer}, AbstractStringVector}
+    return (collect(1:length(names)), names)
+end
+
 function log_color_scale_ticks(
-    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}},
+    colors::Maybe{Union{AbstractVector{<:Union{Real, AbstractString}}, AbstractMatrix{<:Union{Real, AbstractString}}}},
     points_style::PointsStyleConfiguration,
 )::Tuple{Maybe{Vector{Float32}}, Maybe{Vector{String}}}
     log_color_scale_regularization = points_style.log_color_scale_regularization
@@ -2980,4 +2904,530 @@ function write_figure_to_file(figure::Figure, configuration::GraphConfiguration,
     return nothing
 end
 
+"""
+    @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        style::PointsStyleConfiguration = PointsStyleConfiguration()
+        border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    end
+
+Configure a graph showing a grid of points (e.g. for correlations).
+
+TODO
+"""
+@kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
 end
+
+function Validations.validate_object(configuration::GridGraphConfiguration)::Maybe{AbstractString}
+    message = validate_object(configuration.graph)
+    if message === nothing
+        message = validate_object("points", configuration.style)
+    end
+    if message === nothing
+        message = validate_object("points border", configuration.border_style)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct GridGraphData <: AbstractGraphData
+        graph_title::Maybe{AbstractString} = nothing
+        x_axis_title::Maybe{AbstractString} = nothing
+        y_axis_title::Maybe{AbstractString} = nothing
+        scale_title::Maybe{AbstractString} = nothing
+        border_scale_title::Maybe{AbstractString} = nothing
+        colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString,<:Real}}}} = nothing
+        sizes::Maybe{AbstractMatrix{<:Real}} = nothing
+        hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
+        border_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString,<:Real}}}} = nothing
+        border_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
+    end
+
+The data for a graph showing a grid of points (e.g. for correlations).
+
+TODO.
+"""
+@kwdef mutable struct GridGraphData <: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    scale_title::Maybe{AbstractString} = nothing
+    border_scale_title::Maybe{AbstractString} = nothing
+    columns_names::Maybe{AbstractStringVector} = nothing
+    rows_names::Maybe{AbstractStringVector} = nothing
+    colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+    sizes::Maybe{AbstractMatrix{<:Real}} = nothing
+    hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
+    border_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+    border_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
+end
+
+function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
+    colors = data.colors
+    sizes = data.sizes
+
+    if colors === nothing && sizes === nothing
+        return "neither colors nor sizes specified for grid points"
+    end
+
+    if colors !== nothing && sizes !== nothing && size(colors) != size(sizes)
+        return "the colors matrix size: $(size(colors))\n" * "is different from the sizes matrix size: $(size(sizes))"
+    end
+
+    if colors !== nothing
+        grid_size = size(colors)
+    else
+        @assert sizes !== nothing
+        grid_size = size(sizes)
+    end
+
+    n_rows, n_columns = grid_size
+    if sizes !== nothing
+        for row_index in 1:n_rows
+            for column_index in 1:n_columns
+                point_size = sizes[row_index, column_index]
+                if point_size < 0
+                    return "negative size#$(row_index),$(column_index): $(point_size)"
+                end
+            end
+        end
+    end
+
+    border_colors = data.border_colors
+    if border_colors !== nothing && size(border_colors) != grid_size
+        return "the borders colors matrix size: $(size(border_colors))\n" *
+               "is different from the grid matrix size: $(grid_size)"
+    end
+
+    border_sizes = data.border_sizes
+    if border_sizes !== nothing && size(border_sizes) != grid_size
+        return "the borders sizes matrix size: $(size(border_sizes))\n" *
+               "is different from the grid matrix size: $(grid_size)"
+    end
+
+    if border_sizes !== nothing
+        for row_index in 1:n_rows
+            for column_index in 1:n_columns
+                border_size = border_sizes[row_index, column_index]
+                if border_size < 0
+                    return "negative border_size#$(row_index),$(column_index): $(border_size)"
+                end
+            end
+        end
+    end
+
+    hovers = data.hovers
+    if hovers !== nothing && size(hovers) != grid_size
+        return "the hovers matrix size: $(size(hovers))\n" * "is different from the grid matrix size: $(grid_size)"
+    end
+
+    return nothing
+end
+
+function render(
+    data::GridGraphData,
+    configuration::GridGraphConfiguration = GridGraphConfiguration(),
+    output_file::Maybe{AbstractString} = nothing,
+)::Figure
+    assert_valid_object(data)
+    assert_valid_object(configuration)
+    assert_valid_render(data, configuration)
+
+    if data.sizes !== nothing
+        n_rows, n_columns = size(data.sizes)
+    else
+        @assert data.colors !== nothing
+        n_rows, n_columns = size(data.colors)
+    end
+
+    traces = Vector{GenericTrace}()
+
+    border_colors = data.border_colors
+    border_sizes = data.border_sizes
+    if border_colors !== nothing || data.border_sizes !== nothing
+        color_scale = configuration.border_style.color_scale
+        if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            for (value, color) in color_scale
+                mask = border_colors .== value
+                if border_sizes !== nothing
+                    mask .&= border_sizes .> 0
+                end
+                if any(mask)
+                    push!(
+                        traces,
+                        grid_trace(;
+                            data = data,
+                            n_rows = n_rows,
+                            n_columns = n_columns,
+                            color = color,
+                            marker_size = border_marker_size(data, configuration, mask),
+                            coloraxis = nothing,
+                            points_style = configuration.border_style,
+                            scale_title = data.border_scale_title,
+                            legend_group = "borders",
+                            mask = mask,
+                            name = value,
+                        ),
+                    )
+                end
+            end
+        else
+            if data.border_sizes === nothing
+                mask = nothing
+            else
+                mask = border_sizes .> 0
+            end
+            if mask === nothing || any(mask)
+                push!(  # NOJET
+                    traces,
+                    grid_trace(;
+                        data = data,
+                        n_rows = n_rows,
+                        n_columns = n_columns,
+                        color = fix_colors(border_colors, configuration.border_style.log_color_scale_regularization),
+                        marker_size = border_marker_size(data, configuration, mask),
+                        coloraxis = "coloraxis2",
+                        points_style = configuration.border_style,
+                        scale_title = data.border_scale_title,
+                        mask = mask,
+                        legend_group = "borders",
+                    ),
+                )
+            end
+        end
+    end
+
+    sizes = data.sizes
+    color_scale = configuration.style.color_scale
+    if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        for (value, color) in color_scale
+            colors = data.colors
+            @assert colors !== nothing
+            mask = colors .== value
+            if sizes !== nothing
+                mask .&= sizes .> 0
+            end
+            if any(mask)
+                push!(
+                    traces,
+                    grid_trace(;
+                        data = data,
+                        n_rows = n_rows,
+                        n_columns = n_columns,
+                        color = color,
+                        marker_size = data.sizes !== nothing ? masked_data(data.sizes, mask) : configuration.style.size,
+                        coloraxis = nothing,
+                        points_style = configuration.style,
+                        scale_title = data.scale_title,
+                        legend_group = "points",
+                        mask = mask,
+                        name = value,
+                    ),
+                )
+            end
+        end
+    else
+        if sizes === nothing
+            mask = nothing
+        else
+            mask = sizes .> 0
+        end
+        if mask === nothing || any(mask)
+            push!(  # NOJET
+                traces,
+                grid_trace(;
+                    data = data,
+                    n_rows = n_rows,
+                    n_columns = n_columns,
+                    color = fix_colors(data.colors, configuration.style.log_color_scale_regularization),
+                    marker_size = data.sizes !== nothing ? masked_data(data.sizes, mask) : configuration.style.size,
+                    coloraxis = "coloraxis",
+                    points_style = configuration.style,
+                    scale_title = data.scale_title,
+                    mask = mask,
+                    legend_group = "points",
+                ),
+            )
+        end
+    end
+
+    columns_names = data.columns_names
+    if columns_names === nothing
+        columns_names = [string(index) for index in 1:n_columns]
+    end
+    rows_names = data.rows_names
+    if rows_names === nothing
+        rows_names = [string(index) for index in 1:n_rows]
+    end
+
+    layout = points_layout(;
+        data = data,
+        configuration = configuration,
+        x_axis = AxisConfiguration(; minimum = 0.5, maximum = n_columns + 0.5),
+        y_axis = AxisConfiguration(; minimum = 0.5, maximum = n_rows + 0.5),
+        rows_names = rows_names,
+        columns_names = columns_names,
+    )
+    figure = plot(traces, layout)
+    write_figure_to_file(figure, configuration.graph, output_file)
+
+    return figure
+end
+
+function assert_valid_render(data::GridGraphData, configuration::GridGraphConfiguration)::Nothing
+    if data.sizes !== nothing
+        n_rows, n_columns = size(data.sizes)
+    else
+        @assert data.colors !== nothing
+        n_rows, n_columns = size(data.colors)
+    end
+
+    color_scale = configuration.style.color_scale
+    if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.colors isa AbstractMatrix{<:AbstractString} "categorical style.color_scale for non-string points data.colors"
+        scale_colors = Set{AbstractString}([value for (value, _) in color_scale])
+        for column_index in 1:n_columns
+            for row_index in 1:n_rows
+                color = data.colors[row_index, column_index]
+                @assert color in scale_colors "categorical style.color_scale does not contain color#$(row_index),$(column_index): $(color)"
+            end
+        end
+    end
+
+    border_color_scale = configuration.border_style.color_scale
+    if border_color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.border_colors isa AbstractMatrix{<:AbstractString} (
+            "categorical borders_style.color_scale for non-string points data.border_colors"
+        )
+        border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_scale])
+        for column_index in 1:n_columns
+            for row_index in 1:n_rows
+                color = data.border_colors[row_index, column_index]
+                @assert color in border_scale_colors "categorical border_style.color_scale does not contain border_color#$(row_index),$(column_index): $(color)"
+            end
+        end
+    end
+
+    if configuration.style.show_color_scale
+        @assert data.colors !== nothing "no data.colors specified for points style.show_color_scale"
+        @assert !(data.colors isa AbstractMatrix{<:AbstractString}) ||
+                configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.colors specified for points style.show_color_scale"
+        )
+    end
+
+    if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.border_colors isa AbstractMatrix{<:AbstractString} "categorical color_scale for non-string points border_colors data"
+    end
+
+    if configuration.border_style.show_color_scale
+        @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_color_scale"
+        @assert !(data.border_colors isa AbstractMatrix{<:AbstractString}) ||
+                configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.border_colors specified for points border_style.show_color_scale"
+        )
+    end
+
+    return nothing
+end
+
+function grid_trace(;
+    data::GridGraphData,
+    n_rows::Integer,
+    n_columns::Integer,
+    color::Maybe{Union{AbstractString, AbstractMatrix{<:Union{<:AbstractString, Real}}}},
+    marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
+    coloraxis::Maybe{AbstractString},
+    points_style::PointsStyleConfiguration,
+    scale_title::Maybe{AbstractString},
+    legend_group::AbstractString,
+    mask::Maybe{Union{AbstractMatrix{Bool}, BitMatrix}} = nothing,
+    name::Maybe{AbstractString} = nothing,
+)::GenericTrace
+    return scatter(;
+        x = masked_xs(n_rows, n_columns, mask),
+        y = masked_ys(n_rows, n_columns, mask),
+        marker_size = marker_size,
+        marker_color = color !== nothing ? masked_data(color, mask) : points_style.color,
+        marker_colorscale = if points_style.color_scale isa AbstractVector ||
+                               points_style.log_color_scale_regularization !== nothing
+            nothing
+        else
+            points_style.color_scale
+        end,
+        marker_coloraxis = coloraxis,
+        marker_showscale = points_style.show_color_scale &&
+                           !(points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}),
+        marker_reversescale = points_style.reverse_color_scale,
+        showlegend = points_style.show_color_scale &&
+                     points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        legendgroup = legend_group,
+        legendgrouptitle_text = scale_title,
+        name = name !== nothing ? name : points_style.show_color_scale ? "Trace" : "",
+        text = masked_data(data.hovers, mask),
+        hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
+        mode = "markers",
+    )
+end
+
+function masked_data(data::Any, ::Any)::Any
+    return data
+end
+
+function masked_data(data::AbstractVector, mask::Union{AbstractVector{Bool}, BitVector})::AbstractVector
+    return data[mask]  # NOJET
+end
+
+function masked_data(data::AbstractMatrix, mask::Union{AbstractMatrix{Bool}, BitMatrix})::AbstractVector
+    return data[mask]  # NOJET
+end
+
+function masked_data(data::AbstractMatrix, ::Nothing)::AbstractVector
+    return vec(data)
+end
+
+function masked_xs(
+    n_rows::Integer,
+    n_columns::Integer,
+    mask::Maybe{Union{AbstractMatrix{Bool}, BitMatrix}},
+)::Vector{Int}
+    xs = Matrix{Int}(undef, n_rows, n_columns)
+    xs .= transpose(1:n_columns)
+    return masked_data(xs, mask)
+end
+
+function masked_ys(
+    n_rows::Integer,
+    n_columns::Integer,
+    mask::Maybe{Union{AbstractMatrix{Bool}, BitMatrix}},
+)::Vector{Int}
+    ys = Matrix{Int}(undef, n_rows, n_columns)
+    ys .= 1:n_rows
+    return masked_data(ys, mask)
+end
+
+function points_layout(;
+    data::Union{PointsGraphData, GridGraphData},
+    configuration::Union{PointsGraphConfiguration, GridGraphConfiguration},
+    x_axis::AxisConfiguration,
+    y_axis::AxisConfiguration,
+    rows_names::Maybe{AbstractStringVector} = nothing,
+    columns_names::Maybe{AbstractStringVector} = nothing,
+)::Layout
+    color_tickvals, color_ticktext = log_color_scale_ticks(data.colors, configuration.style)
+    border_color_tickvals, border_color_ticktext = log_color_scale_ticks(data.border_colors, configuration.border_style)
+    x_tickvals, x_ticknames = xy_ticks(columns_names)
+    y_tickvals, y_ticknames = xy_ticks(rows_names)
+    return Layout(;  # NOJET
+        title = data.graph_title,
+        template = configuration.graph.template,
+        xaxis_showgrid = configuration.graph.show_grid,
+        xaxis_showticklabels = configuration.graph.show_ticks,
+        xaxis_title = data.x_axis_title,
+        xaxis_range = (x_axis.minimum, x_axis.maximum),
+        xaxis_type = x_axis.log_scale ? "log" : nothing,
+        xaxis_tickvals = x_tickvals,
+        xaxis_ticktext = x_ticknames,
+        yaxis_showgrid = configuration.graph.show_grid,
+        yaxis_showticklabels = configuration.graph.show_ticks,
+        yaxis_title = data.y_axis_title,
+        yaxis_range = (y_axis.minimum, y_axis.maximum),
+        yaxis_type = y_axis.log_scale ? "log" : nothing,
+        yaxis_tickvals = y_tickvals,
+        yaxis_ticktext = y_ticknames,
+        showlegend = (
+            configuration.style.show_color_scale &&
+            configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        ) || (
+            configuration.border_style.show_color_scale &&
+            configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        ),
+        legend_x = if configuration.style.show_color_scale &&
+                      configuration.border_style.show_color_scale &&
+                      configuration.border_style.color_scale isa
+                      AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            1.2
+        else
+            nothing
+        end,
+        coloraxis2_colorbar_x = if (
+            configuration.border_style.show_color_scale && configuration.style.show_color_scale
+        )
+            1.2
+        else
+            nothing  # NOJET
+        end,
+        coloraxis_showscale = configuration.style.show_color_scale && !(
+            configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        ),
+        coloraxis_reversescale = configuration.style.reverse_color_scale,
+        coloraxis_colorscale = normalized_color_scale(
+            configuration.style.color_scale,
+            configuration.style.log_color_scale_regularization,
+        ),
+        coloraxis_cmin = lowest_color_scale(
+            configuration.style.color_scale,
+            configuration.style.log_color_scale_regularization,
+        ),
+        coloraxis_cmax = highest_color_scale(
+            configuration.style.color_scale,
+            configuration.style.log_color_scale_regularization,
+        ),
+        coloraxis_colorbar_title_text = data.scale_title,
+        coloraxis_colorbar_tickvals = color_tickvals,
+        coloraxis_colorbar_ticktext = color_ticktext,
+        coloraxis2_showscale = (data.border_colors !== nothing || data.border_sizes !== nothing) &&
+                               configuration.border_style.show_color_scale &&
+                               !(
+                                   configuration.border_style.color_scale isa
+                                   AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+                               ),
+        coloraxis2_reversescale = configuration.border_style.reverse_color_scale,
+        coloraxis2_colorscale = normalized_color_scale(
+            configuration.border_style.color_scale,
+            configuration.border_style.log_color_scale_regularization,
+        ),
+        coloraxis2_cmin = lowest_color_scale(
+            configuration.border_style.color_scale,
+            configuration.border_style.log_color_scale_regularization,
+        ),
+        coloraxis2_cmax = highest_color_scale(
+            configuration.border_style.color_scale,
+            configuration.border_style.log_color_scale_regularization,
+        ),
+        coloraxis2_colorbar_title_text = data.border_scale_title,
+        coloraxis2_colorbar_tickvals = border_color_tickvals,
+        coloraxis2_colorbar_ticktext = border_color_ticktext,
+    )
+end
+
+function border_marker_size(
+    data::Union{PointsGraphData, GridGraphData},
+    configuration::Union{PointsGraphConfiguration, GridGraphConfiguration},
+    mask::Maybe{Union{AbstractVector{Bool}, BitVector, AbstractMatrix{Bool}, BitMatrix}} = nothing,
+)::Union{Real, Vector{<:Real}}
+    sizes = masked_data(data.sizes, mask)
+    border_sizes = masked_data(data.border_sizes, mask)
+
+    if border_sizes === nothing
+        border_marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
+        if sizes === nothing
+            points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
+            return points_marker_size + 2 * border_marker_size
+        else
+            return sizes .+ 2 * border_marker_size  # untested
+        end
+    else
+        if sizes === nothing
+            points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
+            return 2 .* border_sizes .+ points_marker_size
+        else
+            return 2 .* border_sizes .+ sizes  # untested
+        end
+    end
+end
+
+end  # module

@@ -97,6 +97,12 @@
 </a>
 </li>
 <li>
+<a class="tocitem" href="#Grid">
+<span>Grid
+</span>
+</a>
+</li>
+<li>
 <a class="tocitem" href="#Index">
 <span>Index
 </span>
@@ -373,6 +379,22 @@
 </a>
 </td>
 <td style="text-align: left">Graph of points, possibly with edges between them.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>GridGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
+<code>GridGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a grid of points (e.g. for correlations).
 </td>
 </tr>
 </table>
@@ -1801,6 +1823,77 @@ end
 </div>
 </section>
 </article>
+<h2 id="Grid">
+<a class="docs-heading-anchor" href="#Grid">Grid
+</a>
+<a id="Grid-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Grid" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphData" href="#MCGraphs.Renderers.GridGraphData">
+<code>MCGraphs.Renderers.GridGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct GridGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    scale_title::Maybe{AbstractString} = nothing
+    border_scale_title::Maybe{AbstractString} = nothing
+    colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString,&lt;:Real}}}} = nothing
+    sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
+    hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
+    border_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString,&lt;:Real}}}} = nothing
+    border_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
+end
+</code>
+</pre>
+<p>The data for a graph showing a grid of points (e.g. for correlations).
+</p>
+<p>TODO.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphConfiguration" href="#MCGraphs.Renderers.GridGraphConfiguration">
+<code>MCGraphs.Renderers.GridGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph showing a grid of points (e.g. for correlations).
+</p>
+<p>TODO
+</p>
+</div>
+</section>
+</article>
 <h2 id="Index">
 <a class="docs-heading-anchor" href="#Index">Index
 </a>
@@ -1939,6 +2032,18 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
 <code>MCGraphs.Renderers.GraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
+<code>MCGraphs.Renderers.GridGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>MCGraphs.Renderers.GridGraphData
 </code>
 </a>
 </li>

@@ -66,6 +66,13 @@ MCGraphs.Renderers.BandsConfiguration
 MCGraphs.Renderers.BandRegionConfiguration
 ```
 
+## Grid
+
+```@docs
+MCGraphs.Renderers.GridGraphData
+MCGraphs.Renderers.GridGraphConfiguration
+```
+
 ## Index
 
 ```@index
