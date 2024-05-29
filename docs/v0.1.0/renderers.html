@@ -616,9 +616,9 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     values::AbstractVector{&lt;:Real}
-    names::Maybe{AbstractStringVector} = nothing
-    colors::Maybe{AbstractStringVector} = nothing
-    hovers::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
 </code>
 </pre>
@@ -703,10 +703,10 @@ end
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
     values::AbstractString{&lt;:AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractStringVector} = nothing
-    colors::Maybe{AbstractStringVector} = nothing
-    hovers::Maybe{AbstractStringVector} = nothing
-    bar_names::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    bar_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
 </code>
 </pre>
@@ -851,8 +851,8 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
     values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractStringVector} = nothing
-    line_colors::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    line_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
     fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
     are_dashed::Maybe{AbstractVector{Bool}} = nothing
@@ -1047,8 +1047,8 @@ end
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
     values::AbstractVector{AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractStringVector} = nothing
-    colors::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
 </code>
 </pre>
@@ -1294,7 +1294,7 @@ end
     y_axis_title::Maybe{AbstractString} = nothing
     xs::AbstractVector{AbstractVector{&lt;:Real}}
     ys::AbstractVector{AbstractVector{&lt;:Real}}
-    colors::Maybe{AbstractStringVector} = nothing
+    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
 end
 </code>
@@ -1523,13 +1523,13 @@ end
     border_scale_title::Maybe{AbstractString} = nothing
     xs::AbstractVector{&lt;:Real}
     ys::AbstractVector{&lt;:Real}
-    colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
+    colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
     sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
-    hovers::Maybe{AbstractStringVector} = nothing
-    border_colors::Maybe{Union{AbstractStringVector, AbstractVector{&lt;:Real}}} = nothing
+    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    border_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
     border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
     edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
-    edges_colors::Maybe{AbstractStringVector} = nothing
+    edges_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
 end
 </code>

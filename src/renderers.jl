@@ -323,8 +323,8 @@ end
         trace_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
         values::AbstractVector{AbstractVector{<:Real}}
-        names::Maybe{AbstractStringVector} = nothing
-        colors::Maybe{AbstractStringVector} = nothing
+        names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
 
 The data for a multiple distributions graph. By default, all the titles are empty. You can specify the overall
@@ -338,8 +338,8 @@ vectors in the `values`.
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
     values::AbstractVector{AbstractVector{<:Real}}
-    names::Maybe{AbstractStringVector} = nothing
-    colors::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
 
 function Validations.validate_object(data::DistributionsGraphData)::Maybe{AbstractString}
@@ -404,7 +404,7 @@ function render(
     assert_valid_object(data)
     assert_valid_object(configuration)
 
-    trace = distribution_trace(  # NOJET;;;;;;;;;;;;;;;;;;;
+    trace = distribution_trace(  # NOJET;
         values = data.values,
         name = data.name === nothing ? "Trace" : data.name,
         color = configuration.style.color,
@@ -867,7 +867,7 @@ end
         y_axis_title::Maybe{AbstractString} = nothing
         xs::AbstractVector{AbstractVector{<:Real}}
         ys::AbstractVector{AbstractVector{<:Real}}
-        colors::Maybe{AbstractStringVector} = nothing
+        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         line_widths::Maybe{AbstractVector{<:Real}} = nothing
     end
 
@@ -895,8 +895,8 @@ must not be used.
     legend_title::Maybe{AbstractString} = nothing
     xs::AbstractVector{AbstractVector{<:Real}}
     ys::AbstractVector{AbstractVector{<:Real}}
-    names::Maybe{AbstractStringVector} = nothing
-    line_colors::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    line_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     line_widths::Maybe{AbstractVector{<:Real}} = nothing
     fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
     are_dashed::Maybe{AbstractVector{Bool}} = nothing
@@ -1322,8 +1322,8 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         fraction_axis_title::Maybe{AbstractString} = nothing
         values::AbstractVector{<:AbstractVector{<:Real}}
-        names::Maybe{AbstractStringVector} = nothing
-        line_colors::Maybe{AbstractStringVector} = nothing
+        names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        line_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         line_widths::Maybe{AbstractVector{<:Real}} = nothing
         fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
         are_dashed::Maybe{AbstractVector{Bool}} = nothing
@@ -1342,8 +1342,8 @@ The order of the `values` does not matter.
     fraction_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
     values::AbstractVector{<:AbstractVector{<:Real}}
-    names::Maybe{AbstractStringVector} = nothing
-    line_colors::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    line_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     line_widths::Maybe{AbstractVector{<:Real}} = nothing
     fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
     are_dashed::Maybe{AbstractVector{Bool}} = nothing
@@ -1480,9 +1480,9 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         bar_axis_title::Maybe{AbstractString} = nothing
         values::AbstractVector{<:Real}
-        names::Maybe{AbstractStringVector} = nothing
-        colors::Maybe{AbstractStringVector} = nothing
-        hovers::Maybe{AbstractStringVector} = nothing
+        names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+        hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
 
 The data for a single bar (histogram) graph.
@@ -1498,9 +1498,9 @@ of `values`.
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     values::AbstractVector{<:Real}
-    names::Maybe{AbstractStringVector} = nothing
-    colors::Maybe{AbstractStringVector} = nothing
-    hovers::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
 
 function Validations.validate_object(data::BarGraphData)::Maybe{AbstractString}
@@ -1600,10 +1600,10 @@ end
         bar_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
         values::AbstractString{<:AbstractVector{<:Real}}
-        names::Maybe{AbstractStringVector} = nothing
-        colors::Maybe{AbstractStringVector} = nothing
-        hovers::Maybe{AbstractStringVector} = nothing
-        bar_names::Maybe{AbstractStringVector} = nothing
+        names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+        hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
+        bar_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
 
 The data for a multiple bars (histograms) graph.
@@ -1619,10 +1619,10 @@ All the `values` vectors must be of the same size. If specified, the `bar_names 
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
     values::AbstractVector{<:AbstractVector{<:Real}}
-    names::Maybe{AbstractStringVector} = nothing
-    colors::Maybe{AbstractStringVector} = nothing
-    hovers::Maybe{AbstractStringVector} = nothing
-    bar_names::Maybe{AbstractStringVector} = nothing
+    names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
+    bar_names::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
 
 function Validations.validate_object(data::BarsGraphData)::Maybe{AbstractString}
@@ -1731,9 +1731,9 @@ function bar_trace(
     data::Union{BarGraphData, BarsGraphData},
     configuration::Union{BarGraphConfiguration, BarsGraphConfiguration};
     values::AbstractVector{<:Real},
-    color::Maybe{Union{AbstractString, AbstractStringVector}},
-    hover::Maybe{Union{AbstractString, AbstractStringVector}},
-    names::Maybe{AbstractStringVector},
+    color::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}}},
+    hover::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}}},
+    names::Maybe{AbstractVector{<:AbstractString}},
     name::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
 )::GenericTrace
@@ -1982,13 +1982,13 @@ end
         border_scale_title::Maybe{AbstractString} = nothing
         xs::AbstractVector{<:Real}
         ys::AbstractVector{<:Real}
-        colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+        colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
         sizes::Maybe{AbstractVector{<:Real}} = nothing
-        hovers::Maybe{AbstractStringVector} = nothing
-        border_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+        hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
+        border_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
         border_sizes::Maybe{AbstractVector{<:Real}} = nothing
         edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
-        edges_colors::Maybe{AbstractStringVector} = nothing
+        edges_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         edges_sizes::Maybe{AbstractVector{<:Real}} = nothing
     end
 
@@ -2020,13 +2020,13 @@ The `edges_colors` are restricted to explicit colors, not a color scale.
     border_scale_title::Maybe{AbstractString} = nothing
     xs::AbstractVector{<:Real}
     ys::AbstractVector{<:Real}
-    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+    colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
     sizes::Maybe{AbstractVector{<:Real}} = nothing
-    hovers::Maybe{AbstractStringVector} = nothing
-    border_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+    hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
+    border_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
     border_sizes::Maybe{AbstractVector{<:Real}} = nothing
     edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
-    edges_colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}}} = nothing
+    edges_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
     edges_sizes::Maybe{AbstractVector{<:Real}} = nothing
 end
 
@@ -2279,7 +2279,7 @@ function assert_valid_render(data::PointsGraphData, configuration::PointsGraphCo
 
     color_scale = configuration.style.color_scale
     if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.colors isa AbstractStringVector "categorical style.color_scale for non-string points data.colors"
+        @assert data.colors isa AbstractVector{<:AbstractString} "categorical style.color_scale for non-string points data.colors"
         scale_colors = Set{AbstractString}([value for (value, _) in color_scale])
         for (index, color) in enumerate(data.colors)
             @assert color in scale_colors "categorical style.color_scale does not contain color#$(index): $(color)"
@@ -2288,7 +2288,7 @@ function assert_valid_render(data::PointsGraphData, configuration::PointsGraphCo
 
     border_color_scale = configuration.border_style.color_scale
     if border_color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractStringVector (
+        @assert data.border_colors isa AbstractVector{<:AbstractString} (
             "categorical borders_style.color_scale for non-string points data.border_colors"
         )
         border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_scale])
@@ -2299,19 +2299,19 @@ function assert_valid_render(data::PointsGraphData, configuration::PointsGraphCo
 
     if configuration.style.show_color_scale
         @assert data.colors !== nothing "no data.colors specified for points style.show_color_scale"
-        @assert !(data.colors isa AbstractStringVector) ||
+        @assert !(data.colors isa AbstractVector{<:AbstractString}) ||
                 configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
             "explicit data.colors specified for points style.show_color_scale"
         )
     end
 
     if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractStringVector "categorical color_scale for non-string points border_colors data"
+        @assert data.border_colors isa AbstractVector{<:AbstractString} "categorical color_scale for non-string points border_colors data"
     end
 
     if configuration.border_style.show_color_scale
         @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_color_scale"
-        @assert !(data.border_colors isa AbstractStringVector) ||
+        @assert !(data.border_colors isa AbstractVector{<:AbstractString}) ||
                 configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
             "explicit data.border_colors specified for points border_style.show_color_scale"
         )
@@ -2606,7 +2606,7 @@ end
 
 function points_trace(
     data::PointsGraphData;
-    color::Maybe{Union{AbstractString, AbstractStringVector, AbstractVector{<:Real}}},
+    color::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}, AbstractVector{<:Real}}},
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
     coloraxis::Maybe{AbstractString},
     points_style::PointsStyleConfiguration,
@@ -2743,9 +2743,11 @@ function band_operations(log_scale::Bool)::Tuple{Real, Function, Function}
 end
 
 function fix_colors(
-    colors::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}, AbstractMatrix{<:Union{Real, AbstractString}}}},
+    colors::Maybe{
+        Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}, AbstractMatrix{<:Union{Real, AbstractString}}},
+    },
     ::Nothing,
-)::Maybe{Union{AbstractStringVector, AbstractVector{<:Real}, AbstractMatrix{<:Union{Real, AbstractString}}}}
+)::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}, AbstractMatrix{<:Union{Real, AbstractString}}}}
     return colors
 end
 
@@ -2760,7 +2762,7 @@ function xy_ticks(::Nothing)::Tuple{Nothing, Nothing}
     return (nothing, nothing)
 end
 
-function xy_ticks(names::AbstractStringVector)::Tuple{Vector{<:Integer}, AbstractStringVector}
+function xy_ticks(names::AbstractVector{<:AbstractString})::Tuple{Vector{<:Integer}, AbstractVector{<:AbstractString}}
     return (collect(1:length(names)), names)
 end
 
@@ -2956,8 +2958,8 @@ TODO.
     y_axis_title::Maybe{AbstractString} = nothing
     scale_title::Maybe{AbstractString} = nothing
     border_scale_title::Maybe{AbstractString} = nothing
-    columns_names::Maybe{AbstractStringVector} = nothing
-    rows_names::Maybe{AbstractStringVector} = nothing
+    columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
     sizes::Maybe{AbstractMatrix{<:Real}} = nothing
     hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
@@ -3314,8 +3316,8 @@ function points_layout(;
     configuration::Union{PointsGraphConfiguration, GridGraphConfiguration},
     x_axis::AxisConfiguration,
     y_axis::AxisConfiguration,
-    rows_names::Maybe{AbstractStringVector} = nothing,
-    columns_names::Maybe{AbstractStringVector} = nothing,
+    rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
 )::Layout
     color_tickvals, color_ticktext = log_color_scale_ticks(data.colors, configuration.style)
     border_color_tickvals, border_color_ticktext = log_color_scale_ticks(data.border_colors, configuration.border_style)
