@@ -61,20 +61,14 @@
 </a>
 <ul class="internal">
 <li>
-<a class="tocitem" href="#Bars">
-<span>Bars
+<a class="tocitem" href="#Points">
+<span>Points
 </span>
 </a>
 </li>
 <li>
-<a class="tocitem" href="#CDFs">
-<span>CDFs
-</span>
-</a>
-</li>
-<li>
-<a class="tocitem" href="#Distribution">
-<span>Distribution
+<a class="tocitem" href="#Grid">
+<span>Grid
 </span>
 </a>
 </li>
@@ -85,20 +79,20 @@
 </a>
 </li>
 <li>
-<a class="tocitem" href="#Points">
-<span>Points
+<a class="tocitem" href="#CDFs">
+<span>CDFs
 </span>
 </a>
 </li>
 <li>
-<a class="tocitem" href="#Bands-in-graphs">
-<span>Bands in graphs
+<a class="tocitem" href="#Bars">
+<span>Bars
 </span>
 </a>
 </li>
 <li>
-<a class="tocitem" href="#Grid">
-<span>Grid
+<a class="tocitem" href="#Distribution">
+<span>Distribution
 </span>
 </a>
 </li>
@@ -546,7 +540,7 @@ end
 <code class="language-julia hljs">@kwdef mutable struct AxisConfiguration &lt;: ObjectWithValidation
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
-    log_scale::Bool,
+    log_regularization::Maybe{AbstractFloat} = nothing,
 end
 </code>
 </pre>
@@ -557,8 +551,14 @@ end
 </code> are computed automatically from the data.
 </p>
 <p>If 
-<code>log_scale
-</code> is set, the data must contain only positive values, and the axis is shown in log (base 10) scale. To help with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is &quot;close enough&quot; to 2x for intuitive reading of the ratios).
+<code>log_regularization
+</code> is set, it is added to the coordinate to avoid zero values, and the axis is shown in log (base
+</p>
+<ol>
+<li>scale. To help with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is &quot;close enough&quot; to
+</li>
+</ol>
+<p>2x for intuitive reading of the ratios).
 </p>
 </div>
 </section>
@@ -589,20 +589,20 @@ end
 </div>
 </section>
 </article>
-<h2 id="Bars">
-<a class="docs-heading-anchor" href="#Bars">Bars
+<h2 id="Points">
+<a class="docs-heading-anchor" href="#Points">Points
 </a>
-<a id="Bars-1">
+<a id="Points-1">
 </a>
-<a class="docs-heading-anchor-permalink" href="#Bars" title="Permalink">
+<a class="docs-heading-anchor-permalink" href="#Points" title="Permalink">
 </a>
 </h2>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BarGraphData" href="#MCGraphs.Renderers.BarGraphData">
-<code>MCGraphs.Renderers.BarGraphData
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphData" href="#MCGraphs.Renderers.PointsGraphData">
+<code>MCGraphs.Renderers.PointsGraphData
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -611,36 +611,90 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct BarGraphData &lt;: AbstractGraphData
+<code class="language-julia hljs">@kwdef mutable struct PointsGraphData &lt;: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
-    value_axis_title::Maybe{AbstractString} = nothing
-    bar_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{&lt;:Real}
-    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    scale_title::Maybe{AbstractString} = nothing
+    border_scale_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{&lt;:Real}
+    ys::AbstractVector{&lt;:Real}
+    colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
+    sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
     hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    border_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
+    border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
+    edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
+    edges_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
 end
 </code>
 </pre>
-<p>The data for a single bar (histogram) graph.
+<p>The data for a scatter graph of points.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
 <code>graph_title
 </code> as well as the 
-<code>value_axis_title
+<code>x_axis_title
 </code> and 
-<code>bar_axis_title
+<code>y_axis_title
 </code> for the axes.
 </p>
-<p>If specified, the 
-<code>names
-</code> and/or 
+<p>The 
+<code>xs
+</code> and 
+<code>ys
+</code> vectors must be of the same size. If specified, the 
 <code>colors
+</code> 
+<code>sizes
 </code> and/or 
 <code>hovers
-</code> vectors must contain the same number of elements as the number of 
-<code>values
-</code>.
+</code> vectors must also be of the same size. The 
+<code>colors
+</code> can be either color names or a numeric value; if the latter, then the configuration&#39;s 
+<code>color_palette
+</code> is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs (or when saving an HTML file).
+</p>
+<p>The 
+<code>border_colors
+</code> and 
+<code>border_sizes
+</code> can be used to display additional data per point. The border size is in addition to the point size.
+</p>
+<p>The 
+<code>scale_title
+</code> and 
+<code>border_scale_title
+</code> are only used if 
+<code>show_scale
+</code> is set for the relevant color scales. You can&#39;t specify 
+<code>show_scale
+</code> if there is no 
+<code>colors
+</code> data or if the 
+<code>colors
+</code> contain explicit color names.
+</p>
+<p>It is possible to draw straight 
+<code>edges
+</code> between specific point pairs. In this case the 
+<code>edges_style
+</code> of the 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>PointsGraphConfiguration
+</code>
+</a> will be used, and the 
+<code>edges_colors
+</code> and 
+<code>edges_sizes
+</code> will override it per edge. The 
+<code>edges_colors
+</code> are restricted to explicit colors, not a color scale.
+</p>
+<p>A point (or a point border, or an edge) with a zero size and/or an empty string color (either from the data or from a categorical 
+<code>color_palette
+</code>) will not be shown.
 </p>
 </div>
 </section>
@@ -649,8 +703,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BarGraphConfiguration" href="#MCGraphs.Renderers.BarGraphConfiguration">
-<code>MCGraphs.Renderers.BarGraphConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphConfiguration" href="#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>MCGraphs.Renderers.PointsGraphConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -659,27 +713,77 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct BarGraphConfiguration &lt;: AbstractGraphConfiguration
+<code class="language-julia hljs">@kwdef mutable struct PointsGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    value_axis::AxisConfiguration = AxisConfiguration()
-    color::Maybe{AbstractString} = nothing
-    orientation::ValuesOrientation = VerticalValues
-    bars_gap::Maybe{&lt;:Real} = nothing
+    x_axis::AxisConfiguration = AxisConfiguration()
+    y_axis::AxisConfiguration = AxisConfiguration()
+    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
+    diagonal_bands::BandsConfiguration = BandsConfiguration()
 end
 </code>
 </pre>
-<p>Configure a graph for showing a single bar (histogram) graph. The 
-<code>color
-</code> is chosen automatically. You can override it globally, or per-bar in the 
-<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
-<code>BarGraphData
-</code>
-</a>. By default, the X axis is used for the bars and the Y axis for the values; this can be switched using the 
-<code>orientation
-</code>. The 
-<code>bars_gap
-</code> is the fraction of white space between bars.
+<p>Configure a graph for showing a scatter graph of points.
 </p>
+<p>Using the 
+<code>vertical_bands
+</code>, 
+<code>horizontal_bands
+</code> and/or 
+<code>diagonal_bands
+</code> you can partition the graph into regions. The 
+<code>diagonal_bands
+</code> can only be used if both axes are linear or both axes are in log scale; they also unify the ranges of the X and Y axes. If the axes are in log scale, the 
+<code>line_offset
+</code> of the 
+<code>diagonal_bands
+</code> are multiplicative instead of additive, and must be positive.
+</p>
+<p>The 
+<code>border_style
+</code> is used if the 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a> contains either the 
+<code>border_colors
+</code> and/or 
+<code>border_sizes
+</code>. This allows displaying some additional data per point.
+</p>
+<div class="admonition is-info">
+<header class="admonition-header">Note
+</header>
+<div class="admonition-body">
+<p>There is no 
+<code>show_legend
+</code> for a 
+<a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
+<code>GraphConfiguration
+</code>
+</a> of a points graph. Instead you probably want to set the 
+<code>show_scale
+</code> of the 
+<code>color_scale
+</code> (and/or of the 
+<code>border_style
+</code> and/or 
+<code>edges_style
+</code>). In addition, the color scale options of the 
+<code>edges_style
+</code> must not be set, as the 
+<code>edges_colors
+</code> of 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a> is restricted to explicit colors.
+</p>
+</div>
+</div>
 </div>
 </section>
 </article>
@@ -687,8 +791,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BarsGraphData" href="#MCGraphs.Renderers.BarsGraphData">
-<code>MCGraphs.Renderers.BarsGraphData
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsStyleConfiguration" href="#MCGraphs.Renderers.PointsStyleConfiguration">
+<code>MCGraphs.Renderers.PointsStyleConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -697,48 +801,302 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct BarsGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
-    value_axis_title::Maybe{AbstractString} = nothing
-    bar_axis_title::Maybe{AbstractString} = nothing
-    legend_title::Maybe{AbstractString} = nothing
-    values::AbstractString{&lt;:AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    bar_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+<code class="language-julia hljs">@kwdef mutable struct PointsStyleConfiguration &lt;: ObjectWithValidation
+    color::Maybe{AbstractString} = nothing
+    color_scale::ScaleConfiguration = ScaleConfiguration()
+    color_palette::Maybe{Union{
+        AbstractString,
+        AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}},
+        AbstractVector{&lt;:Tuple{&lt;:AbstractString, &lt;:AbstractString}}
+    }} = nothing
+    size::Maybe{Real} = nothing
+    size_scale::ScaleConfiguration = ScaleConfiguration()
+    size_range::SizeRangeConfiguration = SizeRangeConfiguration()
 end
 </code>
 </pre>
-<p>The data for a multiple bars (histograms) graph.
+<p>Configure points in a graph. By default, the point 
+<code>color
+</code> and 
+<code>size
+</code> is chosen automatically (when this is applied to edges, the 
+<code>size
+</code> is the width of the line). You can override this by specifying colors and/or sizes in the 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a>. For color values, the 
+<code>color_palette
+</code> is applied; this can be the name of a standard one, a vector of (value, color) tuples for a continuous (numeric value) scale or categorical (string value) scales. For sizes, the 
+<code>size_range
+</code> is applied. The 
+<code>color_scale
+</code> and 
+<code>size_scale
+</code> configurations further control the color scales.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.ScaleConfiguration" href="#MCGraphs.Renderers.ScaleConfiguration">
+<code>MCGraphs.Renderers.ScaleConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct ScaleConfiguration &lt;: ObjectWithValidation
+    minimum::Maybe{Real} = nothing
+    maximum::Maybe{Real} = nothing
+    log_regularization::Maybe{AbstractFloat} = nothing
+    reverse_scale::Bool = false
+    show_scale::Bool = false
+end
+</code>
+</pre>
+<p>Configure a color (or sizes) scale. If 
+<code>show_scale
+</code> is set, the color scale is displayed next to the graph. The rest of the fields are only relevant for continuous scales. By default, the 
+<code>minimum
+</code> and 
+<code>maximum
+</code> values are determined automatically by the data. Setting 
+<code>log_regularization
+</code> converts the scale to a log scale, using the (non-negative) regularization to avoid log of zero values. If 
+<code>reverse_scale
+</code> is set, the direction of the color scale is reversed.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.SizeRangeConfiguration" href="#MCGraphs.Renderers.SizeRangeConfiguration">
+<code>MCGraphs.Renderers.SizeRangeConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct SizeRangeConfiguration &lt;: ObjectWithValidation
+    smallest::Maybe{Real} = nothing
+    largest::Maybe{Real} = nothing
+end
+</code>
+</pre>
+<p>Configure the range of sizes in pixels (1/96th of an inch) to map the sizes data into. If no bounds are given, and also the scale is linear, then we assume the sizes data is just the size in pixels. Otherwise, by default we use 2 pixels for the 
+<code>smallest
+</code> size and make the 
+<code>largest
+</code> size be 8 pixels larger than the 
+<code>smallest
+</code> size.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BandsConfiguration" href="#MCGraphs.Renderers.BandsConfiguration">
+<code>MCGraphs.Renderers.BandsConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BandsConfiguration &lt;: ObjectWithValidation
+    low::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
+    middle::BandRegionConfiguration = BandRegionConfiguration()
+    high::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
+end
+</code>
+</pre>
+<p>Configure the partition of the graph up to three band regions. The 
+<code>low
+</code> and 
+<code>high
+</code> are the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
+<code>middle
+</code> is the &quot;inner&quot; region between them (so its line is inside it, solid by default).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BandRegionConfiguration" href="#MCGraphs.Renderers.BandRegionConfiguration">
+<code>MCGraphs.Renderers.BandRegionConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BandRegionConfiguration &lt;: ObjectWithValidation
+    line_color::Maybe{AbstractString} = &quot;black&quot;
+    line_width::Real = 1.0
+    line_is_dashed::Bool = false
+    fill_color::Maybe{AbstractString} = nothing
+end
+</code>
+</pre>
+<p>Configure a region of the graph defined by some band of values. The region only exists if 
+<code>line_offset
+</code> is set. To actually show the region, either the 
+<code>line_color
+</code> and/or the 
+<code>fill_color
+</code> must be set; by default, just the line is shown. The 
+<code>line_width
+</code> is in pixels (1/96th of an inch).
+</p>
+</div>
+</section>
+</article>
+<h2 id="Grid">
+<a class="docs-heading-anchor" href="#Grid">Grid
+</a>
+<a id="Grid-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Grid" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphData" href="#MCGraphs.Renderers.GridGraphData">
+<code>MCGraphs.Renderers.GridGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct GridGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    scale_title::Maybe{AbstractString} = nothing
+    border_scale_title::Maybe{AbstractString} = nothing
+    columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
+    sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
+    hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
+    border_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
+    border_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
+end
+</code>
+</pre>
+<p>The data for a graph showing a grid of points (e.g. for correlations).
+</p>
+<p>This is similar to a 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a>, except that the data is given as a matrix instead of a vector, and no X and Y coordinates are given. Instead each matrix entry is plotted as a point at the matching grid location.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphConfiguration" href="#MCGraphs.Renderers.GridGraphConfiguration">
+<code>MCGraphs.Renderers.GridGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph showing a grid of points (e.g. for correlations).
+</p>
+<p>This displays a matrix of values using a point at each grid position. This is often used to show correlations between two sets of discrete variables. For large amounts of data, use a heatmap instead. An advantage of this over a heatmap is that you can control the color, size, and border color and size of the points to show more than one value per point. A disadvantage of this plot is that it only works for &quot;small&quot; amount of data. Also, you will need to manually tweak the graph size vs. the point sizes for best results, as Plotly&#39;s defaults aren&#39;t very good here.
+</p>
+</div>
+</section>
+</article>
+<h2 id="Lines">
+<a class="docs-heading-anchor" href="#Lines">Lines
+</a>
+<a id="Lines-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Lines" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LineGraphData" href="#MCGraphs.Renderers.LineGraphData">
+<code>MCGraphs.Renderers.LineGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LineGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{&lt;:Real}
+    ys::AbstractVector{&lt;:Real}
+end
+</code>
+</pre>
+<p>The data for a line graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
 <code>graph_title
 </code> as well as the 
-<code>value_axis_title
-</code>, 
-<code>bar_axis_title
-</code> for the axes, and the 
-<code>legend_title
-</code> (if 
-<code>show_legend
-</code> is set in 
-<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
-<code>BarsGraphConfiguration
-</code>
-</a>.
+<code>x_axis_title
+</code> and 
+<code>y_axis_title
+</code> for the axes.
 </p>
-<p>All the 
-<code>values
-</code> vectors must be of the same size. If specified, the 
-<code>bar_names vector must contain the same number of elements. If specified, the
-</code>names
-<code>and/or
-</code>colors
-<code>and/or
-</code>hovers
-<code>vectors must contain the same number of elements as the number of
-</code>values` vectors (that is, the number of series).
+<p>The 
+<code>xs
+</code> and 
+<code>ys
+</code> vectors must be of the same size. A line will be drawn through all the points, and the area under the line may be filled.
 </p>
 </div>
 </section>
@@ -747,8 +1105,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BarsGraphConfiguration" href="#MCGraphs.Renderers.BarsGraphConfiguration">
-<code>MCGraphs.Renderers.BarsGraphConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.LinesGraphData" href="#MCGraphs.Renderers.LinesGraphData">
+<code>MCGraphs.Renderers.LinesGraphData
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -757,30 +1115,201 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct BarsGraphConfiguration &lt;: AbstractGraphConfiguration
+<code class="language-julia hljs">@kwdef mutable struct LinesGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    legend_title::Maybe{AbstractString} = nothing
+    xs::AbstractVector{AbstractVector{&lt;:Real}}
+    ys::AbstractVector{AbstractVector{&lt;:Real}}
+    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
+    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+end
+</code>
+</pre>
+<p>The data for multiple lines graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>x_axis_title
+</code> and 
+<code>y_axis_title
+</code> for the axes.
+</p>
+<p>The 
+<code>xs
+</code> and 
+<code>ys
+</code> vectors must be of the same size (one per line). For each line, its 
+<code>xs
+</code> and 
+<code>ys
+</code> coordinate arrays must also be of the same size; a line will be drawn through all the points, and the area under the line may be filled. If 
+<code>stack_lines
+</code> is specified in 
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
+<code>LinesGraphConfiguration
+</code>
+</a>, then the lines are specified in top-to-bottom order.
+</p>
+<p>The 
+<code>names
+</code>, 
+<code>colors
+</code>, 
+<code>line_widths
+</code>, 
+<code>fill_belows
+</code> and 
+<code>are_dashed
+</code> arrays must have the same number of entries (one per line). The 
+<code>colors
+</code> are restricted to explicit colors; therefore the color scale options of the 
+<code>style
+</code> must not be used.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LineGraphConfiguration" href="#MCGraphs.Renderers.LineGraphConfiguration">
+<code>MCGraphs.Renderers.LineGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LineGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    value_axis::AxisConfiguration = AxisConfiguration()
-    color::Maybe{AbstractString} = nothing
-    orientation::ValuesOrientation = VerticalValues
-    bars_gap::Maybe{&lt;:Real} = nothing
+    x_axis::AxisConfiguration = AxisConfiguration()
+    y_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph for showing line plots.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LinesGraphConfiguration" href="#MCGraphs.Renderers.LinesGraphConfiguration">
+<code>MCGraphs.Renderers.LinesGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LinesGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    x_axis::AxisConfiguration = AxisConfiguration()
+    y_axis::AxisConfiguration = AxisConfiguration()
+    style::LineStyleConfiguration = LineStyleConfiguration()
+    vertical_bands::BandsConfiguration = BandsConfiguration()
+    horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
     stacking::Maybe{Stacking} = nothing
 end
 </code>
 </pre>
-<p>Configure a graph for showing multiple bars (histograms) graph. This is similar to 
-<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
-<code>BarGraphConfiguration
-</code>
-</a>, without the 
-<code>color
-</code> field (which makes no sense when multiple series are shown), and with the addition of a 
+<p>Configure a graph for showing multiple line plots. This allows using 
 <code>show_legend
-</code> and 
+</code> to display a legend of the different lines, and 
 <code>stacking
-</code> fields. If 
+</code> to stack instead of overlay the lines. If 
 <code>stacking
-</code> isn&#39;t specified then the different series are just grouped.
+</code> is specified, then 
+<code>fill_below
+</code> is implied, regardless of what its actual setting is.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LineStyleConfiguration" href="#MCGraphs.Renderers.LineStyleConfiguration">
+<code>MCGraphs.Renderers.LineStyleConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct LineStyleConfiguration &lt;: ObjectWithValidation
+    line_width::Maybe{Real} = 1
+    fill_below::Bool = false
+    line_is_dashed::Bool = false
+    line_color::Maybe{AbstractString} = nothing
+end
+</code>
+</pre>
+<p>Configure a line in a graph.
+</p>
+<p>By default, a solid line is shown; if 
+<code>line_is_dashed
+</code>, the line will be dashed. If 
+<code>fill_below
+</code> is set, the area below the line is filled. If the 
+<code>line_width
+</code> is set to 
+<code>nothing
+</code>, no line is shown (and 
+<code>fill_below
+</code> must be set). By default, the 
+<code>line_color
+</code> is chosen automatically.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.Stacking" href="#MCGraphs.Renderers.Stacking">
+<code>MCGraphs.Renderers.Stacking
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>If stacking multiple data sets, how:
+</p>
+<p>
+<code>StackValues
+</code> - simply add the values on top of each other.
+</p>
+<p>
+<code>StackFractions
+</code> - normalize the added values so their some is 1. The values must not be negative.
+</p>
+<p>
+<code>StackPercents
+</code> - normalize the added values so their some is 100 (percent). The values must not be negative.
 </p>
 </div>
 </section>
@@ -852,7 +1381,7 @@ end
     fraction_axis_title::Maybe{AbstractString} = nothing
     values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
     names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    line_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
     fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
     are_dashed::Maybe{AbstractVector{Bool}} = nothing
@@ -979,6 +1508,204 @@ end
 <p>
 <code>DownToValue
 </code> - Show the fraction of values down to each value.
+</p>
+</div>
+</section>
+</article>
+<h2 id="Bars">
+<a class="docs-heading-anchor" href="#Bars">Bars
+</a>
+<a id="Bars-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Bars" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarGraphData" href="#MCGraphs.Renderers.BarGraphData">
+<code>MCGraphs.Renderers.BarGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BarGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    bar_axis_title::Maybe{AbstractString} = nothing
+    values::AbstractVector{&lt;:Real}
+    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+end
+</code>
+</pre>
+<p>The data for a single bar (histogram) graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code> and 
+<code>bar_axis_title
+</code> for the axes.
+</p>
+<p>If specified, the 
+<code>names
+</code> and/or 
+<code>colors
+</code> and/or 
+<code>hovers
+</code> vectors must contain the same number of elements as the number of 
+<code>values
+</code>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarGraphConfiguration" href="#MCGraphs.Renderers.BarGraphConfiguration">
+<code>MCGraphs.Renderers.BarGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BarGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    color::Maybe{AbstractString} = nothing
+    orientation::ValuesOrientation = VerticalValues
+    bars_gap::Maybe{Real} = nothing
+end
+</code>
+</pre>
+<p>Configure a graph for showing a single bar (histogram) graph. The 
+<code>color
+</code> is chosen automatically. You can override it globally, or per-bar in the 
+<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
+<code>BarGraphData
+</code>
+</a>. By default, the X axis is used for the bars and the Y axis for the values; this can be switched using the 
+<code>orientation
+</code>. The 
+<code>bars_gap
+</code> is the fraction of white space between bars.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarsGraphData" href="#MCGraphs.Renderers.BarsGraphData">
+<code>MCGraphs.Renderers.BarsGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BarsGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    value_axis_title::Maybe{AbstractString} = nothing
+    bar_axis_title::Maybe{AbstractString} = nothing
+    legend_title::Maybe{AbstractString} = nothing
+    values::AbstractString{&lt;:AbstractVector{&lt;:Real}}
+    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    bar_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+end
+</code>
+</pre>
+<p>The data for a multiple bars (histograms) graph.
+</p>
+<p>By default, all the titles are empty. You can specify the overall 
+<code>graph_title
+</code> as well as the 
+<code>value_axis_title
+</code>, 
+<code>bar_axis_title
+</code> for the axes, and the 
+<code>legend_title
+</code> (if 
+<code>show_legend
+</code> is set in 
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>BarsGraphConfiguration
+</code>
+</a>.
+</p>
+<p>All the 
+<code>values
+</code> vectors must be of the same size. If specified, the 
+<code>bar_names
+</code> vector must contain the same number of elements. If specified, the 
+<code>names
+</code> and/or 
+<code>colors
+</code> and/or 
+<code>hovers
+</code> vectors must contain the same number of elements as the number of
+<code>values
+</code> vectors (that is, the number of series).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarsGraphConfiguration" href="#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>MCGraphs.Renderers.BarsGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BarsGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    value_axis::AxisConfiguration = AxisConfiguration()
+    color::Maybe{AbstractString} = nothing
+    orientation::ValuesOrientation = VerticalValues
+    bars_gap::Maybe{Real} = nothing
+    show_legend::Bool = false
+    stacking::Maybe{Stacking} = nothing
+end
+</code>
+</pre>
+<p>Configure a graph for showing multiple bars (histograms) graph. This is similar to 
+<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
+<code>BarGraphConfiguration
+</code>
+</a>, without the 
+<code>color
+</code> field (which makes no sense when multiple series are shown), and with the addition of a 
+<code>show_legend
+</code> and 
+<code>stacking
+</code> fields. If 
+<code>stacking
+</code> isn&#39;t specified then the different series are just grouped.
 </p>
 </div>
 </section>
@@ -1134,7 +1861,7 @@ end
     style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
-    distributions_gap::Maybe{&lt;:Real} = nothing
+    distributions_gap::Maybe{Real} = nothing
     overlay::Bool = false
 end
 </code>
@@ -1220,676 +1947,6 @@ end
 <code>DistributionsGraphData
 </code>
 </a>.
-</p>
-</div>
-</section>
-</article>
-<h2 id="Lines">
-<a class="docs-heading-anchor" href="#Lines">Lines
-</a>
-<a id="Lines-1">
-</a>
-<a class="docs-heading-anchor-permalink" href="#Lines" title="Permalink">
-</a>
-</h2>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.LineGraphData" href="#MCGraphs.Renderers.LineGraphData">
-<code>MCGraphs.Renderers.LineGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct LineGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
-    x_axis_title::Maybe{AbstractString} = nothing
-    y_axis_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{&lt;:Real}
-    ys::AbstractVector{&lt;:Real}
-end
-</code>
-</pre>
-<p>The data for a line graph.
-</p>
-<p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
-</code> as well as the 
-<code>x_axis_title
-</code> and 
-<code>y_axis_title
-</code> for the axes.
-</p>
-<p>The 
-<code>xs
-</code> and 
-<code>ys
-</code> vectors must be of the same size. A line will be drawn through all the points, and the area under the line may be filled.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.LinesGraphData" href="#MCGraphs.Renderers.LinesGraphData">
-<code>MCGraphs.Renderers.LinesGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct LinesGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
-    x_axis_title::Maybe{AbstractString} = nothing
-    y_axis_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{AbstractVector{&lt;:Real}}
-    ys::AbstractVector{AbstractVector{&lt;:Real}}
-    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
-end
-</code>
-</pre>
-<p>The data for multiple lines graph.
-</p>
-<p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
-</code> as well as the 
-<code>x_axis_title
-</code> and 
-<code>y_axis_title
-</code> for the axes.
-</p>
-<p>The 
-<code>xs
-</code> and 
-<code>ys
-</code> vectors must be of the same size (one per line). For each line, its 
-<code>xs
-</code> and 
-<code>ys
-</code> coordinate arrays must also be of the same size; a line will be drawn through all the points, and the area under the line may be filled. If 
-<code>stack_lines
-</code> is specified in 
-<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
-<code>LinesGraphConfiguration
-</code>
-</a>, then the lines are specified in top-to-bottom order.
-</p>
-<p>The 
-<code>names
-</code>, 
-<code>line_colors
-</code>, 
-<code>line_widths
-</code>, 
-<code>fill_belows
-</code> and 
-<code>are_dashed
-</code> arrays must have the same number of entries (one per line). The 
-<code>colors
-</code> are restricted to explicit colors; therefore the color scale options of the 
-<code>style
-</code> must not be used.
-</p>
-<div class="admonition is-info">
-<header class="admonition-header">Note
-</header>
-<div class="admonition-body">
-<p>If 
-<code>stacked
-</code> is spe
-</p>
-</div>
-</div>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.LineGraphConfiguration" href="#MCGraphs.Renderers.LineGraphConfiguration">
-<code>MCGraphs.Renderers.LineGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct LineGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    x_axis::AxisConfiguration = AxisConfiguration()
-    y_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
-    vertical_bands::BandsConfiguration = BandsConfiguration()
-    horizontal_bands::BandsConfiguration = BandsConfiguration()
-end
-</code>
-</pre>
-<p>Configure a graph for showing line plots.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.LinesGraphConfiguration" href="#MCGraphs.Renderers.LinesGraphConfiguration">
-<code>MCGraphs.Renderers.LinesGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct LinesGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    x_axis::AxisConfiguration = AxisConfiguration()
-    y_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
-    vertical_bands::BandsConfiguration = BandsConfiguration()
-    horizontal_bands::BandsConfiguration = BandsConfiguration()
-    show_legend::Bool = false
-    stacking::Maybe{Stacking} = nothing
-end
-</code>
-</pre>
-<p>Configure a graph for showing multiple line plots. This allows using 
-<code>show_legend
-</code> to display a legend of the different lines, and 
-<code>stacking
-</code> to stack instead of overlay the lines. If 
-<code>stacking
-</code> is specified, then 
-<code>fill_below
-</code> is implied, regardless of what its actual setting is.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.LineStyleConfiguration" href="#MCGraphs.Renderers.LineStyleConfiguration">
-<code>MCGraphs.Renderers.LineStyleConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct LineStyleConfiguration &lt;: ObjectWithValidation
-    line_width::Maybe{Real} = 1.0
-    fill_below::Bool = false
-    line_is_dashed::Bool = false
-    line_color::Maybe{AbstractString} = nothing
-end
-</code>
-</pre>
-<p>Configure a line in a graph.
-</p>
-<p>By default, a solid line is shown; if 
-<code>line_is_dashed
-</code>, the line will be dashed. If 
-<code>fill_below
-</code> is set, the area below the line is filled. If the 
-<code>line_width
-</code> is set to 
-<code>nothing
-</code>, no line is shown (and 
-<code>fill_below
-</code> must be set). By default, the 
-<code>line_color
-</code> is chosen automatically.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.Stacking" href="#MCGraphs.Renderers.Stacking">
-<code>MCGraphs.Renderers.Stacking
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<p>If stacking multiple data sets, how:
-</p>
-<p>
-<code>StackValues
-</code> - simply add the values on top of each other.
-</p>
-<p>
-<code>StackFractions
-</code> - normalize the added values so their some is 1.
-</p>
-<p>
-<code>StackPercents
-</code> - normalize the added values so their some is 100 (percent).
-</p>
-</div>
-</section>
-</article>
-<h2 id="Points">
-<a class="docs-heading-anchor" href="#Points">Points
-</a>
-<a id="Points-1">
-</a>
-<a class="docs-heading-anchor-permalink" href="#Points" title="Permalink">
-</a>
-</h2>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphData" href="#MCGraphs.Renderers.PointsGraphData">
-<code>MCGraphs.Renderers.PointsGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct PointsGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
-    x_axis_title::Maybe{AbstractString} = nothing
-    y_axis_title::Maybe{AbstractString} = nothing
-    scale_title::Maybe{AbstractString} = nothing
-    border_scale_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{&lt;:Real}
-    ys::AbstractVector{&lt;:Real}
-    colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
-    sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
-    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    border_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
-    border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
-    edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
-    edges_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
-end
-</code>
-</pre>
-<p>The data for a scatter graph of points.
-</p>
-<p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
-</code> as well as the 
-<code>x_axis_title
-</code> and 
-<code>y_axis_title
-</code> for the axes.
-</p>
-<p>The 
-<code>xs
-</code> and 
-<code>ys
-</code> vectors must be of the same size. If specified, the 
-<code>colors
-</code> 
-<code>sizes
-</code> and/or 
-<code>hovers
-</code> vectors must also be of the same size. The 
-<code>colors
-</code> can be either color names or a numeric value; if the latter, then the configuration&#39;s 
-<code>color_scale
-</code> is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs (or when saving an HTML file).
-</p>
-<p>The 
-<code>border_colors
-</code> and 
-<code>border_sizes
-</code> can be used to display additional data per point. The border size is in addition to the point size.
-</p>
-<p>The 
-<code>scale_title
-</code> and 
-<code>border_scale_title
-</code> are only used if 
-<code>show_color_scale
-</code> is set for the relevant color scales. You can&#39;t specify 
-<code>show_color_scale
-</code> if there is no 
-<code>colors
-</code> data or if the 
-<code>colors
-</code> contain explicit color names.
-</p>
-<p>It is possible to draw straight 
-<code>edges
-</code> between specific point pairs. In this case the 
-<code>edges_style
-</code> of the 
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
-<code>PointsGraphConfiguration
-</code>
-</a> will be used, and the 
-<code>edges_colors
-</code> and 
-<code>edges_sizes
-</code> will override it per edge. The 
-<code>edges_colors
-</code> are restricted to explicit colors, not a color scale.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphConfiguration" href="#MCGraphs.Renderers.PointsGraphConfiguration">
-<code>MCGraphs.Renderers.PointsGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct PointsGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    x_axis::AxisConfiguration = AxisConfiguration()
-    y_axis::AxisConfiguration = AxisConfiguration()
-    style::PointsStyleConfiguration = PointsStyleConfiguration()
-    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    vertical_bands::BandsConfiguration = BandsConfiguration()
-    horizontal_bands::BandsConfiguration = BandsConfiguration()
-    diagonal_bands::BandsConfiguration = BandsConfiguration()
-end
-</code>
-</pre>
-<p>Configure a graph for showing a scatter graph of points.
-</p>
-<p>Using the 
-<code>vertical_bands
-</code>, 
-<code>horizontal_bands
-</code> and/or 
-<code>diagonal_bands
-</code> you can partition the graph into regions. The 
-<code>diagonal_bands
-</code> can only be used if both axes are linear or both axes are in 
-<code>log_scale
-</code>; they also unify the ranges of the X and Y axes. If the axes are in 
-<code>log_scale
-</code>, the 
-<code>line_offset
-</code> of the 
-<code>diagonal_bands
-</code> are multiplicative instead of additive, and must be positive.
-</p>
-<p>The 
-<code>border_style
-</code> is used if the 
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
-<code>PointsGraphData
-</code>
-</a> contains either the 
-<code>border_colors
-</code> and/or 
-<code>border_sizes
-</code>. This allows displaying some additional data per point.
-</p>
-<div class="admonition is-info">
-<header class="admonition-header">Note
-</header>
-<div class="admonition-body">
-<p>There is no 
-<code>show_legend
-</code> for a 
-<a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
-<code>GraphConfiguration
-</code>
-</a> of a points graph. Instead you probably want to set the 
-<code>show_color_scale
-</code> of the 
-<code>style
-</code> (and/or of the 
-<code>border_style
-</code> and/or 
-<code>edges_style
-</code>). In addition, the color scale options of the 
-<code>edges_style
-</code> must not be set, as the 
-<code>edges_colors
-</code> of 
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
-<code>PointsGraphData
-</code>
-</a> is restricted to explicit colors.
-</p>
-</div>
-</div>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.PointsStyleConfiguration" href="#MCGraphs.Renderers.PointsStyleConfiguration">
-<code>MCGraphs.Renderers.PointsStyleConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct PointsStyleConfiguration &lt;: ObjectWithValidation
-    size::Maybe{Real} = nothing
-    color::Maybe{AbstractString} = nothing
-    color_scale::Maybe{Union{
-        AbstractString,
-        AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}},
-        AbstractVector{&lt;:Tuple{&lt;:AbstractString, &lt;:AbstractString}}
-    }} = nothing
-    log_color_scale_regularization::Maybe{AbstractFloat} = nothing
-    reverse_color_scale::Bool = false
-    show_color_scale::Bool = false
-end
-</code>
-</pre>
-<p>Configure points in a graph. By default, the point 
-<code>size
-</code> and 
-<code>color
-</code> is chosen automatically (when this is applied to edges, the 
-<code>size
-</code> is the width of the line). You can also override this by specifying sizes and colors in the 
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
-<code>PointsGraphData
-</code>
-</a>. If the data contains numeric color values, then the 
-<code>color_scale
-</code> will be used instead; if so, if 
-<code>log_color_scale_regularization
-</code> is set, then the values are converted to log (base 10) of the value, and if the 
-<code>color_scale
-</code> is named, 
-<code>reverse_color_scale
-</code> will reverse the colors order in it. You need to explicitly set 
-<code>show_color_scale
-</code> to show its legend.
-</p>
-<p>The 
-<code>color_scale
-</code> can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the values are numbers, the scale is continuous; if they are strings, this is a categorical scale. A categorical scale can&#39;t be reversed.
-</p>
-</div>
-</section>
-</article>
-<h2 id="Bands-in-graphs">
-<a class="docs-heading-anchor" href="#Bands-in-graphs">Bands in graphs
-</a>
-<a id="Bands-in-graphs-1">
-</a>
-<a class="docs-heading-anchor-permalink" href="#Bands-in-graphs" title="Permalink">
-</a>
-</h2>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BandsConfiguration" href="#MCGraphs.Renderers.BandsConfiguration">
-<code>MCGraphs.Renderers.BandsConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct BandsConfiguration &lt;: ObjectWithValidation
-    low::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
-    middle::BandRegionConfiguration = BandRegionConfiguration()
-    high::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
-end
-</code>
-</pre>
-<p>Configure the partition of the graph up to three band regions. The 
-<code>low
-</code> and 
-<code>high
-</code> are the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
-<code>middle
-</code> is the &quot;inner&quot; region between them (so its line is inside it, solid by default).
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BandRegionConfiguration" href="#MCGraphs.Renderers.BandRegionConfiguration">
-<code>MCGraphs.Renderers.BandRegionConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct BandRegionConfiguration &lt;: ObjectWithValidation
-    line_color::Maybe{AbstractString} = &quot;black&quot;
-    line_width::Real = 1.0
-    line_is_dashed::Bool = false
-    fill_color::Maybe{AbstractString} = nothing
-end
-</code>
-</pre>
-<p>Configure a region of the graph defined by some band of values. The region only exists if 
-<code>line_offset
-</code> is set. To actually show the region, either the 
-<code>line_color
-</code> and/or the 
-<code>fill_color
-</code> must be set; by default, just the line is shown. The 
-<code>line_width
-</code> is in pixels (1/96th of an inch).
-</p>
-</div>
-</section>
-</article>
-<h2 id="Grid">
-<a class="docs-heading-anchor" href="#Grid">Grid
-</a>
-<a id="Grid-1">
-</a>
-<a class="docs-heading-anchor-permalink" href="#Grid" title="Permalink">
-</a>
-</h2>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphData" href="#MCGraphs.Renderers.GridGraphData">
-<code>MCGraphs.Renderers.GridGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct GridGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
-    x_axis_title::Maybe{AbstractString} = nothing
-    y_axis_title::Maybe{AbstractString} = nothing
-    scale_title::Maybe{AbstractString} = nothing
-    border_scale_title::Maybe{AbstractString} = nothing
-    colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString,&lt;:Real}}}} = nothing
-    sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
-    hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
-    border_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString,&lt;:Real}}}} = nothing
-    border_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
-end
-</code>
-</pre>
-<p>The data for a graph showing a grid of points (e.g. for correlations).
-</p>
-<p>TODO.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphConfiguration" href="#MCGraphs.Renderers.GridGraphConfiguration">
-<code>MCGraphs.Renderers.GridGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    style::PointsStyleConfiguration = PointsStyleConfiguration()
-    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
-end
-</code>
-</pre>
-<p>Configure a graph showing a grid of points (e.g. for correlations).
-</p>
-<p>TODO
 </p>
 </div>
 </section>
@@ -2092,6 +2149,18 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.PointsStyleConfiguration">
 <code>MCGraphs.Renderers.PointsStyleConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.ScaleConfiguration">
+<code>MCGraphs.Renderers.ScaleConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.SizeRangeConfiguration">
+<code>MCGraphs.Renderers.SizeRangeConfiguration
 </code>
 </a>
 </li>

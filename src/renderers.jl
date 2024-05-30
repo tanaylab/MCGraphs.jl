@@ -112,12 +112,12 @@ end
 function Validations.validate_object(configuration::GraphConfiguration)::Maybe{AbstractString}
     width = configuration.width
     if width !== nothing && width <= 0
-        return "non-positive graph width: $(width)"
+        return "non-positive configuration.graph.width: $(width)"
     end
 
     height = configuration.height
     if height !== nothing && height <= 0
-        return "non-positive graph height: $(height)"
+        return "non-positive configuration.graph.height: $(height)"
     end
 
     return nothing
@@ -127,20 +127,20 @@ end
     @kwdef mutable struct AxisConfiguration <: ObjectWithValidation
         minimum::Maybe{Real} = nothing
         maximum::Maybe{Real} = nothing
-        log_scale::Bool,
+        log_regularization::Maybe{AbstractFloat} = nothing,
     end
 
 Generic configuration for a graph axis. Everything is optional; by default, the `minimum` and `maximum` are computed
 automatically from the data.
 
-If `log_scale` is set, the data must contain only positive values, and the axis is shown in log (base 10) scale. To help
-with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is "close enough" to 2x for intuitive
-reading of the ratios).
+If `log_regularization` is set, it is added to the coordinate to avoid zero values, and the axis is shown in log (base
+10) scale. To help with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is "close enough" to
+2x for intuitive reading of the ratios).
 """
 @kwdef mutable struct AxisConfiguration <: ObjectWithValidation
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
-    log_scale::Bool = false
+    log_regularization::Maybe{AbstractFloat} = nothing
 end
 
 function Validations.validate_object(name::AbstractString, configuration::AxisConfiguration)::Maybe{AbstractString}
@@ -148,15 +148,23 @@ function Validations.validate_object(name::AbstractString, configuration::AxisCo
     maximum = configuration.maximum
 
     if minimum !== nothing && maximum !== nothing && maximum <= minimum
-        return "$(name) axis maximum: $(maximum)\n" * "is not larger than minimum: $(minimum)"
+        return "configuration.$(name)_axis.maximum: $(maximum)\n" *
+               "is not larger than configuration.$(name)_axis.minimum: $(minimum)"
     end
 
-    if configuration.log_scale && minimum !== nothing && minimum <= 0
-        return "non-positive $(name) log axis minimum: $(minimum)"
-    end
+    log_regularization = configuration.log_regularization
+    if log_regularization !== nothing
+        if log_regularization < 0
+            return "negative configuration.$(name)_axis.log_regularization: $(log_regularization)"
+        end
 
-    if configuration.log_scale && maximum !== nothing && maximum <= 0
-        return "non-positive $(name) log axis maximum: $(maximum)"
+        if minimum !== nothing && minimum + log_regularization <= 0
+            return "log of non-positive configuration.$(name)_axis.minimum: $(minimum + log_regularization)"
+        end
+
+        if maximum !== nothing && maximum + log_regularization <= 0
+            return "log of non-positive configuration.$(name)_axis.maximum: $(maximum + log_regularization)"
+        end
     end
 
     return nothing
@@ -198,11 +206,11 @@ end
 
 function Validations.validate_object(configuration::DistributionStyleConfiguration)::Maybe{AbstractString}
     if !configuration.show_box && !configuration.show_violin && !configuration.show_curve
-        return "must specify at least one of: distribution style.show_box, style.show_violin, style.show_curve"
+        return "distribution must specify at least one of: configuration.style.show_box, configuration.style.show_violin, configuration.style.show_curve"
     end
 
     if configuration.show_violin && configuration.show_curve
-        return "can't specify both of: distribution style.show_violin, style.show_curve"
+        return "distribution can't specify both of: configuration.style.show_violin, configuration.style.show_curve"
     end
 
     return nothing
@@ -244,7 +252,7 @@ end
         style::DistributionStyleConfiguration = DistributionStyleConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         show_legend::Bool = false
-        distributions_gap::Maybe{<:Real} = nothing
+        distributions_gap::Maybe{Real} = nothing
         overlay::Bool = false
     end
 
@@ -263,7 +271,7 @@ white space between the distributions. TODO: Implement `overlay`.
     style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
-    distributions_gap::Maybe{<:Real} = nothing
+    distributions_gap::Maybe{Real} = nothing
     overlay::Bool = false
 end
 
@@ -279,9 +287,9 @@ function Validations.validate_object(configuration::DistributionsGraphConfigurat
         distributions_gap = configuration.distributions_gap
         if distributions_gap !== nothing
             if distributions_gap < 0
-                message = "non-positive distributions_gap: $(distributions_gap)"
+                message = "non-positive configuration.distributions_gap: $(distributions_gap)"
             elseif distributions_gap >= 1
-                message = "too-large distributions_gap: $(distributions_gap)"
+                message = "too-large configuration.distributions_gap: $(distributions_gap)"
             end
         end
     end
@@ -310,7 +318,7 @@ end
 
 function Validations.validate_object(data::DistributionGraphData)::Maybe{AbstractString}
     if length(data.values) == 0
-        return "empty values vector"
+        return "empty data.values vector"
     end
 
     return nothing
@@ -344,23 +352,23 @@ end
 
 function Validations.validate_object(data::DistributionsGraphData)::Maybe{AbstractString}
     if length(data.values) == 0
-        return "empty values vector"
+        return "empty data.values vector"
     end
 
     for (index, values) in enumerate(data.values)
         if length(values) == 0
-            return "empty values#$(index) vector"
+            return "empty data.values[$(index)] vector"
         end
     end
 
     if data.names !== nothing && length(data.names) != length(data.values)
-        return "the number of names: $(length(data.names))\n" *
-               "is different from the number of values: $(length(data.values))"
+        return "the data.names size: $(length(data.names))\n" *
+               "is different from the data.values size: $(length(data.values))"
     end
 
     if data.colors !== nothing && length(data.colors) != length(data.values)
-        return "the number of colors: $(length(data.colors))\n" *
-               "is different from the number of values: $(length(data.values))"
+        return "the data.colors size: $(length(data.colors))\n" *
+               "is different from the data.values size: $(length(data.values))"
     end
 
     return nothing
@@ -404,7 +412,7 @@ function render(
     assert_valid_object(data)
     assert_valid_object(configuration)
 
-    trace = distribution_trace(  # NOJET;
+    trace = distribution_trace(  # NOJET;;;;;;;;;;;;;;;;;;
         values = data.values,
         name = data.name === nothing ? "Trace" : data.name,
         color = configuration.style.color,
@@ -525,13 +533,13 @@ function distribution_layout(
         yaxis_showgrid = configuration.graph.show_grid
         yaxis_title = data.value_axis_title
         yaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
-        yaxis_type = configuration.value_axis.log_scale ? "log" : nothing
+        yaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
     elseif configuration.style.orientation == HorizontalValues
         xaxis_showticklabels = configuration.graph.show_ticks
         xaxis_showgrid = configuration.graph.show_grid
         xaxis_title = data.value_axis_title
         xaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
-        xaxis_type = configuration.value_axis.log_scale ? "log" : nothing
+        xaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
         yaxis_showticklabels = has_tick_names
         yaxis_showgrid = false
         yaxis_title = data.trace_axis_title
@@ -564,7 +572,7 @@ end
 
 """
     @kwdef mutable struct LineStyleConfiguration <: ObjectWithValidation
-        line_width::Maybe{Real} = 1.0
+        line_width::Maybe{Real} = 1
         fill_below::Bool = false
         line_is_dashed::Bool = false
         line_color::Maybe{AbstractString} = nothing
@@ -577,7 +585,7 @@ the line is filled. If the `line_width` is set to `nothing`, no line is shown (a
 default, the `line_color` is chosen automatically.
 """
 @kwdef mutable struct LineStyleConfiguration <: ObjectWithValidation
-    line_width::Maybe{Real} = 1.0
+    line_width::Maybe{Real} = 1
     fill_below::Bool = false
     line_is_dashed::Bool = false
     line_color::Maybe{AbstractString} = nothing
@@ -586,10 +594,10 @@ end
 function Validations.validate_object(configuration::LineStyleConfiguration)::Maybe{AbstractString}
     line_width = configuration.line_width
     if line_width !== nothing && line_width <= 0
-        return "non-positive line_width: $(line_width)"
+        return "non-positive configuration.style.line_width: $(line_width)"
     end
     if line_width === nothing && !configuration.fill_below
-        return "either line_width or fill_below must be specified"
+        return "either configuration.style.line_width or configuration.style.fill_below must be specified"
     end
     return nothing
 end
@@ -621,10 +629,10 @@ function Validations.validate_object(
     log_scale::Bool,
 )::Maybe{AbstractString}
     if configuration.line_width <= 0
-        return "non-positive $(of_what) $(of_which) line_width: $(configuration.line_width)"
+        return "non-positive configuration.$(of_what).$(of_which).line_width: $(configuration.line_width)"
     end
     if log_scale && configuration.line_offset !== nothing && configuration.line_offset <= 0
-        return "non-positive log_scale $(of_what) $(of_which) line_offset: $(configuration.line_offset)"
+        return "log of non-positive configuration.$(of_what).$(of_which).line_offset: $(configuration.line_offset)"
     end
     return nothing
 end
@@ -662,25 +670,23 @@ function Validations.validate_object(
         return message
     end
 
-    if configuration.low.line_offset !== nothing &&
-       configuration.middle.line_offset !== nothing &&
-       configuration.low.line_offset >= configuration.middle.line_offset
-        return "$(of_what) low line_offset: $(configuration.low.line_offset)\n" *
-               "is not less than middle line_offset: $(configuration.low.line_offset)"
+    low_line_offset = configuration.low.line_offset
+    middle_line_offset = configuration.middle.line_offset
+    high_line_offset = configuration.high.line_offset
+
+    if low_line_offset !== nothing && middle_line_offset !== nothing && low_line_offset >= middle_line_offset
+        return "configuration.$(of_what).low.line_offset: $(low_line_offset)\n" *
+               "is not less than configuration.$(of_what).middle.line_offset: $(low_line_offset)"
     end
 
-    if configuration.middle.line_offset !== nothing &&
-       configuration.high.line_offset !== nothing &&
-       configuration.middle.line_offset >= configuration.high.line_offset
-        return "$(of_what) high line_offset: $(configuration.high.line_offset)\n" *
-               "is not greater than middle line_offset: $(configuration.middle.line_offset)"
+    if middle_line_offset !== nothing && high_line_offset !== nothing && middle_line_offset >= high_line_offset
+        return "configuration.$(of_what).high.line_offset: $(high_line_offset)\n" *
+               "is not greater than configuration.$(of_what).middle.line_offset: $(middle_line_offset)"
     end
 
-    if configuration.low.line_offset !== nothing &&
-       configuration.high.line_offset !== nothing &&
-       configuration.low.line_offset >= configuration.high.line_offset
-        return "$(of_what) low line_offset: $(configuration.low.line_offset)\n" *
-               "is not less than high line_offset: $(configuration.high.line_offset)"
+    if low_line_offset !== nothing && high_line_offset !== nothing && low_line_offset >= high_line_offset
+        return "configuration.$(of_what).low.line_offset: $(low_line_offset)\n" *
+               "is not less than configuration.$(of_what).high.line_offset: $(high_line_offset)"
     end
 
     return nothing
@@ -734,7 +740,7 @@ end
 
 function Validations.validate_object(data::LineGraphData)::Maybe{AbstractString}
     if length(data.xs) != length(data.ys)
-        return "the number of xs: $(length(data.xs))\n" * "is different from the number of ys: $(length(data.ys))"
+        return "the data.xs size: $(length(data.xs))\n" * "is different from the data.ys size: $(length(data.ys))"
     end
     return nothing
 end
@@ -805,9 +811,9 @@ If stacking multiple data sets, how:
 
 `StackValues` - simply add the values on top of each other.
 
-`StackFractions` - normalize the added values so their some is 1.
+`StackFractions` - normalize the added values so their some is 1. The values must not be negative.
 
-`StackPercents` - normalize the added values so their some is 100 (percent).
+`StackPercents` - normalize the added values so their some is 100 (percent). The values must not be negative.
 """
 @enum Stacking StackValues StackFractions StackPercents
 
@@ -852,10 +858,18 @@ function Validations.validate_object(
         message = validate_object(configuration.style)
     end
     if message === nothing
-        message = validate_object("vertical_bands", configuration.vertical_bands, false)
+        message = validate_object(
+            "vertical_bands",
+            configuration.vertical_bands,
+            configuration.x_axis.log_regularization !== nothing,
+        )
     end
     if message === nothing
-        message = validate_object("horizontal_bands", configuration.horizontal_bands, false)
+        message = validate_object(
+            "horizontal_bands",
+            configuration.horizontal_bands,
+            configuration.y_axis.log_regularization !== nothing,
+        )
     end
     return message
 end
@@ -865,10 +879,14 @@ end
         graph_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
+        legend_title::Maybe{AbstractString} = nothing
         xs::AbstractVector{AbstractVector{<:Real}}
         ys::AbstractVector{AbstractVector{<:Real}}
+        names::Maybe{AbstractVector{<:AbstractString}} = nothing
         colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         line_widths::Maybe{AbstractVector{<:Real}} = nothing
+        fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+        are_dashed::Maybe{AbstractVector{Bool}} = nothing
     end
 
 The data for multiple lines graph.
@@ -880,13 +898,9 @@ The `xs` and `ys` vectors must be of the same size (one per line). For each line
 must also be of the same size; a line will be drawn through all the points, and the area under the line may be filled.
 If `stack_lines` is specified in [`LinesGraphConfiguration`](@ref), then the lines are specified in top-to-bottom order.
 
-The `names`, `line_colors`, `line_widths`, `fill_belows` and `are_dashed` arrays must have the same number of
+The `names`, `colors`, `line_widths`, `fill_belows` and `are_dashed` arrays must have the same number of
 entries (one per line). The `colors` are restricted to explicit colors; therefore the color scale options of the `style`
 must not be used.
-
-!!! note
-
-    If `stacked` is spe
 """
 @kwdef mutable struct LinesGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
@@ -896,7 +910,7 @@ must not be used.
     xs::AbstractVector{AbstractVector{<:Real}}
     ys::AbstractVector{AbstractVector{<:Real}}
     names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    line_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     line_widths::Maybe{AbstractVector{<:Real}} = nothing
     fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
     are_dashed::Maybe{AbstractVector{Bool}} = nothing
@@ -904,54 +918,53 @@ end
 
 function Validations.validate_object(data::LinesGraphData)::Maybe{AbstractString}
     if length(data.xs) != length(data.ys)
-        return "the number of xs lines: $(length(data.xs))\n" *
-               "is different from the number of ys lines: $(length(data.ys))"
+        return "the data.xs size: $(length(data.xs))\n" * "is different from the data.ys size: $(length(data.ys))"
     end
     if length(data.xs) == 0
-        return "empty lines vectors"
+        return "empty data.xs and data.ys vectors"
     end
 
     for (index, (xs, ys)) in enumerate(zip(data.xs, data.ys))
         if length(xs) != length(ys)
-            return "the number of line#$(index) xs: $(length(xs))\n" *
-                   "is different from the number of ys: $(length(ys))"
+            return "the data.xs[$(index)] size: $(length(xs))\n" *
+                   "is different from the data.ys[$(index)] size: $(length(ys))"
         end
         if length(xs) < 2
-            return "too few points in line#$(index): $(length(xs))"
+            return "too few points in data.xs[$(index)] and data.ys[$(index)]: $(length(xs))"
         end
     end
 
     if data.names !== nothing && length(data.names) != length(data.xs)
-        return "the number of names: $(length(data.names))\n" *
-               "is different from the number of lines: $(length(data.xs))"
+        return "the data.names size: $(length(data.names))\n" *
+               "is different from the data.xs and data.ys size: $(length(data.xs))"
     end
 
-    if data.line_colors !== nothing && length(data.line_colors) != length(data.xs)
-        return "the number of line_colors: $(length(data.line_colors))\n" *
-               "is different from the number of lines: $(length(data.xs))"
+    if data.colors !== nothing && length(data.colors) != length(data.xs)
+        return "the data.colors size: $(length(data.colors))\n" *
+               "is different from the data.xs and data.ys size: $(length(data.xs))"
     end
 
     line_widths = data.line_widths
     if line_widths !== nothing
         if length(line_widths) != length(data.xs)
-            return "the number of line_widths: $(length(line_widths))\n" *
-                   "is different from the number of lines: $(length(data.xs))"
+            return "the data.line_widths size: $(length(line_widths))\n" *
+                   "is different from the data.xs and data.ys size: $(length(data.xs))"
         end
         for (index, line_width) in enumerate(line_widths)
             if line_width <= 0
-                return "non-positive line_width#$(index): $(line_width)"
+                return "non-positive data.line_widths[$(index)]: $(line_width)"
             end
         end
     end
 
     if data.fill_belows !== nothing && length(data.fill_belows) != length(data.xs)
-        return "the number of fill_belows: $(length(data.fill_belows))\n" *
-               "is different from the number of lines: $(length(data.xs))"
+        return "the data.fill_belows size: $(length(data.fill_belows))\n" *
+               "is different from the data.xs and data.ys size: $(length(data.xs))"
     end
 
     if data.are_dashed !== nothing && length(data.are_dashed) != length(data.xs)
-        return "the number of are_dashed: $(length(data.are_dashed))\n" *
-               "is different from the number of lines: $(length(data.xs))"
+        return "the data.are_dashed size: $(length(data.are_dashed))\n" *
+               "is different from the data.xs and data.ys size: $(length(data.xs))"
     end
 
     return nothing
@@ -967,7 +980,7 @@ function render(
     if configuration.stacking == StackPercents || configuration.stacking == StackFractions
         for (line_index, ys) in enumerate(data.ys)
             for (point_index, y) in enumerate(ys)
-                @assert y >= 0 "negative stacked fraction/percent line#$(line_index) ys#$(point_index): $(y)"
+                @assert y >= 0 "negative stacked fraction/percent data.ys[$(line_index),$(point_index)]: $(y)"
             end
         end
     end
@@ -1080,7 +1093,7 @@ function lines_trace(
     return scatter(;
         x = xs,
         y = ys,
-        line_color = data.line_colors !== nothing ? data.line_colors[index] : configuration.style.line_color,
+        line_color = data.colors !== nothing ? data.colors[index] : configuration.style.line_color,
         line_width = if data.line_widths !== nothing
             data.line_widths[index]
         elseif configuration.style.line_width === nothing
@@ -1127,12 +1140,12 @@ function lines_layout(
         xaxis_showticklabels = configuration.graph.show_ticks,
         xaxis_title = data.x_axis_title,
         xaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
-        xaxis_type = configuration.x_axis.log_scale ? "log" : nothing,
+        xaxis_type = configuration.x_axis.log_regularization !== nothing ? "log" : nothing,
         yaxis_showgrid = configuration.graph.show_grid,
         yaxis_showticklabels = configuration.graph.show_ticks,
         yaxis_title = data.y_axis_title,
         yaxis_range = (configuration.y_axis.minimum, configuration.y_axis.maximum),
-        yaxis_type = configuration.y_axis.log_scale ? "log" : nothing,
+        yaxis_type = configuration.y_axis.log_regularization !== nothing ? "log" : nothing,
         showlegend = show_legend,
     )
 end
@@ -1202,7 +1215,7 @@ end
 
 function Validations.validate_object(data::CdfGraphData)::Maybe{AbstractString}
     if length(data.values) < 2
-        return "too few values: $(length(data.values))"
+        return "too few data.values: $(length(data.values))"
     end
     return nothing
 end
@@ -1308,10 +1321,18 @@ function Validations.validate_object(
         message = validate_object(configuration.style)
     end
     if message === nothing
-        message = validate_object("value_bands", configuration.value_bands, false)
+        message = validate_object(
+            "value_bands",
+            configuration.value_bands,
+            configuration.value_axis.log_regularization !== nothing,
+        )
     end
     if message === nothing
-        message = validate_object("fraction_bands", configuration.fraction_bands, false)
+        message = validate_object(
+            "fraction_bands",
+            configuration.fraction_bands,
+            configuration.fraction_axis.log_regularization !== nothing,
+        )
     end
     return message
 end
@@ -1323,7 +1344,7 @@ end
         fraction_axis_title::Maybe{AbstractString} = nothing
         values::AbstractVector{<:AbstractVector{<:Real}}
         names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        line_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         line_widths::Maybe{AbstractVector{<:Real}} = nothing
         fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
         are_dashed::Maybe{AbstractVector{Bool}} = nothing
@@ -1343,7 +1364,7 @@ The order of the `values` does not matter.
     legend_title::Maybe{AbstractString} = nothing
     values::AbstractVector{<:AbstractVector{<:Real}}
     names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    line_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     line_widths::Maybe{AbstractVector{<:Real}} = nothing
     fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
     are_dashed::Maybe{AbstractVector{Bool}} = nothing
@@ -1351,11 +1372,11 @@ end
 
 function Validations.validate_object(data::CdfsGraphData)::Maybe{AbstractString}
     if length(data.values) == 0
-        return "empty values vector"
+        return "empty data.values vector"
     end
     for (index, values) in enumerate(data.values)
         if length(values) < 2
-            return "too few values#$(index): $(length(values))"
+            return "too few data.values[$(index)]: $(length(values))"
         end
     end
     return nothing
@@ -1391,7 +1412,7 @@ function cdfs_data_as_lines_data(data::CdfsGraphData, configuration::CdfsGraphCo
             xs = values,
             ys = fractions,
             names = data.names,
-            line_colors = data.line_colors,
+            colors = data.colors,
             line_widths = data.line_widths,
             fill_belows = data.fill_belows,
             are_dashed = data.are_dashed,
@@ -1405,7 +1426,7 @@ function cdfs_data_as_lines_data(data::CdfsGraphData, configuration::CdfsGraphCo
             xs = fractions,
             ys = values,
             names = data.names,
-            line_colors = data.line_colors,
+            colors = data.colors,
             line_widths = data.line_widths,
             fill_belows = data.fill_belows,
             are_dashed = data.are_dashed,
@@ -1459,7 +1480,7 @@ end
         value_axis::AxisConfiguration = AxisConfiguration()
         color::Maybe{AbstractString} = nothing
         orientation::ValuesOrientation = VerticalValues
-        bars_gap::Maybe{<:Real} = nothing
+        bars_gap::Maybe{Real} = nothing
     end
 
 Configure a graph for showing a single bar (histogram) graph. The `color` is chosen automatically. You can override it
@@ -1471,7 +1492,7 @@ values; this can be switched using the `orientation`. The `bars_gap` is the frac
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
     orientation::ValuesOrientation = VerticalValues
-    bars_gap::Maybe{<:Real} = nothing
+    bars_gap::Maybe{Real} = nothing
 end
 
 """
@@ -1505,22 +1526,22 @@ end
 
 function Validations.validate_object(data::BarGraphData)::Maybe{AbstractString}
     if length(data.values) == 0
-        return "empty values vector"
+        return "empty data.values vector"
     end
     names = data.names
     if names !== nothing && length(names) != length(data.values)
-        return "the number of names: $(length(names))\n" *
-               "is different from the number of bars: $(length(data.values))"
+        return "the data.names size: $(length(names))\n" *
+               "is different from the data.values size: $(length(data.values))"
     end
     colors = data.colors
     if colors !== nothing && length(colors) != length(data.values)
-        return "the number of colors: $(length(colors))\n" *
-               "is different from the number of bars: $(length(data.values))"
+        return "the data.colors size: $(length(colors))\n" *
+               "is different from the data.values size: $(length(data.values))"
     end
     hovers = data.hovers
     if hovers !== nothing && length(hovers) != length(data.values)
-        return "the number of hovers: $(length(hovers))\n" *
-               "is different from the number of bars: $(length(data.values))"
+        return "the data.hovers size: $(length(hovers))\n" *
+               "is different from the data.values size: $(length(data.values))"
     end
     return nothing
 end
@@ -1555,7 +1576,7 @@ end
         value_axis::AxisConfiguration = AxisConfiguration()
         color::Maybe{AbstractString} = nothing
         orientation::ValuesOrientation = VerticalValues
-        bars_gap::Maybe{<:Real} = nothing
+        bars_gap::Maybe{Real} = nothing
         show_legend::Bool = false
         stacking::Maybe{Stacking} = nothing
     end
@@ -1568,7 +1589,7 @@ without the `color` field (which makes no sense when multiple series are shown),
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     orientation::ValuesOrientation = VerticalValues
-    bars_gap::Maybe{<:Real} = nothing
+    bars_gap::Maybe{Real} = nothing
     show_legend::Bool = false
     stacking::Maybe{Stacking} = nothing
 end
@@ -1584,9 +1605,9 @@ function Validations.validate_object(
         bars_gap = configuration.bars_gap
         if bars_gap !== nothing
             if bars_gap < 0
-                message = "non-positive bars_gap: $(bars_gap)"
+                message = "non-positive configuration.bars_gap: $(bars_gap)"
             elseif bars_gap >= 1
-                message = "too-large bars_gap: $(bars_gap)"
+                message = "too-large configuration.bars_gap: $(bars_gap)"
             end
         end
     end
@@ -1611,7 +1632,9 @@ The data for a multiple bars (histograms) graph.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title`,
 `bar_axis_title` for the axes, and the `legend_title` (if `show_legend` is set in [`BarsGraphConfiguration`](@ref).
 
-All the `values` vectors must be of the same size. If specified, the `bar_names vector must contain the same number of elements. If specified, the `names`and/or`colors`and/or`hovers`vectors must contain the same number of elements as the number of`values` vectors (that is, the number of series).
+All the `values` vectors must be of the same size. If specified, the `bar_names` vector must contain the same number of
+elements. If specified, the `names` and/or `colors` and/or `hovers` vectors must contain the same number of elements as
+the number of`values` vectors (that is, the number of series).
 """
 @kwdef mutable struct BarsGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
@@ -1628,33 +1651,34 @@ end
 function Validations.validate_object(data::BarsGraphData)::Maybe{AbstractString}
     n_series = length(data.values)
     if n_series == 0
-        return "empty values vector"
+        return "empty data.values vector"
     end
     n_values = length(data.values[1])
     for (index, values) in enumerate(data.values)
         if length(values) != n_values
-            return "the number of values#1: $(n_values)\n" *
-                   "is different from the number of values#$(index): $(length(values))"
+            return "the data.values[$(index)] size: $(length(values))\n" *
+                   "is different from the data.values[1] size: $(n_values)"
         end
     end
     if n_values == 0
-        return "empty values vectors"
+        return "empty data.values vectors"
     end
     names = data.names
     if names !== nothing && length(names) != n_series
-        return "the number of names: $(length(names))\n" * "is different from the number of series: $(n_series)"
+        return "the data.names size: $(length(names))\n" * "is different from the data.values size: $(n_series)"
     end
     colors = data.colors
     if colors !== nothing && length(colors) != n_series
-        return "the number of colors: $(length(colors))\n" * "is different from the number of series: $(n_series)"
+        return "the data.colors size: $(length(colors))\n" * "is different from the data.values size: $(n_series)"
     end
     hovers = data.hovers
     if hovers !== nothing && length(hovers) != n_series
-        return "the number of hovers: $(length(hovers))\n" * "is different from the number of series: $(n_series)"
+        return "the data.hovers size: $(length(hovers))\n" * "is different from the data.values size: $(n_series)"
     end
     bar_names = data.bar_names
     if bar_names !== nothing && length(bar_names) != n_values
-        return "the number of bar_names: $(length(bar_names))\n" * "is different from the number of bars: $(n_values)"
+        return "the data.bar_names size: $(length(bar_names))\n" *
+               "is different from the data.values[:] size: $(n_values)"
     end
     return nothing
 end
@@ -1673,7 +1697,7 @@ function render(
     else
         for (series_index, values) in enumerate(data.values)
             for (bar_index, value) in enumerate(values)
-                @assert value >= 0 "negative stacked value#$(bar_index) of series#$(series_index): $(value)"
+                @assert value >= 0 "negative stacked data.values[$(series_index),$(bar_index)]: $(value)"
             end
         end
         values = stacked_values(stacking, data.values)
@@ -1773,7 +1797,7 @@ function bar_layout(
         xaxis_showticklabels = configuration.graph.show_ticks
         xaxis_title = data.value_axis_title
         xaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
-        xaxis_type = configuration.value_axis.log_scale ? "log" : nothing
+        xaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
 
         yaxis_showgrid = false
         yaxis_showticklabels = has_tick_names
@@ -1791,7 +1815,7 @@ function bar_layout(
         yaxis_showticklabels = configuration.graph.show_ticks
         yaxis_title = data.value_axis_title
         yaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
-        yaxis_type = configuration.value_axis.log_scale ? "log" : nothing
+        yaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
     else
         @assert false
     end
@@ -1816,74 +1840,158 @@ function bar_layout(
 end
 
 """
+    @kwdef mutable struct ScaleConfiguration <: ObjectWithValidation
+        minimum::Maybe{Real} = nothing
+        maximum::Maybe{Real} = nothing
+        log_regularization::Maybe{AbstractFloat} = nothing
+        reverse_scale::Bool = false
+        show_scale::Bool = false
+    end
+
+Configure a color (or sizes) scale. If `show_scale` is set, the color scale is displayed next to the graph. The rest of
+the fields are only relevant for continuous scales. By default, the `minimum` and `maximum` values are determined
+automatically by the data. Setting `log_regularization` converts the scale to a log scale, using the (non-negative)
+regularization to avoid log of zero values. If `reverse_scale` is set, the direction of the color scale is reversed.
+"""
+@kwdef mutable struct ScaleConfiguration <: ObjectWithValidation
+    minimum::Maybe{Real} = nothing
+    maximum::Maybe{Real} = nothing
+    log_regularization::Maybe{AbstractFloat} = nothing
+    reverse_scale::Bool = false
+    show_scale::Bool = false
+end
+
+function Validations.validate_object(
+    of_what::AbstractString,
+    of_which::AbstractString,
+    configuration::ScaleConfiguration,
+)::Maybe{AbstractString}
+    minimum = configuration.minimum
+    maximum = configuration.maximum
+    if minimum !== nothing && maximum !== nothing && maximum <= minimum
+        return "configuration.$(of_what).$(of_which).maximum: $(maximum)\n" *
+               "is not larger than configuration.$(of_what).$(of_which).minimum: $(minimum)"
+    end
+
+    log_regularization = configuration.log_regularization
+    if log_regularization !== nothing
+        if log_regularization < 0
+            return "negative configuration.$(of_what).$(of_which).log_regularization: $(log_regularization)"
+        end
+
+        if minimum !== nothing && minimum + log_regularization <= 0
+            return "log of non-positive configuration.$(of_what).$(of_which).minimum: $(minimum + log_regularization)"
+        end
+
+        if maximum !== nothing && maximum + log_regularization <= 0
+            return "log of non-positive configuration.$(of_what).$(of_which).maximum: $(maximum + log_regularization)"
+        end
+    end
+
+    return nothing
+end
+
+"""
+    @kwdef mutable struct SizeRangeConfiguration <: ObjectWithValidation
+        smallest::Maybe{Real} = nothing
+        largest::Maybe{Real} = nothing
+    end
+
+Configure the range of sizes in pixels (1/96th of an inch) to map the sizes data into. If no bounds are given, and also
+the scale is linear, then we assume the sizes data is just the size in pixels. Otherwise, by default we use 2 pixels for
+the `smallest` size and make the `largest` size be 8 pixels larger than the `smallest` size.
+"""
+@kwdef mutable struct SizeRangeConfiguration <: ObjectWithValidation
+    smallest::Maybe{Real} = nothing
+    largest::Maybe{Real} = nothing
+end
+
+function Validations.validate_object(
+    of_what::AbstractString,
+    configuration::SizeRangeConfiguration,
+)::Maybe{AbstractString}
+    smallest = configuration.smallest
+    largest = configuration.largest
+    if smallest !== nothing && largest !== nothing && largest <= smallest
+        return "configuration.$(of_what).size_range.largest: $(largest)\n" *
+               "is not larger than configuration.$(of_what).size_range.smallest: $(smallest)"
+    end
+    return nothing
+end
+
+"""
     @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
-        size::Maybe{Real} = nothing
         color::Maybe{AbstractString} = nothing
-        color_scale::Maybe{Union{
+        color_scale::ScaleConfiguration = ScaleConfiguration()
+        color_palette::Maybe{Union{
             AbstractString,
             AbstractVector{<:Tuple{<:Real, <:AbstractString}},
             AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         }} = nothing
-        log_color_scale_regularization::Maybe{AbstractFloat} = nothing
-        reverse_color_scale::Bool = false
-        show_color_scale::Bool = false
+        size::Maybe{Real} = nothing
+        size_scale::ScaleConfiguration = ScaleConfiguration()
+        size_range::SizeRangeConfiguration = SizeRangeConfiguration()
     end
 
-Configure points in a graph. By default, the point `size` and `color` is chosen automatically (when this is applied to
-edges, the `size` is the width of the line). You can also override this by specifying sizes and colors in the
-[`PointsGraphData`](@ref). If the data contains numeric color values, then the `color_scale` will be used instead; if
-so, if `log_color_scale_regularization` is set, then the values are converted to log (base 10) of the value, and if the
-`color_scale` is named, `reverse_color_scale` will reverse the colors order in it. You need to explicitly set
-`show_color_scale` to show its legend.
-
-The `color_scale` can be the name of a standard one, a vector of (value, color) tuples for a continuous scale. If the
-values are numbers, the scale is continuous; if they are strings, this is a categorical scale. A categorical scale can't
-be reversed.
+Configure points in a graph. By default, the point `color` and `size` is chosen automatically (when this is applied to
+edges, the `size` is the width of the line). You can override this by specifying colors and/or sizes in the
+[`PointsGraphData`](@ref). For color values, the `color_palette` is applied; this can be the name of a standard one, a
+vector of (value, color) tuples for a continuous (numeric value) scale or categorical (string value) scales. For sizes,
+the `size_range` is applied. The `color_scale` and `size_scale` configurations further control the color scales.
 """
 @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
-    size::Maybe{Real} = nothing
     color::Maybe{AbstractString} = nothing
-    color_scale::Maybe{
+    color_scale::ScaleConfiguration = ScaleConfiguration()
+    color_palette::Maybe{
         Union{
             AbstractString,
             AbstractVector{<:Tuple{<:Real, <:AbstractString}},
             AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
         },
     } = nothing
-    log_color_scale_regularization::Maybe{AbstractFloat} = nothing
-    reverse_color_scale::Bool = false
-    show_color_scale::Bool = false
+    size::Maybe{Real} = nothing
+    size_scale::ScaleConfiguration = ScaleConfiguration()
+    size_range::SizeRangeConfiguration = SizeRangeConfiguration()
 end
 
 function Validations.validate_object(
     of_what::AbstractString,
     configuration::PointsStyleConfiguration,
 )::Maybe{AbstractString}
+    message = validate_object(of_what, "color_scale", configuration.color_scale)
+    if message === nothing
+        message = validate_object(of_what, "size_scale", configuration.size_scale)
+    end
+    if message === nothing
+        message = validate_object(of_what, configuration.size_range)
+    end
+    if message !== nothing
+        return message
+    end
+
     size = configuration.size
     if size !== nothing && size <= 0
-        return "non-positive $(of_what) style.size: $(size)"
+        return "non-positive configuration.$(of_what).size: $(size)"
     end
-    log_color_scale_regularization = configuration.log_color_scale_regularization
-    if log_color_scale_regularization !== nothing && log_color_scale_regularization < 0
-        return "negative log_color_scale_regularization: $(log_color_scale_regularization)"
-    end
-    color_scale = configuration.color_scale
-    if color_scale isa AbstractVector
-        if length(color_scale) == 0
-            return "empty $(of_what) style.color_scale"
+
+    color_palette = configuration.color_palette
+    if color_palette isa AbstractVector
+        if length(color_palette) == 0
+            return "empty configuration.$(of_what).color_palette"
         end
-        if eltype(color_scale) <: Tuple{<:Real, <:AbstractString}
-            cmin = minimum([value for (value, _) in color_scale])
-            cmax = maximum([value for (value, _) in color_scale])
+        if eltype(color_palette) <: Tuple{<:Real, <:AbstractString}
+            cmin = minimum([value for (value, _) in color_palette])
+            cmax = maximum([value for (value, _) in color_palette])
             if cmin == cmax
-                return "single $(of_what) style.color_scale value: $(cmax)"
+                return "single configuration.$(of_what).color_palette value: $(cmax)"
             end
+            log_color_scale_regularization = configuration.color_scale.log_regularization
             if log_color_scale_regularization !== nothing && cmin + log_color_scale_regularization <= 0
-                index = argmin(color_scale)
-                return "non-positive log scale color#$(index): $(cmin + log_color_scale_regularization)"
+                index = argmin(color_palette)
+                return "log of non-positive configuration.$(of_what).color_palette[$(index)]: $(cmin + log_color_scale_regularization)"
             end
-        elseif configuration.reverse_color_scale
-            return "reversed categorical $(of_what) style.color_scale"
+        elseif configuration.color_scale.reverse_scale
+            return "reversed categorical configuration.$(of_what).color_palette"
         end
     end
     return nothing
@@ -1905,9 +2013,9 @@ end
 Configure a graph for showing a scatter graph of points.
 
 Using the `vertical_bands`, `horizontal_bands` and/or `diagonal_bands` you can partition the graph into regions. The
-`diagonal_bands` can only be used if both axes are linear or both axes are in `log_scale`; they also unify the ranges of
-the X and Y axes. If the axes are in `log_scale`, the `line_offset` of the `diagonal_bands` are multiplicative instead
-of additive, and must be positive.
+`diagonal_bands` can only be used if both axes are linear or both axes are in log scale; they also unify the ranges of
+the X and Y axes. If the axes are in log scale, the `line_offset` of the `diagonal_bands` are multiplicative instead of
+additive, and must be positive.
 
 The `border_style` is used if the [`PointsGraphData`](@ref) contains either the `border_colors` and/or `border_sizes`.
 This allows displaying some additional data per point.
@@ -1915,7 +2023,7 @@ This allows displaying some additional data per point.
 !!! note
 
     There is no `show_legend` for a [`GraphConfiguration`](@ref) of a points graph. Instead you probably want to set the
-    `show_color_scale` of the `style` (and/or of the `border_style` and/or `edges_style`). In addition, the color scale
+    `show_scale` of the `color_scale` (and/or of the `border_style` and/or `edges_style`). In addition, the color scale
     options of the `edges_style` must not be set, as the `edges_colors` of [`PointsGraphData`](@ref) is restricted to
     explicit colors.
 """
@@ -1932,9 +2040,9 @@ This allows displaying some additional data per point.
 end
 
 function Validations.validate_object(configuration::PointsGraphConfiguration)::Maybe{AbstractString}
-    @assert configuration.edges_style.color_scale === nothing "not implemented: points edges_style color_scale"
-    @assert !configuration.edges_style.reverse_color_scale "not implemented: points edges_style reverse_color_scale"
-    @assert !configuration.edges_style.show_color_scale "not implemented: points edges_style show_color_scale"
+    @assert configuration.edges_style.color_palette === nothing "not implemented: points edges_style color_palette"
+    @assert !configuration.edges_style.color_scale.reverse_scale "not implemented: points edges_style.color_scale.reverse_scale"
+    @assert !configuration.edges_style.color_scale.show_scale "not implemented: points edges_style.color_scale.show_scale"
 
     message = validate_object(configuration.graph)
     if message === nothing
@@ -1944,31 +2052,43 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
         message = validate_object("y", configuration.y_axis)
     end
     if message === nothing
-        message = validate_object("points", configuration.style)
+        message = validate_object("style", configuration.style)
     end
     if message === nothing
-        message = validate_object("points border", configuration.border_style)
+        message = validate_object("border_style", configuration.border_style)
     end
     if message === nothing
-        message = validate_object("points edges", configuration.edges_style)
+        message = validate_object("edges_style", configuration.edges_style)
     end
     if message === nothing
-        message = validate_object("vertical_bands", configuration.vertical_bands, false)
+        message = validate_object(
+            "vertical_bands",
+            configuration.vertical_bands,
+            configuration.x_axis.log_regularization !== nothing,
+        )
     end
     if message === nothing
-        message = validate_object("horizontal_bands", configuration.horizontal_bands, false)
+        message = validate_object(
+            "horizontal_bands",
+            configuration.horizontal_bands,
+            configuration.y_axis.log_regularization !== nothing,
+        )
     end
     if message === nothing &&
-       configuration.x_axis.log_scale != configuration.y_axis.log_scale &&
+       (configuration.x_axis.log_regularization === nothing) != (configuration.y_axis.log_regularization === nothing) &&
        (
            configuration.diagonal_bands.low.line_offset !== nothing ||
            configuration.diagonal_bands.middle.line_offset !== nothing ||
            configuration.diagonal_bands.high.line_offset !== nothing
        )
-        message = "diagonal_bands specified for a combination of linear and log scale axes"
+        message = "configuration.diagonal_bands specified for a combination of linear and log scale axes"
     end
     if message === nothing
-        message = validate_object("diagonal_bands", configuration.diagonal_bands, configuration.x_axis.log_scale)
+        message = validate_object(
+            "diagonal_bands",
+            configuration.diagonal_bands,
+            configuration.x_axis.log_regularization !== nothing || configuration.y_axis.log_regularization !== nothing,
+        )
     end
     return message
 end
@@ -1999,18 +2119,21 @@ By default, all the titles are empty. You can specify the overall `graph_title` 
 
 The `xs` and `ys` vectors must be of the same size. If specified, the `colors` `sizes` and/or `hovers` vectors must also
 be of the same size. The `colors` can be either color names or a numeric value; if the latter, then the configuration's
-`color_scale` is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs
+`color_palette` is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs
 (or when saving an HTML file).
 
 The `border_colors` and `border_sizes` can be used to display additional data per point. The border size is in addition
 to the point size.
 
-The `scale_title` and `border_scale_title` are only used if `show_color_scale` is set for the relevant color scales. You
-can't specify `show_color_scale` if there is no `colors` data or if the `colors` contain explicit color names.
+The `scale_title` and `border_scale_title` are only used if `show_scale` is set for the relevant color scales. You can't
+specify `show_scale` if there is no `colors` data or if the `colors` contain explicit color names.
 
 It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
 [`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
 The `edges_colors` are restricted to explicit colors, not a color scale.
+
+A point (or a point border, or an edge) with a zero size and/or an empty string color (either from the data or from a
+categorical `color_palette`) will not be shown.
 """
 @kwdef mutable struct PointsGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
@@ -2032,66 +2155,66 @@ end
 
 function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractString}
     if length(data.xs) != length(data.ys)
-        return "the number of xs: $(length(data.xs))\n" * "is different from the number of ys: $(length(data.ys))"
+        return "the data.xs size: $(length(data.xs))\n" * "is different from the data.ys size: $(length(data.ys))"
     end
 
     colors = data.colors
     if colors !== nothing && length(colors) != length(data.xs)
-        return "the number of colors: $(length(colors))\n" *
-               "is different from the number of points: $(length(data.xs))"
+        return "the data.colors size: $(length(colors))\n" *
+               "is different from the data.xs and data.ys size: $(length(data.xs))"
     end
 
     sizes = data.sizes
     if sizes !== nothing
         if length(sizes) != length(data.xs)
-            return "the number of sizes: $(length(sizes))\n" *
-                   "is different from the number of points: $(length(data.xs))"
+            return "the data.sizes size: $(length(sizes))\n" *
+                   "is different from the data.xs and data.ys size: $(length(data.xs))"
         end
 
         for (index, size) in enumerate(sizes)
-            if size <= 0.0
-                return "non-positive size#$(index): $(size)"
+            if size < 0.0
+                return "negative data.sizes[$(index)]: $(size)"
             end
         end
     end
 
     border_colors = data.border_colors
     if border_colors !== nothing && length(border_colors) != length(data.xs)
-        return "the number of border_colors: $(length(border_colors))\n" *
-               "is different from the number of points: $(length(data.xs))"
+        return "the data.border_colors size: $(length(border_colors))\n" *
+               "is different from the data.xs and data.ys size: $(length(data.xs))"
     end
 
     border_sizes = data.border_sizes
     if border_sizes !== nothing
         if length(border_sizes) != length(data.xs)
-            return "the number of border_sizes: $(length(border_sizes))\n" *
-                   "is different from the number of points: $(length(data.xs))"
+            return "the data.border_sizes size: $(length(border_sizes))\n" *
+                   "is different from the data.xs and data.ys size: $(length(data.xs))"
         end
 
         for (index, border_size) in enumerate(border_sizes)
-            if border_size <= 0.0
-                return "non-positive border_size#$(index): $(border_size)"
+            if border_size < 0.0
+                return "negative data.border_sizes[$(index)]: $(border_size)"
             end
         end
     end
 
     hovers = data.hovers
     if hovers !== nothing && length(hovers) != length(data.xs)
-        return "the number of hovers: $(length(hovers))\n" *
-               "is different from the number of points: $(length(data.xs))"
+        return "the data.hovers size: $(length(hovers))\n" *
+               "is different from the data.xs and data.ys size: $(length(data.xs))"
     end
 
     edges = data.edges
     if edges !== nothing
         for (index, (from_point, to_point)) in enumerate(edges)
             if from_point < 1 || length(data.xs) < from_point
-                return "edge#$(index) from invalid point: $(from_point)"
+                return "data.edges[$(index)] from invalid point: $(from_point)"
             end
             if to_point < 1 || length(data.xs) < to_point
-                return "edge#$(index) to invalid point: $(to_point)"
+                return "data.edges[$(index)] to invalid point: $(to_point)"
             end
             if from_point == to_point
-                return "edge#$(index) from point to itself: $(from_point)"
+                return "data.edges[$(index)] from point to itself: $(from_point)"
             end
         end
     end
@@ -2131,87 +2254,151 @@ function render(
         minimum_y,
         maximum_x,
         maximum_y;
-        log_scale = configuration.x_axis.log_scale,
+        log_scale = configuration.x_axis.log_regularization !== nothing ||
+            configuration.y_axis.log_regularization !== nothing,
     )
 
+    sizes = fix_sizes(data.sizes, configuration.style)
+
     if data.border_colors !== nothing || data.border_sizes !== nothing
-        color_scale = configuration.border_style.color_scale
-        if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        marker_size = border_marker_size(data, configuration, sizes)
+        if marker_size isa AbstractVector{<:Real}
+            marker_size_mask = marker_size .> 0  # NOJET
+        else
+            marker_size_mask = nothing
+        end
+
+        color_palette = configuration.border_style.color_palette
+        if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
             border_colors = data.border_colors
-            @assert border_colors !== nothing
-            for (value, color) in color_scale
-                mask = border_colors .== value
+            @assert border_colors isa AbstractVector{<:AbstractString}
+            for (value, color) in color_palette
+                if color != ""
+                    mask = border_colors .== value
+                    if marker_size_mask !== nothing
+                        mask .&= marker_size_mask
+                    end
+                    if any(mask)
+                        push!(
+                            traces,
+                            points_trace(
+                                data;
+                                x_log_regularization = configuration.x_axis.log_regularization,
+                                y_log_regularization = configuration.y_axis.log_regularization,
+                                color = color,
+                                marker_size = marker_size,
+                                coloraxis = nothing,
+                                points_style = configuration.border_style,
+                                scale_title = data.border_scale_title,
+                                legend_group = "borders",
+                                mask = mask,
+                                name = value,
+                            ),
+                        )
+                    end
+                end
+            end
+        else
+            border_colors = data.border_colors
+            if border_colors isa AbstractVector{<:AbstractString}
+                mask = border_colors .!= ""
+                if mask !== nothing && marker_size_mask !== nothing
+                    mask .&= marker_size_mask
+                end
+            else
+                mask = marker_size_mask
+            end
+
+            push!(  # NOJET
+                traces,
+                points_trace(
+                    data;
+                    x_log_regularization = configuration.x_axis.log_regularization,
+                    y_log_regularization = configuration.y_axis.log_regularization,
+                    color = if border_colors !== nothing
+                        fix_colors(border_colors, configuration.border_style.color_scale.log_regularization)
+                    else
+                        configuration.border_style.color
+                    end,
+                    marker_size = marker_size,
+                    coloraxis = "coloraxis2",
+                    points_style = configuration.border_style,
+                    scale_title = data.border_scale_title,
+                    legend_group = "borders",
+                    mask = mask,
+                ),
+            )
+        end
+    end
+
+    if sizes isa AbstractVector{<:Real}
+        marker_size_mask = sizes .> 0
+    else
+        marker_size_mask = nothing
+    end
+
+    color_palette = configuration.style.color_palette
+    if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        for (value, color) in color_palette
+            if color != ""
+                colors = data.colors
+                @assert colors isa AbstractVector{<:AbstractString}
+                mask = colors .== value
+                if marker_size_mask !== nothing
+                    mask .&= marker_size_mask
+                end
                 if any(mask)
-                    marker_size = border_marker_size(data, configuration, mask)
                     push!(
                         traces,
                         points_trace(
                             data;
+                            x_log_regularization = configuration.x_axis.log_regularization,
+                            y_log_regularization = configuration.y_axis.log_regularization,
                             color = color,
-                            marker_size = marker_size,
+                            marker_size = sizes,
                             coloraxis = nothing,
-                            points_style = configuration.border_style,
-                            scale_title = data.border_scale_title,
-                            legend_group = "borders",
+                            points_style = configuration.style,
+                            scale_title = data.scale_title,
+                            legend_group = "points",
                             mask = mask,
                             name = value,
                         ),
                     )
                 end
             end
+        end
+    else
+        colors = data.colors
+        if colors isa AbstractVector{<:AbstractString}
+            mask = colors .!= ""
+            if marker_size_mask !== nothing
+                mask .&= marker_size_mask
+            end
         else
-            marker_size = border_marker_size(data, configuration)
+            mask = marker_size_mask
+        end
+
+        if mask === nothing || any(mask)
             push!(  # NOJET
                 traces,
                 points_trace(
                     data;
-                    color = fix_colors(data.border_colors, configuration.border_style.log_color_scale_regularization),
-                    marker_size = marker_size,
-                    coloraxis = "coloraxis2",
-                    points_style = configuration.border_style,
-                    scale_title = data.border_scale_title,
-                    legend_group = "borders",
+                    x_log_regularization = configuration.x_axis.log_regularization,
+                    y_log_regularization = configuration.y_axis.log_regularization,
+                    color = if colors !== nothing
+                        fix_colors(colors, configuration.style.color_scale.log_regularization)
+                    else
+                        configuration.style.color
+                    end,
+                    marker_size = sizes,
+                    coloraxis = "coloraxis",
+                    points_style = configuration.style,
+                    scale_title = data.scale_title,
+                    legend_group = "points",
+                    mask = mask,
                 ),
             )
         end
-    end
-
-    color_scale = configuration.style.color_scale
-    if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        for (value, color) in color_scale
-            colors = data.colors
-            @assert colors !== nothing
-            mask = colors .== value
-            if any(mask)
-                push!(
-                    traces,
-                    points_trace(
-                        data;
-                        color = color,
-                        marker_size = data.sizes !== nothing ? data.sizes : configuration.style.size,
-                        coloraxis = nothing,
-                        points_style = configuration.style,
-                        scale_title = data.scale_title,
-                        legend_group = "points",
-                        mask = mask,
-                        name = value,
-                    ),
-                )
-            end
-        end
-    else
-        push!(  # NOJET
-            traces,
-            points_trace(
-                data;
-                color = fix_colors(data.colors, configuration.style.log_color_scale_regularization),
-                marker_size = data.sizes !== nothing ? data.sizes : configuration.style.size,
-                coloraxis = "coloraxis",
-                points_style = configuration.style,
-                scale_title = data.scale_title,
-                legend_group = "points",
-            ),
-        )
     end
 
     edges = data.edges
@@ -2246,7 +2433,8 @@ function render(
                     minimum_y,
                     maximum_x,
                     maximum_y;
-                    log_scale = configuration.x_axis.log_scale,
+                    log_scale = configuration.x_axis.log_regularization !== nothing ||
+                        configuration.y_axis.log_regularization !== nothing,
                 ),
             )
         end
@@ -2265,72 +2453,78 @@ function render(
 end
 
 function assert_valid_render(data::PointsGraphData, configuration::PointsGraphConfiguration)::Nothing
-    if configuration.x_axis.log_scale
+    x_log_regularization = configuration.x_axis.log_regularization
+    if x_log_regularization !== nothing
         for (index, x) in enumerate(data.xs)
-            @assert x > 0 "non-positive log x#$(index): $(x)"
+            @assert x + x_log_regularization > 0 "log of non-positive data.xs[$(index)]: $(x + x_log_regularization)"
         end
     end
 
-    if configuration.y_axis.log_scale
+    y_log_regularization = configuration.y_axis.log_regularization
+    if y_log_regularization !== nothing
         for (index, y) in enumerate(data.ys)
-            @assert y > 0 "non-positive log y#$(index): $(y)"
+            @assert y + y_log_regularization > 0 "log of non-positive data.ys[$(index)]: $(y + y_log_regularization)"
         end
     end
 
-    color_scale = configuration.style.color_scale
-    if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.colors isa AbstractVector{<:AbstractString} "categorical style.color_scale for non-string points data.colors"
-        scale_colors = Set{AbstractString}([value for (value, _) in color_scale])
+    color_palette = configuration.style.color_palette
+    if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.colors isa AbstractVector{<:AbstractString} "categorical style.color_palette for non-string data.colors"
+        scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
         for (index, color) in enumerate(data.colors)
-            @assert color in scale_colors "categorical style.color_scale does not contain color#$(index): $(color)"
+            if color != ""
+                @assert color in scale_colors "categorical style.color_palette does not contain data.colors[$(index)]: $(color)"
+            end
         end
     end
 
-    border_color_scale = configuration.border_style.color_scale
-    if border_color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+    border_color_palette = configuration.border_style.color_palette
+    if border_color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         @assert data.border_colors isa AbstractVector{<:AbstractString} (
-            "categorical borders_style.color_scale for non-string points data.border_colors"
+            "categorical borders_style.color_palette for non-string data.border_colors"
         )
-        border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_scale])
+        border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_palette])
         for (index, color) in enumerate(data.border_colors)
-            @assert color in border_scale_colors "categorical border_style.color_scale does not contain color#$(index): $(color)"
+            if color != ""
+                @assert color in border_scale_colors "categorical border_style.color_palette does not contain data.colors[$(index)]: $(color)"
+            end
         end
     end
 
-    if configuration.style.show_color_scale
-        @assert data.colors !== nothing "no data.colors specified for points style.show_color_scale"
+    if configuration.style.color_scale.show_scale
+        @assert data.colors !== nothing "no data.colors specified for configuration.style.color_scale.show_scale"
         @assert !(data.colors isa AbstractVector{<:AbstractString}) ||
-                configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.colors specified for points style.show_color_scale"
+                configuration.style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.colors specified for configuration.style.color_scale.show_scale"
         )
     end
 
-    if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractVector{<:AbstractString} "categorical color_scale for non-string points border_colors data"
+    if configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.border_colors isa AbstractVector{<:AbstractString} "categorical color_palette for non-string data.border_colors"
     end
 
-    if configuration.border_style.show_color_scale
-        @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_color_scale"
+    if configuration.border_style.color_scale.show_scale
+        @assert data.border_colors !== nothing "no data.border_colors specified for configuration.border_style.color_scale.show_scale"
         @assert !(data.border_colors isa AbstractVector{<:AbstractString}) ||
-                configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.border_colors specified for points border_style.show_color_scale"
+                configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.border_colors specified for configuration.border_style.color_scale.show_scale"
         )
     end
 
-    if configuration.style.log_color_scale_regularization !== nothing
+    if configuration.style.color_scale.log_regularization !== nothing
         colors = data.colors
         @assert colors isa AbstractVector{<:Real} "non-real colors with log scale"
         index = argmin(colors)
-        minimal_color = colors[index] + configuration.style.log_color_scale_regularization
-        @assert minimal_color > 0 "non-positive log color#$(index): $(minimal_color)"
+        minimal_color = colors[index] + configuration.style.color_scale.log_regularization
+        @assert minimal_color > 0 "log of non-positive data.colors[$(index)]: $(minimal_color)"
     end
 
-    if configuration.border_style.log_color_scale_regularization !== nothing
+    if configuration.border_style.color_scale.log_regularization !== nothing
         border_colors = data.border_colors
         @assert border_colors isa AbstractVector{<:Real} "non-real border colors with log scale"
         index = argmin(border_colors)
-        minimal_color = border_colors[index] + configuration.style.log_color_scale_regularization
-        @assert minimal_color > 0 "non-positive log border color#$(index): $(minimal_color)"
+        minimal_color = border_colors[index] + configuration.style.color_scale.log_regularization
+        @assert minimal_color > 0 "log of non-positive data.border_colors[$(index)]: $(minimal_color)"
     end
 
     return nothing
@@ -2499,7 +2693,7 @@ function push_fill_diagonal_bands_traces(
 end
 
 function low_diagonal_trace(
-    offset::Real,
+    line_offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
@@ -2510,23 +2704,23 @@ function low_diagonal_trace(
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
     threshold, increase, decrease = band_operations(log_scale)
-    if offset < threshold
+    if line_offset < threshold
         return fill_trace(
-            [decrease(minimum_xy, offset), maximum_xy, maximum_xy],
-            [minimum_xy, increase(maximum_xy, offset), minimum_xy];
+            [decrease(minimum_xy, line_offset), maximum_xy, maximum_xy],
+            [minimum_xy, increase(maximum_xy, line_offset), minimum_xy];
             color = color,
         )
     else
         return fill_trace(
-            [minimum_xy, maximum_xy, maximum_xy, decrease(maximum_xy, offset), minimum_xy],
-            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, increase(minimum_xy, offset)];
+            [minimum_xy, maximum_xy, maximum_xy, decrease(maximum_xy, line_offset), minimum_xy],
+            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, increase(minimum_xy, line_offset)];
             color = color,
         )
     end
 end
 
 function high_diagonal_trace(
-    offset::Real,
+    line_offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
@@ -2537,16 +2731,16 @@ function high_diagonal_trace(
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
     threshold, increase, decrease = band_operations(log_scale)
-    if offset < threshold
+    if line_offset < threshold
         return fill_trace(
-            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, decrease(minimum_xy, offset)],
-            [minimum_xy, maximum_xy, maximum_xy, increase(maximum_xy, offset), minimum_xy];
+            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, decrease(minimum_xy, line_offset)],
+            [minimum_xy, maximum_xy, maximum_xy, increase(maximum_xy, line_offset), minimum_xy];
             color = color,
         )
     else
         return fill_trace(
-            [minimum_xy, decrease(maximum_xy, offset), minimum_xy],
-            [increase(minimum_xy, offset), maximum_xy, maximum_xy];
+            [minimum_xy, decrease(maximum_xy, line_offset), minimum_xy],
+            [increase(minimum_xy, line_offset), maximum_xy, maximum_xy];
             color = color,
         )
     end
@@ -2606,6 +2800,8 @@ end
 
 function points_trace(
     data::PointsGraphData;
+    x_log_regularization::Maybe{AbstractFloat},
+    y_log_regularization::Maybe{AbstractFloat},
     color::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}, AbstractVector{<:Real}}},
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
     coloraxis::Maybe{AbstractString},
@@ -2616,25 +2812,26 @@ function points_trace(
     name::Maybe{AbstractString} = nothing,
 )::GenericTrace
     return scatter(;
-        x = masked_data(data.xs, mask),
-        y = masked_data(data.ys, mask),
+        x = masked_data(data.xs, mask) .+ (x_log_regularization === nothing ? 0 : x_log_regularization),
+        y = masked_data(data.ys, mask) .+ (y_log_regularization === nothing ? 0 : y_log_regularization),
         marker_size = masked_data(marker_size, mask),
         marker_color = color !== nothing ? masked_data(color, mask) : points_style.color,
-        marker_colorscale = if points_style.color_scale isa AbstractVector ||
-                               points_style.log_color_scale_regularization !== nothing
+        marker_colorscale = if points_style.color_palette isa AbstractVector ||
+                               points_style.color_scale.log_regularization !== nothing
             nothing
         else
-            points_style.color_scale
+            points_style.color_palette
         end,
         marker_coloraxis = coloraxis,
-        marker_showscale = points_style.show_color_scale &&
-                           !(points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}),
-        marker_reversescale = points_style.reverse_color_scale,
-        showlegend = points_style.show_color_scale &&
-                     points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        marker_showscale = points_style.color_scale.show_scale && !(
+            points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        ),
+        marker_reversescale = points_style.color_scale.reverse_scale,
+        showlegend = points_style.color_scale.show_scale &&
+                     points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
         legendgroup = legend_group,
         legendgrouptitle_text = scale_title,
-        name = name !== nothing ? name : points_style.show_color_scale ? "Trace" : "",
+        name = name !== nothing ? name : points_style.color_scale.show_scale ? "Trace" : "",
         text = data.hovers,
         hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
@@ -2707,20 +2904,20 @@ function diagonal_line_trace(
     maximum_y::Real;
     log_scale::Bool,
 )::GenericTrace
-    @assert band_region_configuration.line_offset !== nothing
+    line_offset = band_region_configuration.line_offset
+    @assert line_offset !== nothing
     @assert band_region_configuration.line_color !== nothing
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
 
-    offset = band_region_configuration.line_offset
     threshold, increase, decrease = band_operations(log_scale)
 
-    if offset < threshold
-        x = [decrease(minimum_xy, offset), maximum_xy]
-        y = [minimum_xy, increase(maximum_xy, offset)]
+    if line_offset < threshold
+        x = [decrease(minimum_xy, line_offset), maximum_xy]
+        y = [minimum_xy, increase(maximum_xy, line_offset)]
     else
-        x = [minimum_xy, decrease(maximum_xy, offset)]
-        y = [increase(minimum_xy, offset), maximum_xy]
+        x = [minimum_xy, decrease(maximum_xy, line_offset)]
+        y = [increase(minimum_xy, line_offset), maximum_xy]
     end
 
     return scatter(;
@@ -2734,11 +2931,11 @@ function diagonal_line_trace(
     )
 end
 
-function band_operations(log_scale::Bool)::Tuple{Real, Function, Function}
+function band_operations(log_scale::Bool)::Tuple{AbstractFloat, Function, Function}
     if log_scale
-        return (1, *, /)
+        return (1.0, *, /)
     else
-        return (0, +, -)
+        return (0.0, +, -)
     end
 end
 
@@ -2770,16 +2967,18 @@ function log_color_scale_ticks(
     colors::Maybe{Union{AbstractVector{<:Union{Real, AbstractString}}, AbstractMatrix{<:Union{Real, AbstractString}}}},
     points_style::PointsStyleConfiguration,
 )::Tuple{Maybe{Vector{Float32}}, Maybe{Vector{String}}}
-    log_color_scale_regularization = points_style.log_color_scale_regularization
-    if log_color_scale_regularization === nothing || !points_style.show_color_scale
+    log_color_scale_regularization = points_style.color_scale.log_regularization
+    if log_color_scale_regularization === nothing || !points_style.color_scale.show_scale
         return nothing, nothing
     else
         @assert colors isa AbstractVector{<:Real}
-        cmin = lowest_color_scale(points_style.color_scale, log_color_scale_regularization)  # NOJET
+        cmin =
+            lowest_color(points_style.color_palette, points_style.color_scale.minimum, log_color_scale_regularization)  # NOJET
         if cmin === nothing
             cmin = log10(minimum(colors) + log_color_scale_regularization)
         end
-        cmax = highest_color_scale(points_style.color_scale, log_color_scale_regularization)  # NOJET
+        cmax =
+            highest_color(points_style.color_palette, points_style.color_scale.maximum, log_color_scale_regularization)  # NOJET
         if cmax === nothing
             cmax = log10(maximum(colors) + log_color_scale_regularization)
         end
@@ -2829,72 +3028,82 @@ function log_tick_text_for_vals(tickvals::AbstractVector{Float32}, first_int_ind
     return ticktext
 end
 
-function normalized_color_scale(color_scale::Maybe{AbstractString}, ::Maybe{<:AbstractFloat})::Maybe{AbstractString}
-    return color_scale
+function normalized_color_palette(color_palette::Maybe{AbstractString}, ::ScaleConfiguration)::Maybe{AbstractString}
+    return color_palette
 end
 
-function normalized_color_scale(
-    color_scale::AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
-    ::Nothing,
+function normalized_color_palette(
+    color_palette::AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+    ::ScaleConfiguration,
 )::AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-    return color_scale
+    return color_palette
 end
 
-function normalized_color_scale(
-    color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+function normalized_color_palette(
+    color_palette::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+    color_scale::ScaleConfiguration,
+)::AbstractVector{<:Tuple{<:Real, <:AbstractString}}
+    log_regularization = color_scale.log_regularization
+    if log_regularization === nothing
+        cmin = lowest_color(color_palette, color_scale.minimum, nothing)
+        cmax = highest_color(color_palette, color_scale.maximum, nothing)
+        return [(clamp((value - cmin) / (cmax - cmin), 0.0, 1.0), color) for (value, color) in color_palette]
+    else
+        cmin = lowest_color(color_palette, color_scale.minimum, log_regularization)
+        cmax = highest_color(color_palette, color_scale.maximum, log_regularization)
+        return [
+            (clamp((log10(value + log_regularization) - cmin) / (cmax - cmin), 0.0, 1.0), color) for
+            (value, color) in color_palette
+        ]
+    end
+end
+
+function lowest_color(::Any, minimum::Real, ::Any)::Real
+    return minimum
+end
+
+function lowest_color(
+    ::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}}},
     ::Nothing,
-)::AbstractVector{<:Tuple{<:Real, <:AbstractString}}
-    cmin = lowest_color_scale(color_scale, nothing)
-    cmax = highest_color_scale(color_scale, nothing)
-    return [((value - cmin) / (cmax - cmin), color) for (value, color) in color_scale]
+    ::Maybe{AbstractFloat},
+)::Nothing
+    return nothing
 end
 
-function normalized_color_scale(
-    color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+function lowest_color(color_palette::AbstractVector{<:Tuple{<:Real, <:AbstractString}}, ::Nothing, ::Nothing)::Real
+    return minimum([value for (value, _) in color_palette])
+end
+
+function lowest_color(
+    color_palette::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+    ::Nothing,
     log_color_scale_regularization::AbstractFloat,
-)::AbstractVector{<:Tuple{<:Real, <:AbstractString}}
-    cmin = lowest_color_scale(color_scale, log_color_scale_regularization)
-    cmax = highest_color_scale(color_scale, log_color_scale_regularization)
-    return [
-        ((log10(value + log_color_scale_regularization) - cmin) / (cmax - cmin), color) for
-        (value, color) in color_scale
-    ]
+)::AbstractFloat
+    return log10(minimum([value for (value, _) in color_palette]) + log_color_scale_regularization)
 end
 
-function lowest_color_scale(
+function highest_color(::Any, maximum::Real, ::Any)::Real
+    return maximum
+end
+
+function highest_color(
     ::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}}},
-    ::Maybe{<:Real},
+    ::Nothing,
+    ::Maybe{AbstractFloat},
 )::Nothing
     return nothing
 end
 
-function lowest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}}, ::Nothing)::Real
-    return minimum([value for (value, _) in color_scale])
+function highest_color(color_palette::AbstractVector{<:Tuple{<:Real, <:AbstractString}}, ::Nothing, ::Nothing)::Real
+    return maximum([value for (value, _) in color_palette])
 end
 
-function lowest_color_scale(
-    color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
-    log_color_scale_regularization::Real,
-)::Real
-    return log10(minimum([value for (value, _) in color_scale]) + log_color_scale_regularization)
-end
-
-function highest_color_scale(
-    ::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}}},
-    ::Maybe{<:Real},
-)::Nothing
-    return nothing
-end
-
-function highest_color_scale(color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}}, ::Nothing)::Real
-    return maximum([value for (value, _) in color_scale])
-end
-
-function highest_color_scale(
-    color_scale::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
-    log_color_scale_regularization::Real,
-)::Real
-    return log10(maximum([value for (value, _) in color_scale]) + log_color_scale_regularization)
+function highest_color(
+    color_palette::AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+    ::Nothing,
+    log_color_scale_regularization::AbstractFloat,
+)::AbstractFloat
+    return log10(maximum([value for (value, _) in color_palette]) + log_color_scale_regularization)
 end
 
 function write_figure_to_file(::Figure, ::GraphConfiguration, ::Nothing)::Nothing  # untested
@@ -2915,7 +3124,11 @@ end
 
 Configure a graph showing a grid of points (e.g. for correlations).
 
-TODO
+This displays a matrix of values using a point at each grid position. This is often used to show correlations between
+two sets of discrete variables. For large amounts of data, use a heatmap instead. An advantage of this over a heatmap is
+that you can control the color, size, and border color and size of the points to show more than one value per point. A
+disadvantage of this plot is that it only works for "small" amount of data. Also, you will need to manually tweak the
+graph size vs. the point sizes for best results, as Plotly's defaults aren't very good here.
 """
 @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
@@ -2926,10 +3139,10 @@ end
 function Validations.validate_object(configuration::GridGraphConfiguration)::Maybe{AbstractString}
     message = validate_object(configuration.graph)
     if message === nothing
-        message = validate_object("points", configuration.style)
+        message = validate_object("style", configuration.style)
     end
     if message === nothing
-        message = validate_object("points border", configuration.border_style)
+        message = validate_object("border_style", configuration.border_style)
     end
     return message
 end
@@ -2941,16 +3154,19 @@ end
         y_axis_title::Maybe{AbstractString} = nothing
         scale_title::Maybe{AbstractString} = nothing
         border_scale_title::Maybe{AbstractString} = nothing
-        colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString,<:Real}}}} = nothing
+        columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
         sizes::Maybe{AbstractMatrix{<:Real}} = nothing
         hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
-        border_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString,<:Real}}}} = nothing
+        border_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
         border_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
     end
 
 The data for a graph showing a grid of points (e.g. for correlations).
 
-TODO.
+This is similar to a [`PointsGraphData`](@ref), except that the data is given as a matrix instead of a vector, and no X
+and Y coordinates are given. Instead each matrix entry is plotted as a point at the matching grid location.
 """
 @kwdef mutable struct GridGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
@@ -2972,11 +3188,11 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
     sizes = data.sizes
 
     if colors === nothing && sizes === nothing
-        return "neither colors nor sizes specified for grid points"
+        return "neither data.colors nor data.sizes specified for grid points"
     end
 
     if colors !== nothing && sizes !== nothing && size(colors) != size(sizes)
-        return "the colors matrix size: $(size(colors))\n" * "is different from the sizes matrix size: $(size(sizes))"
+        return "the data.colors size: $(size(colors))\n" * "is different from the data.sizes size: $(size(sizes))"
     end
 
     if colors !== nothing
@@ -2992,7 +3208,7 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
             for column_index in 1:n_columns
                 point_size = sizes[row_index, column_index]
                 if point_size < 0
-                    return "negative size#$(row_index),$(column_index): $(point_size)"
+                    return "negative data.sizes[$(row_index),$(column_index)]: $(point_size)"
                 end
             end
         end
@@ -3000,14 +3216,14 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
 
     border_colors = data.border_colors
     if border_colors !== nothing && size(border_colors) != grid_size
-        return "the borders colors matrix size: $(size(border_colors))\n" *
-               "is different from the grid matrix size: $(grid_size)"
+        return "the data.border_colors size: $(size(border_colors))\n" *
+               "is different from the data.colors and/or data.sizes size: $(grid_size)"
     end
 
     border_sizes = data.border_sizes
     if border_sizes !== nothing && size(border_sizes) != grid_size
-        return "the borders sizes matrix size: $(size(border_sizes))\n" *
-               "is different from the grid matrix size: $(grid_size)"
+        return "the data.borders_sizes size: $(size(border_sizes))\n" *
+               "is different from the data.colors and/or data.sizes size: $(grid_size)"
     end
 
     if border_sizes !== nothing
@@ -3015,7 +3231,7 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
             for column_index in 1:n_columns
                 border_size = border_sizes[row_index, column_index]
                 if border_size < 0
-                    return "negative border_size#$(row_index),$(column_index): $(border_size)"
+                    return "negative data.border_sizes[$(row_index),$(column_index)]: $(border_size)"
                 end
             end
         end
@@ -3023,7 +3239,8 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
 
     hovers = data.hovers
     if hovers !== nothing && size(hovers) != grid_size
-        return "the hovers matrix size: $(size(hovers))\n" * "is different from the grid matrix size: $(grid_size)"
+        return "the data.hovers size: $(size(hovers))\n" *
+               "is different from the data.colors and/or data.sizes size: $(grid_size)"
     end
 
     return nothing
@@ -3047,41 +3264,57 @@ function render(
 
     traces = Vector{GenericTrace}()
 
+    sizes = fix_sizes(data.sizes, configuration.style)
+
     border_colors = data.border_colors
-    border_sizes = data.border_sizes
     if border_colors !== nothing || data.border_sizes !== nothing
-        color_scale = configuration.border_style.color_scale
-        if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-            for (value, color) in color_scale
-                mask = border_colors .== value
-                if border_sizes !== nothing
-                    mask .&= border_sizes .> 0
-                end
-                if any(mask)
-                    push!(
-                        traces,
-                        grid_trace(;
-                            data = data,
-                            n_rows = n_rows,
-                            n_columns = n_columns,
-                            color = color,
-                            marker_size = border_marker_size(data, configuration, mask),
-                            coloraxis = nothing,
-                            points_style = configuration.border_style,
-                            scale_title = data.border_scale_title,
-                            legend_group = "borders",
-                            mask = mask,
-                            name = value,
-                        ),
-                    )
+        marker_size = border_marker_size(data, configuration, sizes)
+        if marker_size isa AbstractVector{<:Real}
+            marker_size_mask = marker_size .> 0
+        else
+            marker_size_mask = nothing
+        end
+
+        color_palette = configuration.border_style.color_palette
+        if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            @assert border_colors isa AbstractMatrix{<:AbstractString}
+            for (value, color) in color_palette
+                if color != ""
+                    mask = vec(border_colors) .== value
+                    if marker_size_mask !== nothing
+                        mask .&= marker_size_mask
+                    end
+                    if any(mask)
+                        push!(
+                            traces,
+                            grid_trace(;
+                                data = data,
+                                n_rows = n_rows,
+                                n_columns = n_columns,
+                                color = color,
+                                marker_size = marker_size,
+                                coloraxis = nothing,
+                                points_style = configuration.border_style,
+                                scale_title = data.border_scale_title,
+                                legend_group = "borders",
+                                mask = mask,
+                                name = value,
+                            ),
+                        )
+                    end
                 end
             end
         else
-            if data.border_sizes === nothing
-                mask = nothing
+            border_colors = data.border_colors
+            if border_colors isa AbstractMatrix{<:AbstractString}
+                mask = vec(border_colors) .!= ""
+                if marker_size_mask !== nothing
+                    mask .&= marker_size_mask
+                end
             else
-                mask = border_sizes .> 0
+                mask = marker_size_mask
             end
+
             if mask === nothing || any(mask)
                 push!(  # NOJET
                     traces,
@@ -3089,8 +3322,12 @@ function render(
                         data = data,
                         n_rows = n_rows,
                         n_columns = n_columns,
-                        color = fix_colors(border_colors, configuration.border_style.log_color_scale_regularization),
-                        marker_size = border_marker_size(data, configuration, mask),
+                        color = if border_colors !== nothing
+                            fix_colors(border_colors, configuration.border_style.color_scale.log_regularization)
+                        else
+                            configuration.border_style.color
+                        end,
+                        marker_size = marker_size,
                         coloraxis = "coloraxis2",
                         points_style = configuration.border_style,
                         scale_title = data.border_scale_title,
@@ -3102,41 +3339,53 @@ function render(
         end
     end
 
-    sizes = data.sizes
-    color_scale = configuration.style.color_scale
-    if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        for (value, color) in color_scale
-            colors = data.colors
-            @assert colors !== nothing
-            mask = colors .== value
-            if sizes !== nothing
-                mask .&= sizes .> 0
-            end
-            if any(mask)
-                push!(
-                    traces,
-                    grid_trace(;
-                        data = data,
-                        n_rows = n_rows,
-                        n_columns = n_columns,
-                        color = color,
-                        marker_size = data.sizes !== nothing ? masked_data(data.sizes, mask) : configuration.style.size,
-                        coloraxis = nothing,
-                        points_style = configuration.style,
-                        scale_title = data.scale_title,
-                        legend_group = "points",
-                        mask = mask,
-                        name = value,
-                    ),
-                )
+    if sizes isa AbstractVector{<:Real}
+        marker_size_mask = sizes .> 0
+    else
+        marker_size_mask = nothing
+    end
+
+    color_palette = configuration.style.color_palette
+    if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        colors = data.colors
+        @assert colors isa AbstractMatrix{<:AbstractString}
+        for (value, color) in color_palette
+            if color != ""
+                mask = vec(colors .== value)
+                if marker_size_mask !== nothing
+                    mask .&= marker_size_mask
+                end
+                if any(mask)
+                    push!(
+                        traces,
+                        grid_trace(;
+                            data = data,
+                            n_rows = n_rows,
+                            n_columns = n_columns,
+                            color = color,
+                            marker_size = sizes,
+                            coloraxis = nothing,
+                            points_style = configuration.style,
+                            scale_title = data.scale_title,
+                            legend_group = "points",
+                            mask = mask,
+                            name = value,
+                        ),
+                    )
+                end
             end
         end
     else
-        if sizes === nothing
-            mask = nothing
+        colors = data.colors
+        if colors isa AbstractMatrix{<:AbstractString}
+            mask = vec(colors) .!= ""
+            if marker_size_mask !== nothing
+                mask .&= marker_size_mask
+            end
         else
-            mask = sizes .> 0
+            mask = marker_size_mask
         end
+
         if mask === nothing || any(mask)
             push!(  # NOJET
                 traces,
@@ -3144,8 +3393,12 @@ function render(
                     data = data,
                     n_rows = n_rows,
                     n_columns = n_columns,
-                    color = fix_colors(data.colors, configuration.style.log_color_scale_regularization),
-                    marker_size = data.sizes !== nothing ? masked_data(data.sizes, mask) : configuration.style.size,
+                    color = if colors !== nothing
+                        fix_colors(colors, configuration.style.color_scale.log_regularization)
+                    else
+                        configuration.style.color
+                    end,
+                    marker_size = sizes,
                     coloraxis = "coloraxis",
                     points_style = configuration.style,
                     scale_title = data.scale_title,
@@ -3187,49 +3440,53 @@ function assert_valid_render(data::GridGraphData, configuration::GridGraphConfig
         n_rows, n_columns = size(data.colors)
     end
 
-    color_scale = configuration.style.color_scale
-    if color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.colors isa AbstractMatrix{<:AbstractString} "categorical style.color_scale for non-string points data.colors"
-        scale_colors = Set{AbstractString}([value for (value, _) in color_scale])
+    color_palette = configuration.style.color_palette
+    if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.colors isa AbstractMatrix{<:AbstractString} "categorical style.color_palette for non-string data.colors"
+        scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
         for column_index in 1:n_columns
             for row_index in 1:n_rows
                 color = data.colors[row_index, column_index]
-                @assert color in scale_colors "categorical style.color_scale does not contain color#$(row_index),$(column_index): $(color)"
+                if color != ""
+                    @assert color in scale_colors "categorical style.color_palette does not contain data.colors[$(row_index),$(column_index)]: $(color)"
+                end
             end
         end
     end
 
-    border_color_scale = configuration.border_style.color_scale
-    if border_color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+    border_color_palette = configuration.border_style.color_palette
+    if border_color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         @assert data.border_colors isa AbstractMatrix{<:AbstractString} (
-            "categorical borders_style.color_scale for non-string points data.border_colors"
+            "categorical borders_style.color_palette for non-string data.border_colors"
         )
-        border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_scale])
+        border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_palette])
         for column_index in 1:n_columns
             for row_index in 1:n_rows
                 color = data.border_colors[row_index, column_index]
-                @assert color in border_scale_colors "categorical border_style.color_scale does not contain border_color#$(row_index),$(column_index): $(color)"
+                if color != ""
+                    @assert color in border_scale_colors "categorical border_style.color_palette does not contain data.border_colors[$(row_index),$(column_index)]: $(color)"
+                end
             end
         end
     end
 
-    if configuration.style.show_color_scale
-        @assert data.colors !== nothing "no data.colors specified for points style.show_color_scale"
+    if configuration.style.color_scale.show_scale
+        @assert data.colors !== nothing "no data.colors specified for configuration.style.color_scale.show_scale"
         @assert !(data.colors isa AbstractMatrix{<:AbstractString}) ||
-                configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.colors specified for points style.show_color_scale"
+                configuration.style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.colors specified for configuration.style.color_scale.show_scale"
         )
     end
 
-    if configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractMatrix{<:AbstractString} "categorical color_scale for non-string points border_colors data"
+    if configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        @assert data.border_colors isa AbstractMatrix{<:AbstractString} "categorical color_palette for non-string data.border_colors"
     end
 
-    if configuration.border_style.show_color_scale
-        @assert data.border_colors !== nothing "no data.border_colors specified for points border_style.show_color_scale"
+    if configuration.border_style.color_scale.show_scale
+        @assert data.border_colors !== nothing "no data.border_colors specified for configuration.border_style.color_scale.show_scale"
         @assert !(data.border_colors isa AbstractMatrix{<:AbstractString}) ||
-                configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.border_colors specified for points border_style.show_color_scale"
+                configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit data.border_colors specified for configuration.border_style.color_scale.show_scale"
         )
     end
 
@@ -3246,29 +3503,30 @@ function grid_trace(;
     points_style::PointsStyleConfiguration,
     scale_title::Maybe{AbstractString},
     legend_group::AbstractString,
-    mask::Maybe{Union{AbstractMatrix{Bool}, BitMatrix}} = nothing,
+    mask::Maybe{Union{Vector{Bool}, BitVector}} = nothing,
     name::Maybe{AbstractString} = nothing,
 )::GenericTrace
     return scatter(;
         x = masked_xs(n_rows, n_columns, mask),
         y = masked_ys(n_rows, n_columns, mask),
-        marker_size = marker_size,
+        marker_size = masked_data(marker_size, mask),
         marker_color = color !== nothing ? masked_data(color, mask) : points_style.color,
-        marker_colorscale = if points_style.color_scale isa AbstractVector ||
-                               points_style.log_color_scale_regularization !== nothing
+        marker_colorscale = if points_style.color_palette isa AbstractVector ||
+                               points_style.color_scale.log_regularization !== nothing
             nothing
         else
-            points_style.color_scale
+            points_style.color_palette
         end,
         marker_coloraxis = coloraxis,
-        marker_showscale = points_style.show_color_scale &&
-                           !(points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}),
-        marker_reversescale = points_style.reverse_color_scale,
-        showlegend = points_style.show_color_scale &&
-                     points_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        marker_showscale = points_style.color_scale.show_scale && !(
+            points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        ),
+        marker_reversescale = points_style.color_scale.reverse_scale,
+        showlegend = points_style.color_scale.show_scale &&
+                     points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
         legendgroup = legend_group,
         legendgrouptitle_text = scale_title,
-        name = name !== nothing ? name : points_style.show_color_scale ? "Trace" : "",
+        name = name !== nothing ? name : points_style.color_scale.show_scale ? "Trace" : "",
         text = masked_data(data.hovers, mask),
         hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
@@ -3283,8 +3541,8 @@ function masked_data(data::AbstractVector, mask::Union{AbstractVector{Bool}, Bit
     return data[mask]  # NOJET
 end
 
-function masked_data(data::AbstractMatrix, mask::Union{AbstractMatrix{Bool}, BitMatrix})::AbstractVector
-    return data[mask]  # NOJET
+function masked_data(data::AbstractMatrix, mask::Union{AbstractVector{Bool}, BitVector})::AbstractVector
+    return vec(data)[mask]  # NOJET
 end
 
 function masked_data(data::AbstractMatrix, ::Nothing)::AbstractVector
@@ -3294,7 +3552,7 @@ end
 function masked_xs(
     n_rows::Integer,
     n_columns::Integer,
-    mask::Maybe{Union{AbstractMatrix{Bool}, BitMatrix}},
+    mask::Maybe{Union{AbstractVector{Bool}, BitVector}},
 )::Vector{Int}
     xs = Matrix{Int}(undef, n_rows, n_columns)
     xs .= transpose(1:n_columns)
@@ -3304,7 +3562,7 @@ end
 function masked_ys(
     n_rows::Integer,
     n_columns::Integer,
-    mask::Maybe{Union{AbstractMatrix{Bool}, BitMatrix}},
+    mask::Maybe{Union{AbstractVector{Bool}, BitVector}},
 )::Vector{Int}
     ys = Matrix{Int}(undef, n_rows, n_columns)
     ys .= 1:n_rows
@@ -3330,75 +3588,79 @@ function points_layout(;
         xaxis_showticklabels = configuration.graph.show_ticks,
         xaxis_title = data.x_axis_title,
         xaxis_range = (x_axis.minimum, x_axis.maximum),
-        xaxis_type = x_axis.log_scale ? "log" : nothing,
+        xaxis_type = x_axis.log_regularization !== nothing ? "log" : nothing,
         xaxis_tickvals = x_tickvals,
         xaxis_ticktext = x_ticknames,
         yaxis_showgrid = configuration.graph.show_grid,
         yaxis_showticklabels = configuration.graph.show_ticks,
         yaxis_title = data.y_axis_title,
         yaxis_range = (y_axis.minimum, y_axis.maximum),
-        yaxis_type = y_axis.log_scale ? "log" : nothing,
+        yaxis_type = y_axis.log_regularization !== nothing ? "log" : nothing,
         yaxis_tickvals = y_tickvals,
         yaxis_ticktext = y_ticknames,
         showlegend = (
-            configuration.style.show_color_scale &&
-            configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            configuration.style.color_scale.show_scale &&
+            configuration.style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ) || (
-            configuration.border_style.show_color_scale &&
-            configuration.border_style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            configuration.border_style.color_scale.show_scale &&
+            configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        legend_x = if configuration.style.show_color_scale &&
-                      configuration.border_style.show_color_scale &&
-                      configuration.border_style.color_scale isa
+        legend_x = if configuration.style.color_scale.show_scale &&
+                      configuration.border_style.color_scale.show_scale &&
+                      configuration.border_style.color_palette isa
                       AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
             1.2
         else
             nothing
         end,
         coloraxis2_colorbar_x = if (
-            configuration.border_style.show_color_scale && configuration.style.show_color_scale
+            configuration.border_style.color_scale.show_scale && configuration.style.color_scale.show_scale
         )
             1.2
         else
             nothing  # NOJET
         end,
-        coloraxis_showscale = configuration.style.show_color_scale && !(
-            configuration.style.color_scale isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        coloraxis_showscale = configuration.style.color_scale.show_scale && !(
+            configuration.style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        coloraxis_reversescale = configuration.style.reverse_color_scale,
-        coloraxis_colorscale = normalized_color_scale(
+        coloraxis_reversescale = configuration.style.color_scale.reverse_scale,
+        coloraxis_colorscale = normalized_color_palette(
+            configuration.style.color_palette,
             configuration.style.color_scale,
-            configuration.style.log_color_scale_regularization,
         ),
-        coloraxis_cmin = lowest_color_scale(
-            configuration.style.color_scale,
-            configuration.style.log_color_scale_regularization,
+        coloraxis_cmin = lowest_color(
+            configuration.style.color_palette,
+            configuration.style.color_scale.minimum,
+            configuration.style.color_scale.log_regularization,
         ),
-        coloraxis_cmax = highest_color_scale(
-            configuration.style.color_scale,
-            configuration.style.log_color_scale_regularization,
+        coloraxis_cmax = highest_color(
+            configuration.style.color_palette,
+            configuration.style.color_scale.maximum,
+            configuration.style.color_scale.log_regularization,
         ),
         coloraxis_colorbar_title_text = data.scale_title,
         coloraxis_colorbar_tickvals = color_tickvals,
         coloraxis_colorbar_ticktext = color_ticktext,
         coloraxis2_showscale = (data.border_colors !== nothing || data.border_sizes !== nothing) &&
-                               configuration.border_style.show_color_scale &&
+                               configuration.border_style.color_scale.show_scale &&
                                !(
-                                   configuration.border_style.color_scale isa
+                                   configuration.border_style.color_palette isa
                                    AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
                                ),
-        coloraxis2_reversescale = configuration.border_style.reverse_color_scale,
-        coloraxis2_colorscale = normalized_color_scale(
+        coloraxis2_reversescale = configuration.border_style.color_scale.reverse_scale,
+        coloraxis2_colorscale = normalized_color_palette(
+            configuration.border_style.color_palette,
             configuration.border_style.color_scale,
-            configuration.border_style.log_color_scale_regularization,
         ),
-        coloraxis2_cmin = lowest_color_scale(
-            configuration.border_style.color_scale,
-            configuration.border_style.log_color_scale_regularization,
+        coloraxis2_cmin = lowest_color(
+            configuration.border_style.color_palette,
+            configuration.border_style.color_scale.minimum,
+            configuration.border_style.color_scale.log_regularization,
         ),
-        coloraxis2_cmax = highest_color_scale(
-            configuration.border_style.color_scale,
-            configuration.border_style.log_color_scale_regularization,
+        coloraxis2_cmax = highest_color(
+            configuration.border_style.color_palette,
+            configuration.border_style.color_scale.maximum,
+            configuration.border_style.color_scale.log_regularization,
         ),
         coloraxis2_colorbar_title_text = data.border_scale_title,
         coloraxis2_colorbar_tickvals = border_color_tickvals,
@@ -3409,27 +3671,64 @@ end
 function border_marker_size(
     data::Union{PointsGraphData, GridGraphData},
     configuration::Union{PointsGraphConfiguration, GridGraphConfiguration},
-    mask::Maybe{Union{AbstractVector{Bool}, BitVector, AbstractMatrix{Bool}, BitMatrix}} = nothing,
+    sizes::Maybe{Union{Real, AbstractVector{<:Real}}},
 )::Union{Real, Vector{<:Real}}
-    sizes = masked_data(data.sizes, mask)
-    border_sizes = masked_data(data.border_sizes, mask)
+    sizes = sizes
+    border_sizes = fix_sizes(data.border_sizes, configuration.border_style)
 
     if border_sizes === nothing
         border_marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
+        @assert border_marker_size !== nothing
         if sizes === nothing
             points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
             return points_marker_size + 2 * border_marker_size
         else
-            return sizes .+ 2 * border_marker_size  # untested
+            return sizes .+ 2 * border_marker_size
         end
     else
         if sizes === nothing
             points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
             return 2 .* border_sizes .+ points_marker_size
         else
-            return 2 .* border_sizes .+ sizes  # untested
+            return 2 .* border_sizes .+ sizes
         end
     end
+end
+
+function fix_sizes(
+    sizes::Maybe{Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}}},
+    configuration::PointsStyleConfiguration,
+)::Maybe{Union{Real, Vector{<:Real}}}
+    if sizes === nothing
+        return configuration.size
+    end
+
+    sizes = vec(sizes)
+
+    smallest = configuration.size_range.smallest
+    largest = configuration.size_range.largest
+    log_regularization = configuration.size_scale.log_regularization
+    if smallest === nothing && largest === nothing && log_regularization === nothing
+        return sizes
+    end
+
+    smin = configuration.size_scale.minimum !== nothing ? configuration.size_scale.minimum : minimum(sizes)
+    smax = configuration.size_scale.maximum !== nothing ? configuration.size_scale.maximum : maximum(sizes)
+
+    if log_regularization !== nothing
+        smin = log10(smin + log_regularization)
+        smax = log10(smax + log_regularization)
+        sizes = log10.(sizes .+ log_regularization)
+    end
+
+    if smallest === nothing
+        smallest = 2.0
+    end
+    if largest === nothing
+        largest = smallest + 8.0
+    end
+
+    return (sizes .- smin) .* (largest - smallest) ./ (smax - smin) .+ smallest
 end
 
 end  # module

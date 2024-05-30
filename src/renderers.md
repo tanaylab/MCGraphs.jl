@@ -11,33 +11,23 @@ MCGraphs.Renderers.AxisConfiguration
 MCGraphs.Renderers.ValuesOrientation
 ```
 
-## Bars
+## Points
 
 ```@docs
-MCGraphs.Renderers.BarGraphData
-MCGraphs.Renderers.BarGraphConfiguration
-MCGraphs.Renderers.BarsGraphData
-MCGraphs.Renderers.BarsGraphConfiguration
+MCGraphs.Renderers.PointsGraphData
+MCGraphs.Renderers.PointsGraphConfiguration
+MCGraphs.Renderers.PointsStyleConfiguration
+MCGraphs.Renderers.ScaleConfiguration
+MCGraphs.Renderers.SizeRangeConfiguration
+MCGraphs.Renderers.BandsConfiguration
+MCGraphs.Renderers.BandRegionConfiguration
 ```
 
-## CDFs
+## Grid
 
 ```@docs
-MCGraphs.Renderers.CdfGraphData
-MCGraphs.Renderers.CdfsGraphData
-MCGraphs.Renderers.CdfsGraphConfiguration
-MCGraphs.Renderers.CdfGraphConfiguration
-MCGraphs.Renderers.CdfDirection
-```
-
-## Distribution
-
-```@docs
-MCGraphs.Renderers.DistributionGraphData
-MCGraphs.Renderers.DistributionsGraphData
-MCGraphs.Renderers.DistributionGraphConfiguration
-MCGraphs.Renderers.DistributionsGraphConfiguration
-MCGraphs.Renderers.DistributionStyleConfiguration
+MCGraphs.Renderers.GridGraphData
+MCGraphs.Renderers.GridGraphConfiguration
 ```
 
 ## Lines
@@ -51,26 +41,33 @@ MCGraphs.Renderers.LineStyleConfiguration
 MCGraphs.Renderers.Stacking
 ```
 
-## Points
+## CDFs
 
 ```@docs
-MCGraphs.Renderers.PointsGraphData
-MCGraphs.Renderers.PointsGraphConfiguration
-MCGraphs.Renderers.PointsStyleConfiguration
+MCGraphs.Renderers.CdfGraphData
+MCGraphs.Renderers.CdfsGraphData
+MCGraphs.Renderers.CdfsGraphConfiguration
+MCGraphs.Renderers.CdfGraphConfiguration
+MCGraphs.Renderers.CdfDirection
 ```
 
-## Bands in graphs
+## Bars
 
 ```@docs
-MCGraphs.Renderers.BandsConfiguration
-MCGraphs.Renderers.BandRegionConfiguration
+MCGraphs.Renderers.BarGraphData
+MCGraphs.Renderers.BarGraphConfiguration
+MCGraphs.Renderers.BarsGraphData
+MCGraphs.Renderers.BarsGraphConfiguration
 ```
 
-## Grid
+## Distribution
 
 ```@docs
-MCGraphs.Renderers.GridGraphData
-MCGraphs.Renderers.GridGraphConfiguration
+MCGraphs.Renderers.DistributionGraphData
+MCGraphs.Renderers.DistributionsGraphData
+MCGraphs.Renderers.DistributionGraphConfiguration
+MCGraphs.Renderers.DistributionsGraphConfiguration
+MCGraphs.Renderers.DistributionStyleConfiguration
 ```
 
 ## Index
