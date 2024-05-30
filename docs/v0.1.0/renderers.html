@@ -233,34 +233,66 @@
 </tr>
 <tr>
 <td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
-<code>BarGraphData
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
 </code>
 </a>
 </td>
 <td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
-<code>BarGraphConfiguration
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>PointsGraphConfiguration
 </code>
 </a>
 </td>
-<td style="text-align: left">Graph of a single set of bars (histogram).
+<td style="text-align: left">Graph of points, possibly with edges between them.
 </td>
 </tr>
 <tr>
 <td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.BarsGraphData">
-<code>BarsGraphData
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>GridGraphData
 </code>
 </a>
 </td>
 <td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
-<code>BarsGraphConfiguration
+<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
+<code>GridGraphConfiguration
 </code>
 </a>
 </td>
-<td style="text-align: left">Graph of multiple sets of bars (histograms).
+<td style="text-align: left">Graph of a grid of points (e.g. for correlations).
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LineGraphData">
+<code>LineGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
+<code>LineGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single line (e.g. a function y=f(x)).
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphData">
+<code>LinesGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
+<code>LinesGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of multiple functions, possibly stacked.
 </td>
 </tr>
 <tr>
@@ -329,66 +361,34 @@
 </tr>
 <tr>
 <td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.LineGraphData">
-<code>LineGraphData
+<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
+<code>BarGraphData
 </code>
 </a>
 </td>
 <td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
-<code>LineGraphConfiguration
+<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
+<code>BarGraphConfiguration
 </code>
 </a>
 </td>
-<td style="text-align: left">Graph of a single line (e.g. a function y=f(x)).
+<td style="text-align: left">Graph of a single set of bars (histogram).
 </td>
 </tr>
 <tr>
 <td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.LinesGraphData">
-<code>LinesGraphData
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphData">
+<code>BarsGraphData
 </code>
 </a>
 </td>
 <td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
-<code>LinesGraphConfiguration
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>BarsGraphConfiguration
 </code>
 </a>
 </td>
-<td style="text-align: left">Graph of multiple functions, possibly stacked.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
-<code>PointsGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
-<code>PointsGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of points, possibly with edges between them.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
-<code>GridGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
-<code>GridGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of a grid of points (e.g. for correlations).
+<td style="text-align: left">Graph of multiple sets of bars (histograms).
 </td>
 </tr>
 </table>
@@ -617,13 +617,13 @@ end
     y_axis_title::Maybe{AbstractString} = nothing
     scale_title::Maybe{AbstractString} = nothing
     border_scale_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{&lt;:Real}
-    ys::AbstractVector{&lt;:Real}
-    colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
+    points_xs::AbstractVector{&lt;:Real}
+    points_ys::AbstractVector{&lt;:Real}
+    points_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
     sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
     hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    border_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
-    border_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
+    borders_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
+    borders_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
     edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
     edges_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
@@ -641,25 +641,25 @@ end
 </code> for the axes.
 </p>
 <p>The 
-<code>xs
+<code>points_xs
 </code> and 
-<code>ys
+<code>points_ys
 </code> vectors must be of the same size. If specified, the 
-<code>colors
+<code>points_colors
 </code> 
 <code>sizes
 </code> and/or 
 <code>hovers
 </code> vectors must also be of the same size. The 
-<code>colors
+<code>points_colors
 </code> can be either color names or a numeric value; if the latter, then the configuration&#39;s 
 <code>color_palette
 </code> is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs (or when saving an HTML file).
 </p>
 <p>The 
-<code>border_colors
+<code>borders_colors
 </code> and 
-<code>border_sizes
+<code>borders_sizes
 </code> can be used to display additional data per point. The border size is in addition to the point size.
 </p>
 <p>The 
@@ -671,9 +671,9 @@ end
 </code> is set for the relevant color scales. You can&#39;t specify 
 <code>show_scale
 </code> if there is no 
-<code>colors
+<code>points_colors
 </code> data or if the 
-<code>colors
+<code>points_colors
 </code> contain explicit color names.
 </p>
 <p>It is possible to draw straight 
@@ -717,7 +717,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    points_style::PointsStyleConfiguration = PointsStyleConfiguration()
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
     edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
@@ -737,7 +737,7 @@ end
 </code> you can partition the graph into regions. The 
 <code>diagonal_bands
 </code> can only be used if both axes are linear or both axes are in log scale; they also unify the ranges of the X and Y axes. If the axes are in log scale, the 
-<code>line_offset
+<code>offset
 </code> of the 
 <code>diagonal_bands
 </code> are multiplicative instead of additive, and must be positive.
@@ -749,9 +749,9 @@ end
 <code>PointsGraphData
 </code>
 </a> contains either the 
-<code>border_colors
+<code>borders_colors
 </code> and/or 
-<code>border_sizes
+<code>borders_sizes
 </code>. This allows displaying some additional data per point.
 </p>
 <div class="admonition is-info">
@@ -922,19 +922,19 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct BandsConfiguration &lt;: ObjectWithValidation
-    low::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
-    middle::BandRegionConfiguration = BandRegionConfiguration()
-    high::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
+    low_band_style::BandStyleConfiguration = BandStyleConfiguration(is_dashed = true)
+    middle_band_style::BandStyleConfiguration = BandStyleConfiguration()
+    high_band_style::BandStyleConfiguration = BandStyleConfiguration(is_dashed = true)
 end
 </code>
 </pre>
 <p>Configure the partition of the graph up to three band regions. The 
-<code>low
+<code>low_band_style
 </code> and 
-<code>high
-</code> are the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
-<code>middle
-</code> is the &quot;inner&quot; region between them (so its line is inside it, solid by default).
+<code>high_band_style
+</code> are for the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
+<code>middle_band_style
+</code> is for the &quot;inner&quot; region between them (so its line is inside it, solid by default).
 </p>
 </div>
 </section>
@@ -943,8 +943,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BandRegionConfiguration" href="#MCGraphs.Renderers.BandRegionConfiguration">
-<code>MCGraphs.Renderers.BandRegionConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.BandStyleConfiguration" href="#MCGraphs.Renderers.BandStyleConfiguration">
+<code>MCGraphs.Renderers.BandStyleConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -953,23 +953,30 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct BandRegionConfiguration &lt;: ObjectWithValidation
-    line_color::Maybe{AbstractString} = &quot;black&quot;
-    line_width::Real = 1.0
-    line_is_dashed::Bool = false
-    fill_color::Maybe{AbstractString} = nothing
+<code class="language-julia hljs">@kwdef mutable struct BandStyleConfiguration &lt;: ObjectWithValidation
+    offset::Maybe{Real} = nothing
+    color::Maybe{AbstractString} = nothing
+    width::Maybe{Real} = 1.0
+    is_dashed::Bool = false
+    is_filled::Bool = false
 end
 </code>
 </pre>
-<p>Configure a region of the graph defined by some band of values. The region only exists if 
-<code>line_offset
-</code> is set. To actually show the region, either the 
-<code>line_color
-</code> and/or the 
-<code>fill_color
-</code> must be set; by default, just the line is shown. The 
-<code>line_width
-</code> is in pixels (1/96th of an inch).
+<p>Configure a region of the graph defined by some band of values. This is the same as a 
+<code>LineStyleConfiguration
+</code> (for controlling the style of the line drawn for the band) with the addition of the 
+<code>offset
+</code> of the line&#39;s position. We allow up to three bands in a complete 
+<a href="renderers.html#MCGraphs.Renderers.BandsConfiguration">
+<code>BandsConfiguration
+</code>
+</a>. The low and high bands are defined as below and above their line&#39;s 
+<code>offset
+</code>, and do not exist if the 
+<code>offset
+</code> is not specified. The middle band is defined to be between these two lines (and therefore only exists if both are specified). Its 
+<code>offset
+</code> defined a center line, if one is to be displayed, and is therefore optional.
 </p>
 </div>
 </section>
@@ -1004,11 +1011,11 @@ end
     border_scale_title::Maybe{AbstractString} = nothing
     columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
-    sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
-    hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
-    border_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
-    border_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
+    points_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
+    points_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
+    points_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
+    borders_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
+    borders_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
 end
 </code>
 </pre>
@@ -1039,7 +1046,7 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    points_style::PointsStyleConfiguration = PointsStyleConfiguration()
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
 end
 </code>
@@ -1077,8 +1084,8 @@ end
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{&lt;:Real}
-    ys::AbstractVector{&lt;:Real}
+    points_xs::AbstractVector{&lt;:Real}
+    points_ys::AbstractVector{&lt;:Real}
 end
 </code>
 </pre>
@@ -1093,9 +1100,9 @@ end
 </code> for the axes.
 </p>
 <p>The 
-<code>xs
+<code>points_xs
 </code> and 
-<code>ys
+<code>points_ys
 </code> vectors must be of the same size. A line will be drawn through all the points, and the area under the line may be filled.
 </p>
 </div>
@@ -1120,13 +1127,13 @@ end
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{AbstractVector{&lt;:Real}}
-    ys::AbstractVector{AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
-    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+    lines_xs::AbstractVector{AbstractVector{&lt;:Real}}
+    lines_ys::AbstractVector{AbstractVector{&lt;:Real}}
+    lines_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    lines_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    lines_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
+    lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
 end
 </code>
 </pre>
@@ -1141,10 +1148,10 @@ end
 </code> for the axes.
 </p>
 <p>The 
-<code>xs
+<code>lines_xs
 </code> and 
-<code>ys
-</code> vectors must be of the same size (one per line). For each line, its 
+<code>lines_ys
+</code> vectors must be of the same size (one per line). For each line, its points 
 <code>xs
 </code> and 
 <code>ys
@@ -1157,19 +1164,19 @@ end
 </a>, then the lines are specified in top-to-bottom order.
 </p>
 <p>The 
-<code>names
+<code>lines_names
 </code>, 
-<code>colors
+<code>lines_colors
 </code>, 
-<code>line_widths
+<code>lines_widths
 </code>, 
-<code>fill_belows
+<code>lines_are_filled
 </code> and 
-<code>are_dashed
+<code>lines_are_dashed
 </code> arrays must have the same number of entries (one per line). The 
-<code>colors
+<code>lines_colors
 </code> are restricted to explicit colors; therefore the color scale options of the 
-<code>style
+<code>line_style
 </code> must not be used.
 </p>
 </div>
@@ -1193,7 +1200,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
+    line_style::LineStyleConfiguration = LineStyleConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
 end
@@ -1222,7 +1229,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
+    line_style::LineStyleConfiguration = LineStyleConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
@@ -1237,7 +1244,7 @@ end
 </code> to stack instead of overlay the lines. If 
 <code>stacking
 </code> is specified, then 
-<code>fill_below
+<code>is_filled
 </code> is implied, regardless of what its actual setting is.
 </p>
 </div>
@@ -1258,27 +1265,27 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct LineStyleConfiguration &lt;: ObjectWithValidation
-    line_width::Maybe{Real} = 1
-    fill_below::Bool = false
-    line_is_dashed::Bool = false
-    line_color::Maybe{AbstractString} = nothing
+    width::Maybe{Real} = 1
+    is_filled::Bool = false
+    is_dashed::Bool = false
+    color::Maybe{AbstractString} = nothing
 end
 </code>
 </pre>
 <p>Configure a line in a graph.
 </p>
 <p>By default, a solid line is shown; if 
-<code>line_is_dashed
+<code>is_dashed
 </code>, the line will be dashed. If 
-<code>fill_below
+<code>is_filled
 </code> is set, the area below the line is filled. If the 
-<code>line_width
+<code>width
 </code> is set to 
 <code>nothing
 </code>, no line is shown (and 
-<code>fill_below
+<code>is_filled
 </code> must be set). By default, the 
-<code>line_color
+<code>color
 </code> is chosen automatically.
 </p>
 </div>
@@ -1340,7 +1347,7 @@ end
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{&lt;:Real}
+    line_values::AbstractVector{&lt;:Real}
 end
 </code>
 </pre>
@@ -1355,7 +1362,7 @@ end
 </code> for the axes.
 </p>
 <p>The order of the 
-<code>values
+<code>line_values
 </code> does not matter.
 </p>
 </div>
@@ -1379,12 +1386,12 @@ end
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    line_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
-    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+    lines_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
+    lines_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    lines_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    lines_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
+    lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
 end
 </code>
 </pre>
@@ -1398,8 +1405,8 @@ end
 <code>fraction_axis_title
 </code> for the axes.
 </p>
-<p>The order of the 
-<code>values
+<p>The order of the entries inside each of the 
+<code>lines_values
 </code> does not matter.
 </p>
 </div>
@@ -1423,9 +1430,9 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
-    orientation::ValuesOrientation = HorizontalValues
-    direction::CdfDirection = UpToValue
+    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    values_orientation::ValuesOrientation = HorizontalValues
+    cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
     fraction_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
@@ -1463,18 +1470,18 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
-    orientation::ValuesOrientation = HorizontalValues
-    direction::CdfDirection = UpToValue
+    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    values_orientation::ValuesOrientation = HorizontalValues
+    cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
     fraction_bands::BandsConfiguration = BandsConfiguration()
 end
 </code>
 </pre>
 <p>Configure a graph for showing a CDF (Cumulative Distribution Function) graph. By default, the X axis is used for the values and the Y axis for the fraction; this can be switched using the 
-<code>orientation
+<code>values_orientation
 </code>. By default, the fraction is of the values up to each value; this can be switched using the 
-<code>direction
+<code>cdf_direction
 </code>.
 </p>
 <p>By default, the fraction axis units are between 0 and 1; if 
@@ -1502,11 +1509,11 @@ end
 <p>The direction of the CDF graph:
 </p>
 <p>
-<code>UpToValue
+<code>CdfUpToValue
 </code> - Show the fraction of values up to each value.
 </p>
 <p>
-<code>DownToValue
+<code>CdfDownToValue
 </code> - Show the fraction of values down to each value.
 </p>
 </div>
@@ -1538,10 +1545,10 @@ end
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{&lt;:Real}
-    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    bars_values::AbstractVector{&lt;:Real}
+    bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    bars_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    bars_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
 </code>
 </pre>
@@ -1556,13 +1563,13 @@ end
 </code> for the axes.
 </p>
 <p>If specified, the 
-<code>names
+<code>bars_names
 </code> and/or 
-<code>colors
+<code>bars_colors
 </code> and/or 
-<code>hovers
+<code>bars_hovers
 </code> vectors must contain the same number of elements as the number of 
-<code>values
+<code>bars_values
 </code>.
 </p>
 </div>
@@ -1585,20 +1592,20 @@ end
 <code class="language-julia hljs">@kwdef mutable struct BarGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
-    color::Maybe{AbstractString} = nothing
-    orientation::ValuesOrientation = VerticalValues
+    values_orientation::ValuesOrientation = VerticalValues
+    bars_color::Maybe{AbstractString} = nothing
     bars_gap::Maybe{Real} = nothing
 end
 </code>
 </pre>
 <p>Configure a graph for showing a single bar (histogram) graph. The 
-<code>color
+<code>bars_color
 </code> is chosen automatically. You can override it globally, or per-bar in the 
 <a href="renderers.html#MCGraphs.Renderers.BarGraphData">
 <code>BarGraphData
 </code>
 </a>. By default, the X axis is used for the bars and the Y axis for the values; this can be switched using the 
-<code>orientation
+<code>values_orientation
 </code>. The 
 <code>bars_gap
 </code> is the fraction of white space between bars.
@@ -1625,11 +1632,11 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    values::AbstractString{&lt;:AbstractVector{&lt;:Real}}
+    series_values::AbstractString{&lt;:AbstractVector{&lt;:Real}}
     names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    bar_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
 </code>
 </pre>
@@ -1652,18 +1659,18 @@ end
 </a>.
 </p>
 <p>All the 
-<code>values
+<code>series_values
 </code> vectors must be of the same size. If specified, the 
-<code>bar_names
-</code> vector must contain the same number of elements. If specified, the 
 <code>names
+</code> vector must contain the same number of elements. If specified, the 
+<code>bars_names
 </code> and/or 
 <code>colors
 </code> and/or 
 <code>hovers
-</code> vectors must contain the same number of elements as the number of
-<code>values
-</code> vectors (that is, the number of series).
+</code> vectors must contain the same number of elements as the number of 
+<code>series_values
+</code> vectors.
 </p>
 </div>
 </section>
@@ -1686,7 +1693,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     color::Maybe{AbstractString} = nothing
-    orientation::ValuesOrientation = VerticalValues
+    values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
     show_legend::Bool = false
     stacking::Maybe{Stacking} = nothing
@@ -1736,8 +1743,8 @@ end
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{&lt;:Real}
-    name::Maybe{AbstractString} = nothing
+    distribution_values::AbstractVector{&lt;:Real}
+    distribution_name::Maybe{AbstractString} = nothing
 end
 </code>
 </pre>
@@ -1748,7 +1755,7 @@ end
 </code> and the 
 <code>trace_axis_title
 </code>. The optional 
-<code>name
+<code>distribution_name
 </code> is used as the tick value for the distribution.
 </p>
 </div>
@@ -1773,9 +1780,9 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    distributions_values::AbstractVector{AbstractVector{&lt;:Real}}
+    distributions_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    distributions_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
 </code>
 </pre>
@@ -1790,11 +1797,11 @@ end
 </code> (if 
 <code>show_legend
 </code> is set). If specified, the 
-<code>names
+<code>distributions_names
 </code> and/or the 
-<code>colors
+<code>distributions_colors
 </code> vectors must contain the same number of elements as the number of vectors in the 
-<code>values
+<code>distributions_values
 </code>.
 </p>
 </div>
@@ -1816,7 +1823,7 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 </code>
@@ -1858,11 +1865,11 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionsGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
     distributions_gap::Maybe{Real} = nothing
-    overlay::Bool = false
+    overlay_distributions::Bool = false
 end
 </code>
 </pre>
@@ -1875,12 +1882,10 @@ end
 </a> with the addition of 
 <code>show_legend
 </code> to show a legend. This is not set by default as it makes little sense unless 
-<code>overlay
+<code>overlay_distributions
 </code> is also set. The 
 <code>distributions_gap
-</code> is the fraction of white space between the distributions. TODO: Implement 
-<code>overlay
-</code>.
+</code> is the fraction of white space between the distributions.
 </p>
 <div class="admonition is-info">
 <header class="admonition-header">Note
@@ -1912,6 +1917,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionStyleConfiguration &lt;: ObjectWithValidation
+    values_orientation::ValuesOrientation = VerticalValues
     show_box::Bool = true
     show_violin::Bool = false
     show_curve::Bool = false
@@ -1921,6 +1927,10 @@ end
 </code>
 </pre>
 <p>Configure the style of a distribution graph.
+</p>
+<p>The 
+<code>values_orientation
+</code> controls which axis is used for the values (the other axis is used for the density). By default the values are shown on the Y axis (vertical values).
 </p>
 <p>If 
 <code>show_box
@@ -1985,8 +1995,8 @@ end
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.BandRegionConfiguration">
-<code>MCGraphs.Renderers.BandRegionConfiguration
+<a href="renderers.html#MCGraphs.Renderers.BandStyleConfiguration">
+<code>MCGraphs.Renderers.BandStyleConfiguration
 </code>
 </a>
 </li>

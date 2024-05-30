@@ -16,8 +16,10 @@ export BarGraphData
 export BarsGraphConfiguration
 export BarsGraphData
 export CdfDirection
+export CdfDownToValue
 export CdfGraphConfiguration
 export CdfGraphData
+export CdfUpToValue
 export CdfsGraphConfiguration
 export CdfsGraphData
 export DistributionGraphConfiguration
@@ -25,7 +27,6 @@ export DistributionGraphData
 export DistributionStyleConfiguration
 export DistributionsGraphConfiguration
 export DistributionsGraphData
-export DownToValue
 export GraphConfiguration
 export GridGraphConfiguration
 export GridGraphData
@@ -42,13 +43,13 @@ export StackFractions
 export StackPercents
 export StackValues
 export Stacking
-export UpToValue
 export ValuesOrientation
 export VerticalValues
 export render
 
 using ..Validations
 
+using Colors
 using Daf.GenericTypes
 using PlotlyJS
 
@@ -172,6 +173,7 @@ end
 
 """
     @kwdef mutable struct DistributionStyleConfiguration <: ObjectWithValidation
+        values_orientation::ValuesOrientation = VerticalValues
         show_box::Bool = true
         show_violin::Bool = false
         show_curve::Bool = false
@@ -180,6 +182,9 @@ end
     end
 
 Configure the style of a distribution graph.
+
+The `values_orientation` controls which axis is used for the values (the other axis is used for the density). By default
+the values are shown on the Y axis (vertical values).
 
 If `show_box`, show a box graph.
 
@@ -196,7 +201,7 @@ The `color` is chosen automatically by default. When showing multiple distributi
 the [`DistributionsGraphData`](@ref).
 """
 @kwdef mutable struct DistributionStyleConfiguration <: ObjectWithValidation
-    orientation::ValuesOrientation = VerticalValues
+    values_orientation::ValuesOrientation = VerticalValues
     show_box::Bool = true
     show_violin::Bool = false
     show_curve::Bool = false
@@ -206,20 +211,41 @@ end
 
 function Validations.validate_object(configuration::DistributionStyleConfiguration)::Maybe{AbstractString}
     if !configuration.show_box && !configuration.show_violin && !configuration.show_curve
-        return "distribution must specify at least one of: configuration.style.show_box, configuration.style.show_violin, configuration.style.show_curve"
+        return "must specify at least one of: configuration.distribution_style.show_box, configuration.distribution_style.show_violin, configuration.distribution_style.show_curve"
     end
 
     if configuration.show_violin && configuration.show_curve
-        return "distribution can't specify both of: configuration.style.show_violin, configuration.style.show_curve"
+        return "must not specify both of: configuration.distribution_style.show_violin, configuration.distribution_style.show_curve"
     end
 
-    return nothing
+    return validate_color("configuration.distribution_style.color", configuration.color)
+end
+
+function validate_color(what::AbstractString, color::Maybe{AbstractString})::Maybe{AbstractString}
+    if is_valid_color(color)
+        return nothing
+    else
+        return "invalid $(what): $(color)"
+    end
+end
+
+function is_valid_color(::Nothing)::Bool
+    return true
+end
+
+function is_valid_color(color::AbstractString)::Bool
+    try
+        parse(Colorant, color)  # NOJET
+        return true
+    catch
+        return false
+    end
 end
 
 """
     @kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
-        style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+        distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
     end
 
@@ -231,14 +257,14 @@ possible to specify the color of each one in the [`DistributionsGraphData`](@ref
 """
 @kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 
 function Validations.validate_object(configuration::DistributionGraphConfiguration)::Maybe{AbstractString}
     message = validate_object(configuration.graph)
     if message === nothing
-        message = validate_object(configuration.style)
+        message = validate_object(configuration.distribution_style)
     end
     if message === nothing
         message = validate_object("value", configuration.value_axis)
@@ -249,18 +275,18 @@ end
 """
     @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
-        style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+        distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         show_legend::Bool = false
         distributions_gap::Maybe{Real} = nothing
-        overlay::Bool = false
+        overlay_distributions::Bool = false
     end
 
 Configure a graph for showing several distributions several distributions.
 
 This is identical to [`DistributionGraphConfiguration`](@ref) with the addition of `show_legend` to show a legend. This
-is not set by default as it makes little sense unless `overlay` is also set. The `distributions_gap` is the fraction of
-white space between the distributions. TODO: Implement `overlay`.
+is not set by default as it makes little sense unless `overlay_distributions` is also set. The `distributions_gap` is
+the fraction of white space between the distributions.
 
 !!! note
 
@@ -268,17 +294,17 @@ white space between the distributions. TODO: Implement `overlay`.
 """
 @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
     distributions_gap::Maybe{Real} = nothing
-    overlay::Bool = false
+    overlay_distributions::Bool = false
 end
 
 function Validations.validate_object(configuration::DistributionsGraphConfiguration)::Maybe{AbstractString}
     message = validate_object(configuration.graph)
     if message === nothing
-        message = validate_object(configuration.style)
+        message = validate_object(configuration.distribution_style)
     end
     if message === nothing
         message = validate_object("value", configuration.value_axis)
@@ -301,24 +327,24 @@ end
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
-        values::AbstractVector{<:Real}
-        name::Maybe{AbstractString} = nothing
+        distribution_values::AbstractVector{<:Real}
+        distribution_name::Maybe{AbstractString} = nothing
     end
 
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
-the `trace_axis_title`. The optional `name` is used as the tick value for the distribution.
+the `trace_axis_title`. The optional `distribution_name` is used as the tick value for the distribution.
 """
 @kwdef mutable struct DistributionGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{<:Real}
-    name::Maybe{AbstractString} = nothing
+    distribution_values::AbstractVector{<:Real}
+    distribution_name::Maybe{AbstractString} = nothing
 end
 
 function Validations.validate_object(data::DistributionGraphData)::Maybe{AbstractString}
-    if length(data.values) == 0
-        return "empty data.values vector"
+    if length(data.distribution_values) == 0
+        return "empty data.distribution_values vector"
     end
 
     return nothing
@@ -330,45 +356,55 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
-        values::AbstractVector{AbstractVector{<:Real}}
-        names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+        distributions_values::AbstractVector{AbstractVector{<:Real}}
+        distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
 
 The data for a multiple distributions graph. By default, all the titles are empty. You can specify the overall
 `graph_title` as well as the `value_axis_title`, the `trace_axis_title` and the `legend_title` (if `show_legend` is
-set). If specified, the `names` and/or the `colors` vectors must contain the same number of elements as the number of
-vectors in the `values`.
+set). If specified, the `distributions_names` and/or the `distributions_colors` vectors must contain the same number of
+elements as the number of vectors in the `distributions_values`.
 """
 @kwdef mutable struct DistributionsGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{AbstractVector{<:Real}}
-    names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    distributions_values::AbstractVector{AbstractVector{<:Real}}
+    distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
 
 function Validations.validate_object(data::DistributionsGraphData)::Maybe{AbstractString}
-    if length(data.values) == 0
-        return "empty data.values vector"
+    n_distributions = length(data.distributions_values)
+    if n_distributions == 0
+        return "empty data.distributions_values vector"
     end
 
-    for (index, values) in enumerate(data.values)
-        if length(values) == 0
-            return "empty data.values[$(index)] vector"
+    for (index, distribution_values) in enumerate(data.distributions_values)
+        if length(distribution_values) == 0
+            return "empty data.distributions_values[$(index)] vector"
         end
     end
 
-    if data.names !== nothing && length(data.names) != length(data.values)
-        return "the data.names size: $(length(data.names))\n" *
-               "is different from the data.values size: $(length(data.values))"
+    names = data.distributions_names
+    if names !== nothing && length(names) != n_distributions
+        return "the data.distributions_names size: $(length(names))\n" *
+               "is different from the data.distributions_values size: $(n_distributions)"
     end
 
-    if data.colors !== nothing && length(data.colors) != length(data.values)
-        return "the data.colors size: $(length(data.colors))\n" *
-               "is different from the data.values size: $(length(data.values))"
+    colors = data.distributions_colors
+    if colors !== nothing
+        if length(colors) != n_distributions
+            return "the data.distributions_colors size: $(length(colors))\n" *
+                   "is different from the data.distributions_values size: $(n_distributions)"
+        end
+        for (color_index, color) in enumerate(colors)
+            if !is_valid_color(color)
+                return "invalid data.distributions_colors[$(color_index)]: $(color)"
+            end
+        end
     end
 
     return nothing
@@ -390,16 +426,16 @@ Render a graph given its data and configuration. The implementation depends on t
 
 | [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                          |
 |:-------------------------------- |:----------------------------------------- |:---------------------------------------------------- |
-| [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).           |
-| [`BarsGraphData`](@ref)          | [`BarsGraphConfiguration`](@ref)          | Graph of multiple sets of bars (histograms).         |
+| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.   |
+| [`GridGraphData`](@ref)          | [`GridGraphConfiguration`](@ref)          | Graph of a grid of points (e.g. for correlations).   |
+| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).     |
+| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.       |
 | [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function.  |
 | [`CdfsGraphData`](@ref)          | [`CdfsGraphConfiguration`](@ref)          | Graph of multiple cumulative distribution functions. |
 | [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                      |
 | [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                     |
-| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).     |
-| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.       |
-| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.   |
-| [`GridGraphData`](@ref)          | [`GridGraphConfiguration`](@ref)          | Graph of a grid of points (e.g. for correlations).   |
+| [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).           |
+| [`BarsGraphData`](@ref)          | [`BarsGraphConfiguration`](@ref)          | Graph of multiple sets of bars (histograms).         |
 
 This returns a [`Figure`](@ref) which can be displayed directly, or converted to JSON for transfer to other programming languages
 (Python or R)
@@ -412,19 +448,19 @@ function render(
     assert_valid_object(data)
     assert_valid_object(configuration)
 
-    trace = distribution_trace(  # NOJET;;;;;;;;;;;;;;;;;;
-        values = data.values,
-        name = data.name === nothing ? "Trace" : data.name,
-        color = configuration.style.color,
+    trace = distribution_trace(;  # NOJET
+        distribution_values = data.distribution_values,
+        distribution_name = data.distribution_name === nothing ? "Trace" : data.distribution_name,
+        color = configuration.distribution_style.color,
         legend_title = nothing,
         configuration = configuration,
-        overlay = false,
+        overlay_distributions = false,
     )
 
     layout = distribution_layout(
         data,
         configuration;
-        has_tick_names = data.name !== nothing,
+        has_tick_names = data.distribution_name !== nothing,
         show_legend = false,
         distributions_gap = nothing,
     )
@@ -441,26 +477,34 @@ function render(
 )::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
-    if configuration.distributions_gap !== nothing && configuration.style.show_curve
+    if configuration.distributions_gap !== nothing && configuration.distribution_style.show_curve
         @warn "setting the distributions_gap for curve is buggy in plotly"
     end
 
-    n_values = length(data.values)
+    n_distributions = length(data.distributions_values)
     traces = [
         distribution_trace(;
-            values = data.values[index],
-            name = data.names === nothing ? "Trace $(index)" : data.names[index],
-            color = data.colors === nothing ? configuration.style.color : data.colors[index],
+            distribution_values = data.distributions_values[index],
+            distribution_name = if data.distributions_names === nothing
+                "Trace $(index)"
+            else
+                data.distributions_names[index]
+            end,
+            color = if data.distributions_colors === nothing
+                configuration.distribution_style.color
+            else
+                data.distributions_colors[index]
+            end,
             legend_title = data.legend_title,
             configuration = configuration,
-            overlay = configuration.overlay,
-        ) for index in 1:n_values
+            overlay_distributions = configuration.overlay_distributions,
+        ) for index in 1:n_distributions
     ]
 
     layout = distribution_layout(
         data,
         configuration;
-        has_tick_names = data.names !== nothing,
+        has_tick_names = data.distributions_names !== nothing,
         show_legend = configuration.show_legend,
         distributions_gap = configuration.distributions_gap,
     )
@@ -471,34 +515,34 @@ function render(
 end
 
 function distribution_trace(;
-    values::AbstractVector{<:Real},
-    name::AbstractString,
+    distribution_values::AbstractVector{<:Real},
+    distribution_name::AbstractString,
     color::Maybe{AbstractString},
     legend_title::Maybe{AbstractString},
     configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration},
-    overlay::Bool,
+    overlay_distributions::Bool,
 )::GenericTrace
     style = (
-        (configuration.style.show_box ? BOX : 0) |
-        (configuration.style.show_violin ? VIOLIN : 0) |
-        (configuration.style.show_curve ? CURVE : 0)
+        (configuration.distribution_style.show_box ? BOX : 0) |
+        (configuration.distribution_style.show_violin ? VIOLIN : 0) |
+        (configuration.distribution_style.show_curve ? CURVE : 0)
     )
 
-    if configuration.style.orientation == VerticalValues
+    if configuration.distribution_style.values_orientation == VerticalValues
         x = nothing
-        y = values
-        x0 = overlay ? " " : nothing
+        y = distribution_values
+        x0 = overlay_distributions ? " " : nothing
         y0 = nothing
-    elseif configuration.style.orientation == HorizontalValues
-        x = values
+    elseif configuration.distribution_style.values_orientation == HorizontalValues
+        x = distribution_values
         y = nothing
         x0 = nothing
-        y0 = overlay ? " " : nothing
+        y0 = overlay_distributions ? " " : nothing
     else
         @assert false
     end
 
-    points = configuration.style.show_outliers ? "outliers" : false
+    points = configuration.distribution_style.show_outliers ? "outliers" : false
     tracer = style == BOX ? box : violin
 
     return tracer(;
@@ -506,11 +550,11 @@ function distribution_trace(;
         y = y,
         x0 = x0,
         y0 = y0,
-        side = configuration.style.show_curve ? "positive" : nothing,
-        box_visible = configuration.style.show_box,
+        side = configuration.distribution_style.show_curve ? "positive" : nothing,
+        box_visible = configuration.distribution_style.show_box,
         boxpoints = points,
         points = points,
-        name = name,
+        name = distribution_name,
         marker_color = color,
         legendgrouptitle_text = legend_title,
     )
@@ -523,7 +567,7 @@ function distribution_layout(
     show_legend::Bool,
     distributions_gap::Maybe{Real},
 )::Layout
-    if configuration.style.orientation == VerticalValues
+    if configuration.distribution_style.values_orientation == VerticalValues
         xaxis_showticklabels = has_tick_names
         xaxis_showgrid = false
         xaxis_title = data.trace_axis_title
@@ -534,7 +578,7 @@ function distribution_layout(
         yaxis_title = data.value_axis_title
         yaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
         yaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
-    elseif configuration.style.orientation == HorizontalValues
+    elseif configuration.distribution_style.values_orientation == HorizontalValues
         xaxis_showticklabels = configuration.graph.show_ticks
         xaxis_showgrid = configuration.graph.show_grid
         xaxis_title = data.value_axis_title
@@ -572,86 +616,93 @@ end
 
 """
     @kwdef mutable struct LineStyleConfiguration <: ObjectWithValidation
-        line_width::Maybe{Real} = 1
-        fill_below::Bool = false
-        line_is_dashed::Bool = false
-        line_color::Maybe{AbstractString} = nothing
+        width::Maybe{Real} = 1
+        is_filled::Bool = false
+        is_dashed::Bool = false
+        color::Maybe{AbstractString} = nothing
     end
 
 Configure a line in a graph.
 
-By default, a solid line is shown; if `line_is_dashed`, the line will be dashed. If `fill_below` is set, the area below
-the line is filled. If the `line_width` is set to `nothing`, no line is shown (and `fill_below` must be set). By
-default, the `line_color` is chosen automatically.
+By default, a solid line is shown; if `is_dashed`, the line will be dashed. If `is_filled` is set, the area below the
+line is filled. If the `width` is set to `nothing`, no line is shown (and `is_filled` must be set). By default, the
+`color` is chosen automatically.
 """
 @kwdef mutable struct LineStyleConfiguration <: ObjectWithValidation
-    line_width::Maybe{Real} = 1
-    fill_below::Bool = false
-    line_is_dashed::Bool = false
-    line_color::Maybe{AbstractString} = nothing
+    width::Maybe{Real} = 1
+    is_filled::Bool = false
+    is_dashed::Bool = false
+    color::Maybe{AbstractString} = nothing
 end
 
 function Validations.validate_object(configuration::LineStyleConfiguration)::Maybe{AbstractString}
-    line_width = configuration.line_width
-    if line_width !== nothing && line_width <= 0
-        return "non-positive configuration.style.line_width: $(line_width)"
+    width = configuration.width
+    if width !== nothing && width <= 0
+        return "non-positive configuration.line_style.width: $(width)"
     end
-    if line_width === nothing && !configuration.fill_below
-        return "either configuration.style.line_width or configuration.style.fill_below must be specified"
+    if width === nothing && !configuration.is_filled
+        return "either configuration.line_style.width or configuration.line_style.is_filled must be specified"
     end
-    return nothing
+    return validate_color("configuration.line_style.color", configuration.color)
 end
 
 """
-    @kwdef mutable struct BandRegionConfiguration <: ObjectWithValidation
-        line_color::Maybe{AbstractString} = "black"
-        line_width::Real = 1.0
-        line_is_dashed::Bool = false
-        fill_color::Maybe{AbstractString} = nothing
+    @kwdef mutable struct BandStyleConfiguration <: ObjectWithValidation
+        offset::Maybe{Real} = nothing
+        color::Maybe{AbstractString} = nothing
+        width::Maybe{Real} = 1.0
+        is_dashed::Bool = false
+        is_filled::Bool = false
     end
 
-Configure a region of the graph defined by some band of values. The region only exists if `line_offset` is set. To
-actually show the region, either the `line_color` and/or the `fill_color` must be set; by default, just the line is
-shown. The `line_width` is in pixels (1/96th of an inch).
+Configure a region of the graph defined by some band of values. This is the same as a `LineStyleConfiguration` (for
+controlling the style of the line drawn for the band) with the addition of the `offset` of the line's position. We allow
+up to three bands in a complete [`BandsConfiguration`](@ref). The low and high bands are defined as below and above
+their line's `offset`, and do not exist if the `offset` is not specified. The middle band is defined to be between these
+two lines (and therefore only exists if both are specified). Its `offset` defined a center line, if one is to be
+displayed, and is therefore optional.
 """
-@kwdef mutable struct BandRegionConfiguration <: ObjectWithValidation
-    line_offset::Maybe{Real} = nothing
-    line_color::Maybe{AbstractString} = "black"
-    line_width::Real = 1.0
-    line_is_dashed::Bool = false
-    fill_color::Maybe{AbstractString} = nothing
+@kwdef mutable struct BandStyleConfiguration <: ObjectWithValidation
+    offset::Maybe{Real} = nothing
+    color::Maybe{AbstractString} = nothing
+    width::Maybe{Real} = 1.0
+    is_dashed::Bool = false
+    is_filled::Bool = false
 end
 
 function Validations.validate_object(
     of_what::AbstractString,
     of_which::AbstractString,
-    configuration::BandRegionConfiguration,
+    configuration::BandStyleConfiguration,
     log_scale::Bool,
 )::Maybe{AbstractString}
-    if configuration.line_width <= 0
-        return "non-positive configuration.$(of_what).$(of_which).line_width: $(configuration.line_width)"
+    if configuration.width !== nothing && configuration.width <= 0
+        return "non-positive configuration.$(of_what).$(of_which).width: $(configuration.width)"
     end
-    if log_scale && configuration.line_offset !== nothing && configuration.line_offset <= 0
-        return "log of non-positive configuration.$(of_what).$(of_which).line_offset: $(configuration.line_offset)"
+    if log_scale && configuration.offset !== nothing && configuration.offset <= 0
+        return "log of non-positive configuration.$(of_what).$(of_which).offset: $(configuration.offset)"
+    end
+    if !is_valid_color(configuration.color)
+        return "invalid configuration.$(of_what).$(of_which).color: $(configuration.color)"
     end
     return nothing
 end
 
 """
     @kwdef mutable struct BandsConfiguration <: ObjectWithValidation
-        low::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
-        middle::BandRegionConfiguration = BandRegionConfiguration()
-        high::BandRegionConfiguration = BandRegionConfiguration(line_is_dashed = true)
+        low_band_style::BandStyleConfiguration = BandStyleConfiguration(is_dashed = true)
+        middle_band_style::BandStyleConfiguration = BandStyleConfiguration()
+        high_band_style::BandStyleConfiguration = BandStyleConfiguration(is_dashed = true)
     end
 
-Configure the partition of the graph up to three band regions. The `low` and `high` are the "outer" regions (so their
-lines are at their border, dashed by default) and the `middle` is the "inner" region between them (so its line is inside
-it, solid by default).
+Configure the partition of the graph up to three band regions. The `low_band_style` and `high_band_style` are for the
+"outer" regions (so their lines are at their border, dashed by default) and the `middle_band_style` is for the "inner"
+region between them (so its line is inside it, solid by default).
 """
 @kwdef mutable struct BandsConfiguration <: ObjectWithValidation
-    low::BandRegionConfiguration = BandRegionConfiguration(; line_is_dashed = true)
-    middle::BandRegionConfiguration = BandRegionConfiguration()
-    high::BandRegionConfiguration = BandRegionConfiguration(; line_is_dashed = true)
+    low_band_style::BandStyleConfiguration = BandStyleConfiguration(; is_dashed = true)
+    middle_band_style::BandStyleConfiguration = BandStyleConfiguration()
+    high_band_style::BandStyleConfiguration = BandStyleConfiguration(; is_dashed = true)
 end
 
 function Validations.validate_object(
@@ -659,34 +710,34 @@ function Validations.validate_object(
     configuration::BandsConfiguration,
     log_scale::Bool,
 )::Maybe{AbstractString}
-    message = validate_object(of_what, "low", configuration.low, log_scale)
+    message = validate_object(of_what, "low_band_style", configuration.low_band_style, log_scale)
     if message === nothing
-        message = validate_object(of_what, "middle", configuration.middle, log_scale)
+        message = validate_object(of_what, "middle_band_style", configuration.middle_band_style, log_scale)
     end
     if message === nothing
-        message = validate_object(of_what, "high", configuration.high, log_scale)
+        message = validate_object(of_what, "high_band_style", configuration.high_band_style, log_scale)
     end
     if message !== nothing
         return message
     end
 
-    low_line_offset = configuration.low.line_offset
-    middle_line_offset = configuration.middle.line_offset
-    high_line_offset = configuration.high.line_offset
+    low_line_offset = configuration.low_band_style.offset
+    middle_line_offset = configuration.middle_band_style.offset
+    high_line_offset = configuration.high_band_style.offset
 
     if low_line_offset !== nothing && middle_line_offset !== nothing && low_line_offset >= middle_line_offset
-        return "configuration.$(of_what).low.line_offset: $(low_line_offset)\n" *
-               "is not less than configuration.$(of_what).middle.line_offset: $(low_line_offset)"
+        return "configuration.$(of_what).low_band_style.offset: $(low_line_offset)\n" *
+               "is not less than configuration.$(of_what).middle_band_style.offset: $(low_line_offset)"
     end
 
     if middle_line_offset !== nothing && high_line_offset !== nothing && middle_line_offset >= high_line_offset
-        return "configuration.$(of_what).high.line_offset: $(high_line_offset)\n" *
-               "is not greater than configuration.$(of_what).middle.line_offset: $(middle_line_offset)"
+        return "configuration.$(of_what).high_band_style.offset: $(high_line_offset)\n" *
+               "is not greater than configuration.$(of_what).middle_band_style.offset: $(middle_line_offset)"
     end
 
     if low_line_offset !== nothing && high_line_offset !== nothing && low_line_offset >= high_line_offset
-        return "configuration.$(of_what).low.line_offset: $(low_line_offset)\n" *
-               "is not less than configuration.$(of_what).high.line_offset: $(high_line_offset)"
+        return "configuration.$(of_what).low_band_style.offset: $(low_line_offset)\n" *
+               "is not less than configuration.$(of_what).high_band_style.offset: $(high_line_offset)"
     end
 
     return nothing
@@ -697,7 +748,7 @@ end
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
-        style::LineStyleConfiguration = LineStyleConfiguration()
+        line_style::LineStyleConfiguration = LineStyleConfiguration()
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
     end
@@ -708,7 +759,7 @@ Configure a graph for showing line plots.
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
+    line_style::LineStyleConfiguration = LineStyleConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
 end
@@ -718,8 +769,8 @@ end
         graph_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
-        xs::AbstractVector{<:Real}
-        ys::AbstractVector{<:Real}
+        points_xs::AbstractVector{<:Real}
+        points_ys::AbstractVector{<:Real}
     end
 
 The data for a line graph.
@@ -727,20 +778,21 @@ The data for a line graph.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
 `y_axis_title` for the axes.
 
-The `xs` and `ys` vectors must be of the same size. A line will be drawn through all the points, and the area under the
-line may be filled.
+The `points_xs` and `points_ys` vectors must be of the same size. A line will be drawn through all the points, and the
+area under the line may be filled.
 """
 @kwdef mutable struct LineGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{<:Real}
-    ys::AbstractVector{<:Real}
+    points_xs::AbstractVector{<:Real}
+    points_ys::AbstractVector{<:Real}
 end
 
 function Validations.validate_object(data::LineGraphData)::Maybe{AbstractString}
-    if length(data.xs) != length(data.ys)
-        return "the data.xs size: $(length(data.xs))\n" * "is different from the data.ys size: $(length(data.ys))"
+    if length(data.points_xs) != length(data.points_ys)
+        return "the data.points_xs size: $(length(data.points_xs))\n" *
+               "is different from the data.points_ys size: $(length(data.points_ys))"
     end
     return nothing
 end
@@ -755,10 +807,10 @@ function render(
 
     traces = Vector{GenericTrace}()
 
-    minimum_x = minimum(data.xs)
-    minimum_y = minimum(data.ys)
-    maximum_x = maximum(data.xs)
-    maximum_y = maximum(data.ys)
+    minimum_x = minimum(data.points_xs)
+    minimum_y = minimum(data.points_ys)
+    maximum_x = maximum(data.points_xs)
+    maximum_y = maximum(data.points_ys)
 
     push_fill_vertical_bands_traces(traces, configuration.vertical_bands, minimum_x, minimum_y, maximum_x, maximum_y)
     push_fill_horizontal_bands_traces(
@@ -770,18 +822,24 @@ function render(
         maximum_y,
     )
 
-    push!(traces, line_trace(data, configuration.style))
+    push!(traces, line_trace(data, configuration.line_style))
 
-    for band in
-        (configuration.vertical_bands.low, configuration.vertical_bands.middle, configuration.vertical_bands.high)
-        if band.line_offset !== nothing && band.line_color !== nothing
+    for band in (
+        configuration.vertical_bands.low_band_style,
+        configuration.vertical_bands.middle_band_style,
+        configuration.vertical_bands.high_band_style,
+    )
+        if band.offset !== nothing && band.width !== nothing
             push!(traces, vertical_line_trace(band, minimum_y, maximum_y))
         end
     end
 
-    for band in
-        (configuration.horizontal_bands.low, configuration.horizontal_bands.middle, configuration.horizontal_bands.high)
-        if band.line_offset !== nothing && band.line_color !== nothing
+    for band in (
+        configuration.horizontal_bands.low_band_style,
+        configuration.horizontal_bands.middle_band_style,
+        configuration.horizontal_bands.high_band_style,
+    )
+        if band.offset !== nothing && band.width !== nothing
             push!(traces, horizontal_line_trace(band, minimum_x, maximum_x))
         end
     end
@@ -795,12 +853,12 @@ end
 
 function line_trace(data::LineGraphData, line_style::LineStyleConfiguration)::GenericTrace
     return scatter(;
-        x = data.xs,
-        y = data.ys,
-        line_color = line_style.line_color,
-        line_width = line_style.line_width === nothing ? 0 : line_style.line_width,
-        line_dash = line_style.line_is_dashed ? "dash" : nothing,
-        fill = line_style.fill_below ? "tozeroy" : nothing,
+        x = data.points_xs,
+        y = data.points_ys,
+        line_color = line_style.color,
+        line_width = line_style.width === nothing ? 0 : line_style.width,
+        line_dash = line_style.is_dashed ? "dash" : nothing,
+        fill = line_style.is_filled ? "tozeroy" : nothing,
         name = "",
         mode = "lines",
     )
@@ -822,7 +880,7 @@ If stacking multiple data sets, how:
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
-        style::LineStyleConfiguration = LineStyleConfiguration()
+        line_style::LineStyleConfiguration = LineStyleConfiguration()
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
         show_legend::Bool = false
@@ -830,14 +888,14 @@ If stacking multiple data sets, how:
     end
 
 Configure a graph for showing multiple line plots. This allows using `show_legend` to display a legend of the different
-lines, and `stacking` to stack instead of overlay the lines. If `stacking` is specified, then `fill_below` is implied,
+lines, and `stacking` to stack instead of overlay the lines. If `stacking` is specified, then `is_filled` is implied,
 regardless of what its actual setting is.
 """
 @kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
+    line_style::LineStyleConfiguration = LineStyleConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
@@ -855,7 +913,7 @@ function Validations.validate_object(
         message = validate_object("y", configuration.y_axis)
     end
     if message === nothing
-        message = validate_object(configuration.style)
+        message = validate_object(configuration.line_style)
     end
     if message === nothing
         message = validate_object(
@@ -880,13 +938,13 @@ end
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
-        xs::AbstractVector{AbstractVector{<:Real}}
-        ys::AbstractVector{AbstractVector{<:Real}}
-        names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-        line_widths::Maybe{AbstractVector{<:Real}} = nothing
-        fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-        are_dashed::Maybe{AbstractVector{Bool}} = nothing
+        lines_xs::AbstractVector{AbstractVector{<:Real}}
+        lines_ys::AbstractVector{AbstractVector{<:Real}}
+        lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+        lines_widths::Maybe{AbstractVector{<:Real}} = nothing
+        lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+        lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
     end
 
 The data for multiple lines graph.
@@ -894,77 +952,88 @@ The data for multiple lines graph.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
 `y_axis_title` for the axes.
 
-The `xs` and `ys` vectors must be of the same size (one per line). For each line, its `xs` and `ys` coordinate arrays
-must also be of the same size; a line will be drawn through all the points, and the area under the line may be filled.
-If `stack_lines` is specified in [`LinesGraphConfiguration`](@ref), then the lines are specified in top-to-bottom order.
+The `lines_xs` and `lines_ys` vectors must be of the same size (one per line). For each line, its points `xs` and `ys`
+coordinate arrays must also be of the same size; a line will be drawn through all the points, and the area under the
+line may be filled. If `stack_lines` is specified in [`LinesGraphConfiguration`](@ref), then the lines are specified in
+top-to-bottom order.
 
-The `names`, `colors`, `line_widths`, `fill_belows` and `are_dashed` arrays must have the same number of
-entries (one per line). The `colors` are restricted to explicit colors; therefore the color scale options of the `style`
-must not be used.
+The `lines_names`, `lines_colors`, `lines_widths`, `lines_are_filled` and `lines_are_dashed` arrays must have the same
+number of entries (one per line). The `lines_colors` are restricted to explicit colors; therefore the color scale
+options of the `line_style` must not be used.
 """
 @kwdef mutable struct LinesGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{AbstractVector{<:Real}}
-    ys::AbstractVector{AbstractVector{<:Real}}
-    names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-    line_widths::Maybe{AbstractVector{<:Real}} = nothing
-    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+    lines_xs::AbstractVector{AbstractVector{<:Real}}
+    lines_ys::AbstractVector{AbstractVector{<:Real}}
+    lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    lines_widths::Maybe{AbstractVector{<:Real}} = nothing
+    lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
 end
 
 function Validations.validate_object(data::LinesGraphData)::Maybe{AbstractString}
-    if length(data.xs) != length(data.ys)
-        return "the data.xs size: $(length(data.xs))\n" * "is different from the data.ys size: $(length(data.ys))"
+    n_lines = length(data.lines_xs)
+    if length(data.lines_ys) != n_lines
+        return "the data.lines_xs size: $(n_lines)\n" *
+               "is different from the data.lines_ys size: $(length(data.lines_ys))"
     end
-    if length(data.xs) == 0
-        return "empty data.xs and data.ys vectors"
+    if n_lines == 0
+        return "empty data.lines_xs and data.lines_ys vectors"
     end
 
-    for (index, (xs, ys)) in enumerate(zip(data.xs, data.ys))
-        if length(xs) != length(ys)
-            return "the data.xs[$(index)] size: $(length(xs))\n" *
-                   "is different from the data.ys[$(index)] size: $(length(ys))"
+    for (index, (points_xs, points_ys)) in enumerate(zip(data.lines_xs, data.lines_ys))
+        if length(points_xs) != length(points_ys)
+            return "the data.lines_xs[$(index)] size: $(length(points_xs))\n" *
+                   "is different from the data.lines_ys[$(index)] size: $(length(points_ys))"
         end
-        if length(xs) < 2
-            return "too few points in data.xs[$(index)] and data.ys[$(index)]: $(length(xs))"
+        if length(points_xs) < 2
+            return "too few points in data.lines_xs[$(index)] and data.lines_ys[$(index)]: $(length(points_xs))"
         end
     end
 
-    if data.names !== nothing && length(data.names) != length(data.xs)
-        return "the data.names size: $(length(data.names))\n" *
-               "is different from the data.xs and data.ys size: $(length(data.xs))"
+    if data.lines_names !== nothing && length(data.lines_names) != n_lines
+        return "the data.lines_names size: $(length(data.lines_names))\n" *
+               "is different from the data.lines_xs and data.lines_ys size: $(n_lines)"
     end
 
-    if data.colors !== nothing && length(data.colors) != length(data.xs)
-        return "the data.colors size: $(length(data.colors))\n" *
-               "is different from the data.xs and data.ys size: $(length(data.xs))"
-    end
-
-    line_widths = data.line_widths
-    if line_widths !== nothing
-        if length(line_widths) != length(data.xs)
-            return "the data.line_widths size: $(length(line_widths))\n" *
-                   "is different from the data.xs and data.ys size: $(length(data.xs))"
+    colors = data.lines_colors
+    if colors !== nothing
+        if length(colors) != n_lines
+            return "the data.lines_colors size: $(length(colors))\n" *
+                   "is different from the data.lines_xs and data.lines_ys size: $(n_lines)"
         end
-        for (index, line_width) in enumerate(line_widths)
-            if line_width <= 0
-                return "non-positive data.line_widths[$(index)]: $(line_width)"
+        for (color_index, color) in enumerate(colors)
+            if !is_valid_color(color)
+                return "invalid data.lines_colors[$(color_index)]: $(color)"
             end
         end
     end
 
-    if data.fill_belows !== nothing && length(data.fill_belows) != length(data.xs)
-        return "the data.fill_belows size: $(length(data.fill_belows))\n" *
-               "is different from the data.xs and data.ys size: $(length(data.xs))"
+    lines_widths = data.lines_widths
+    if lines_widths !== nothing
+        if length(lines_widths) != n_lines
+            return "the data.lines_widths size: $(length(lines_widths))\n" *
+                   "is different from the data.lines_xs and data.lines_ys size: $(n_lines)"
+        end
+        for (index, line_width) in enumerate(lines_widths)
+            if line_width <= 0
+                return "non-positive data.lines_widths[$(index)]: $(line_width)"
+            end
+        end
     end
 
-    if data.are_dashed !== nothing && length(data.are_dashed) != length(data.xs)
-        return "the data.are_dashed size: $(length(data.are_dashed))\n" *
-               "is different from the data.xs and data.ys size: $(length(data.xs))"
+    if data.lines_are_filled !== nothing && length(data.lines_are_filled) != n_lines
+        return "the data.lines_are_filled size: $(length(data.lines_are_filled))\n" *
+               "is different from the data.lines_xs and data.lines_ys size: $(n_lines)"
+    end
+
+    if data.lines_are_dashed !== nothing && length(data.lines_are_dashed) != n_lines
+        return "the data.lines_are_dashed size: $(length(data.lines_are_dashed))\n" *
+               "is different from the data.lines_xs and data.lines_ys size: $(n_lines)"
     end
 
     return nothing
@@ -978,30 +1047,30 @@ function render(
     assert_valid_object(data)
     assert_valid_object(configuration)
     if configuration.stacking == StackPercents || configuration.stacking == StackFractions
-        for (line_index, ys) in enumerate(data.ys)
-            for (point_index, y) in enumerate(ys)
-                @assert y >= 0 "negative stacked fraction/percent data.ys[$(line_index),$(point_index)]: $(y)"
+        for (line_index, points_ys) in enumerate(data.lines_ys)
+            for (point_index, point_y) in enumerate(points_ys)
+                @assert point_y >= 0 "negative stacked fraction/percent data.lines_ys[$(line_index),$(point_index)]: $(point_y)"
             end
         end
     end
 
     if configuration.stacking === nothing
-        xs = data.xs
-        ys = data.ys
+        lines_xs = data.lines_xs
+        lines_ys = data.lines_ys
     else
-        xs, ys = unify_xs(data.xs, data.ys)
+        lines_xs, lines_ys = unify_xs(data.lines_xs, data.lines_ys)
     end
 
     traces = Vector{GenericTrace}()
 
-    for index in 1:length(data.xs)
+    for index in 1:length(data.lines_xs)
         push!(
             traces,
             lines_trace(
                 data,
                 configuration;
-                xs = xs[index],
-                ys = ys[index],
+                points_xs = lines_xs[index],
+                points_ys = lines_ys[index],
                 index = index,
                 legend_title = data.legend_title,
             ),
@@ -1016,10 +1085,10 @@ function render(
 end
 
 function unify_xs(
-    xs::AbstractVector{<:AbstractVector{<:Real}},
-    ys::AbstractVector{<:AbstractVector{<:Real}},
+    lines_xs::AbstractVector{<:AbstractVector{<:Real}},
+    lines_ys::AbstractVector{<:AbstractVector{<:Real}},
 )::Tuple{Vector{Vector{Float32}}, Vector{Vector{Float32}}}
-    n_lines = length(xs)
+    n_lines = length(lines_xs)
     unified_xs = Vector{Vector{Float32}}()
     unified_ys = Vector{Vector{Float32}}()
     zero_before = zeros(Bool, n_lines)
@@ -1033,11 +1102,11 @@ function unify_xs(
         unified_x = nothing
         for line_index in 1:n_lines
             point_index = next_point_indices[line_index]
-            if point_index <= length(xs[line_index])
+            if point_index <= length(lines_xs[line_index])
                 if unified_x === nothing
-                    unified_x = xs[line_index][point_index]
+                    unified_x = lines_xs[line_index][point_index]
                 else
-                    unified_x = min(unified_x, xs[line_index][point_index])
+                    unified_x = min(unified_x, lines_xs[line_index][point_index])
                 end
             end
         end
@@ -1046,7 +1115,7 @@ function unify_xs(
         end
         for line_index in 1:n_lines
             point_index = next_point_indices[line_index]
-            next_x = xs[line_index][min(point_index, length(xs[line_index]))]
+            next_x = lines_xs[line_index][min(point_index, length(lines_xs[line_index]))]
             if unified_x > next_x
                 if !zero_after[line_index]
                     push!(unified_xs[line_index], next_x)
@@ -1056,7 +1125,7 @@ function unify_xs(
                 push!(unified_xs[line_index], unified_x)
                 push!(unified_ys[line_index], 0)
             else
-                next_y = ys[line_index][point_index]
+                next_y = lines_ys[line_index][point_index]
                 if unified_x == next_x
                     if zero_before[line_index]
                         push!(unified_xs[line_index], unified_x)
@@ -1072,8 +1141,8 @@ function unify_xs(
                     zero_before[line_index] = true
                 else
                     @assert !zero_before[line_index]
-                    prev_x = xs[line_index][point_index - 1]
-                    prev_y = ys[line_index][point_index - 1]
+                    prev_x = lines_xs[line_index][point_index - 1]
+                    prev_y = lines_ys[line_index][point_index - 1]
                     push!(unified_xs[line_index], unified_x)
                     push!(unified_ys[line_index], prev_y + (next_y - prev_y) * (unified_x - prev_x) / (next_x - prev_x))
                 end
@@ -1085,35 +1154,39 @@ end
 function lines_trace(
     data::LinesGraphData,
     configuration::LinesGraphConfiguration;
-    xs::AbstractVector{<:Real},
-    ys::AbstractVector{<:Real},
+    points_xs::AbstractVector{<:Real},
+    points_ys::AbstractVector{<:Real},
     index::Int,
     legend_title::Maybe{AbstractString},
 )::GenericTrace
     return scatter(;
-        x = xs,
-        y = ys,
-        line_color = data.colors !== nothing ? data.colors[index] : configuration.style.line_color,
-        line_width = if data.line_widths !== nothing
-            data.line_widths[index]
-        elseif configuration.style.line_width === nothing
+        x = points_xs,
+        y = points_ys,
+        line_color = data.lines_colors !== nothing ? data.lines_colors[index] : configuration.line_style.color,
+        line_width = if data.lines_widths !== nothing
+            data.lines_widths[index]
+        elseif configuration.line_style.width === nothing
             0
         else
-            configuration.style.line_width  # NOJET
+            configuration.line_style.width  # NOJET
         end,
-        line_dash = if (data.are_dashed !== nothing ? data.are_dashed[index] : configuration.style.line_is_dashed)
+        line_dash = if (
+            data.lines_are_dashed !== nothing ? data.lines_are_dashed[index] : configuration.line_style.is_dashed
+        )
             "dash"
         else
             nothing
         end,
-        fill = if !(data.fill_belows !== nothing ? data.fill_belows[index] : configuration.style.fill_below)
+        fill = if !(
+            data.lines_are_filled !== nothing ? data.lines_are_filled[index] : configuration.line_style.is_filled
+        )
             nothing
-        elseif index == length(data.xs)
+        elseif index == length(data.lines_xs)
             "tozeroy"
         else
             "tonexty"
         end,
-        name = data.names !== nothing ? data.names[index] : "Trace $(index)",
+        name = data.lines_names !== nothing ? data.lines_names[index] : "Trace $(index)",
         stackgroup = configuration.stacking === nothing ? nothing : "stacked",
         groupnorm = if configuration.stacking == StackFractions
             "fraction"
@@ -1153,27 +1226,27 @@ end
 """
 The direction of the CDF graph:
 
-`UpToValue` - Show the fraction of values up to each value.
+`CdfUpToValue` - Show the fraction of values up to each value.
 
-`DownToValue` - Show the fraction of values down to each value.
+`CdfDownToValue` - Show the fraction of values down to each value.
 """
-@enum CdfDirection UpToValue DownToValue
+@enum CdfDirection CdfUpToValue CdfDownToValue
 
 """
     @kwdef mutable struct CdfGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         fraction_axis::AxisConfiguration = AxisConfiguration()
-        style::LineStyleConfiguration = LineStyleConfiguration()
-        orientation::ValuesOrientation = HorizontalValues
-        direction::CdfDirection = UpToValue
+        line_style::LineStyleConfiguration = LineStyleConfiguration()
+        values_orientation::ValuesOrientation = HorizontalValues
+        cdf_direction::CdfDirection = CdfUpToValue
         value_bands::BandsConfiguration = BandsConfiguration()
         fraction_bands::BandsConfiguration = BandsConfiguration()
     end
 
 Configure a graph for showing a CDF (Cumulative Distribution Function) graph. By default, the X axis is used for the
-values and the Y axis for the fraction; this can be switched using the `orientation`. By default, the fraction is
-of the values up to each value; this can be switched using the `direction`.
+values and the Y axis for the fraction; this can be switched using the `values_orientation`. By default, the fraction is
+of the values up to each value; this can be switched using the `cdf_direction`.
 
 By default, the fraction axis units are between 0 and 1; if `show_percent`, this is changed to between 0 and 100.
 
@@ -1183,9 +1256,9 @@ CDF graphs are internally converted to line graphs for rendering.
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
-    orientation::ValuesOrientation = HorizontalValues
-    direction::CdfDirection = UpToValue
+    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    values_orientation::ValuesOrientation = HorizontalValues
+    cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
     fraction_bands::BandsConfiguration = BandsConfiguration()
     show_percent::Bool = false
@@ -1196,7 +1269,7 @@ end
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         fraction_axis_title::Maybe{AbstractString} = nothing
-        values::AbstractVector{<:Real}
+        line_values::AbstractVector{<:Real}
     end
 
 The data for a CDF (Cumulative Distribution Function) graph.
@@ -1204,19 +1277,20 @@ The data for a CDF (Cumulative Distribution Function) graph.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
 `fraction_axis_title` for the axes.
 
-The order of the `values` does not matter.
+The order of the `line_values` does not matter.
 """
 @kwdef mutable struct CdfGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{<:Real}
+    line_values::AbstractVector{<:Real}
 end
 
 function Validations.validate_object(data::CdfGraphData)::Maybe{AbstractString}
-    if length(data.values) < 2
-        return "too few data.values: $(length(data.values))"
+    if length(data.line_values) < 2
+        return "too few data.line_values: $(length(data.line_values))"
     end
+    # TRICKY: Validation will be done by the `LineGraphData` we will convert to.
     return nothing
 end
 
@@ -1234,33 +1308,33 @@ function render(
 end
 
 function cdf_data_as_line_data(data::CdfGraphData, configuration::CdfGraphConfiguration)::LineGraphData
-    values, fractions = collect_cdf_data(data.values, configuration)
-    if configuration.orientation == HorizontalValues
+    values, fractions = collect_cdf_data(data.line_values, configuration)
+    if configuration.values_orientation == HorizontalValues
         return LineGraphData(;
             graph_title = data.graph_title,
             x_axis_title = data.value_axis_title,
             y_axis_title = data.fraction_axis_title,
-            xs = values,
-            ys = fractions,
+            points_xs = values,
+            points_ys = fractions,
         )
     else
         return LineGraphData(;
             graph_title = data.graph_title,
             x_axis_title = data.fraction_axis_title,
             y_axis_title = data.value_axis_title,
-            xs = fractions,
-            ys = values,
+            points_xs = fractions,
+            points_ys = values,
         )
     end
 end
 
 function cdf_configuration_as_line_configuration(configuration::CdfGraphConfiguration)::LineGraphConfiguration
-    if configuration.orientation == HorizontalValues
+    if configuration.values_orientation == HorizontalValues
         return LineGraphConfiguration(;
             graph = configuration.graph,
             x_axis = configuration.value_axis,
             y_axis = configuration.fraction_axis,
-            style = configuration.style,
+            line_style = configuration.line_style,
             vertical_bands = configuration.value_bands,
             horizontal_bands = configuration.fraction_bands,
         )
@@ -1269,7 +1343,7 @@ function cdf_configuration_as_line_configuration(configuration::CdfGraphConfigur
             graph = configuration.graph,
             x_axis = configuration.fraction_axis,
             y_axis = configuration.value_axis,
-            style = configuration.style,
+            line_style = configuration.line_style,
             vertical_bands = configuration.fraction_bands,
             horizontal_bands = configuration.value_bands,
         )
@@ -1281,9 +1355,9 @@ end
         graph::GraphConfiguration = GraphConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         fraction_axis::AxisConfiguration = AxisConfiguration()
-        style::LineStyleConfiguration = LineStyleConfiguration()
-        orientation::ValuesOrientation = HorizontalValues
-        direction::CdfDirection = UpToValue
+        line_style::LineStyleConfiguration = LineStyleConfiguration()
+        values_orientation::ValuesOrientation = HorizontalValues
+        cdf_direction::CdfDirection = CdfUpToValue
         value_bands::BandsConfiguration = BandsConfiguration()
         fraction_bands::BandsConfiguration = BandsConfiguration()
         show_legend::Bool = false
@@ -1298,9 +1372,9 @@ CDF graphs are internally converted to line graphs for rendering.
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
-    style::LineStyleConfiguration = LineStyleConfiguration()
-    orientation::ValuesOrientation = HorizontalValues
-    direction::CdfDirection = UpToValue
+    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    values_orientation::ValuesOrientation = HorizontalValues
+    cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
     fraction_bands::BandsConfiguration = BandsConfiguration()
     show_percent::Bool = false
@@ -1318,7 +1392,7 @@ function Validations.validate_object(
         message = validate_object("fraction", configuration.fraction_axis)
     end
     if message === nothing
-        message = validate_object(configuration.style)
+        message = validate_object(configuration.line_style)
     end
     if message === nothing
         message = validate_object(
@@ -1342,12 +1416,12 @@ end
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         fraction_axis_title::Maybe{AbstractString} = nothing
-        values::AbstractVector{<:AbstractVector{<:Real}}
-        names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-        line_widths::Maybe{AbstractVector{<:Real}} = nothing
-        fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-        are_dashed::Maybe{AbstractVector{Bool}} = nothing
+        lines_values::AbstractVector{<:AbstractVector{<:Real}}
+        lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+        lines_widths::Maybe{AbstractVector{<:Real}} = nothing
+        lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+        lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
     end
 
 The data for multiple CDFs (Cumulative Distribution Functions) graph.
@@ -1355,30 +1429,31 @@ The data for multiple CDFs (Cumulative Distribution Functions) graph.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
 `fraction_axis_title` for the axes.
 
-The order of the `values` does not matter.
+The order of the entries inside each of the `lines_values` does not matter.
 """
 @kwdef mutable struct CdfsGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{<:AbstractVector{<:Real}}
-    names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-    line_widths::Maybe{AbstractVector{<:Real}} = nothing
-    fill_belows::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-    are_dashed::Maybe{AbstractVector{Bool}} = nothing
+    lines_values::AbstractVector{<:AbstractVector{<:Real}}
+    lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    lines_widths::Maybe{AbstractVector{<:Real}} = nothing
+    lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
 end
 
 function Validations.validate_object(data::CdfsGraphData)::Maybe{AbstractString}
-    if length(data.values) == 0
-        return "empty data.values vector"
+    if length(data.lines_values) == 0
+        return "empty data.lines_values vector"
     end
-    for (index, values) in enumerate(data.values)
+    for (index, values) in enumerate(data.lines_values)
         if length(values) < 2
-            return "too few data.values[$(index)]: $(length(values))"
+            return "too few data.lines_values[$(index)]: $(length(values))"
         end
     end
+    # TRICKY: Validation will be done by the `LinesGraphData` we will convert to.
     return nothing
 end
 
@@ -1397,25 +1472,25 @@ end
 
 function cdfs_data_as_lines_data(data::CdfsGraphData, configuration::CdfsGraphConfiguration)::LinesGraphData
     fractions = Vector{Vector{Float64}}()
-    values = Vector{Vector{eltype(eltype(data.values))}}()
-    for trace_values in data.values
-        trace_values, trace_fractions = collect_cdf_data(trace_values, configuration)
+    lines_values = Vector{Vector{eltype(eltype(data.lines_values))}}()
+    for line_values in data.lines_values
+        line_values, trace_fractions = collect_cdf_data(line_values, configuration)
         push!(fractions, trace_fractions)
-        push!(values, trace_values)
+        push!(lines_values, line_values)
     end
-    if configuration.orientation == HorizontalValues
+    if configuration.values_orientation == HorizontalValues
         return LinesGraphData(;
             graph_title = data.graph_title,
             x_axis_title = data.value_axis_title,
             y_axis_title = data.fraction_axis_title,
             legend_title = data.legend_title,
-            xs = values,
-            ys = fractions,
-            names = data.names,
-            colors = data.colors,
-            line_widths = data.line_widths,
-            fill_belows = data.fill_belows,
-            are_dashed = data.are_dashed,
+            lines_xs = lines_values,
+            lines_ys = fractions,
+            lines_names = data.lines_names,
+            lines_colors = data.lines_colors,
+            lines_widths = data.lines_widths,
+            lines_are_filled = data.lines_are_filled,
+            lines_are_dashed = data.lines_are_dashed,
         )
     else
         return LinesGraphData(;
@@ -1423,13 +1498,13 @@ function cdfs_data_as_lines_data(data::CdfsGraphData, configuration::CdfsGraphCo
             x_axis_title = data.fraction_axis_title,
             y_axis_title = data.value_axis_title,
             legend_title = data.legend_title,
-            xs = fractions,
-            ys = values,
-            names = data.names,
-            colors = data.colors,
-            line_widths = data.line_widths,
-            fill_belows = data.fill_belows,
-            are_dashed = data.are_dashed,
+            lines_xs = fractions,
+            lines_ys = lines_values,
+            lines_names = data.lines_names,
+            lines_colors = data.lines_colors,
+            lines_widths = data.lines_widths,
+            lines_are_filled = data.lines_are_filled,
+            lines_are_dashed = data.lines_are_dashed,
         )
     end
 end
@@ -1441,7 +1516,7 @@ function collect_cdf_data(
     n_values = length(values)
     sorted_values = sort(values)
     fractions = collect(1.0:length(sorted_values)) ./ n_values
-    if configuration.direction == DownToValue
+    if configuration.cdf_direction == CdfDownToValue
         fractions = (1 + 1 / n_values) .- fractions
     end
     if configuration.show_percent
@@ -1451,12 +1526,12 @@ function collect_cdf_data(
 end
 
 function cdfs_configuration_as_lines_configuration(configuration::CdfsGraphConfiguration)::LinesGraphConfiguration
-    if configuration.orientation == HorizontalValues
+    if configuration.values_orientation == HorizontalValues
         return LinesGraphConfiguration(;
             graph = configuration.graph,
             x_axis = configuration.value_axis,
             y_axis = configuration.fraction_axis,
-            style = configuration.style,
+            line_style = configuration.line_style,
             vertical_bands = configuration.value_bands,
             horizontal_bands = configuration.fraction_bands,
             show_legend = configuration.show_legend,
@@ -1466,7 +1541,7 @@ function cdfs_configuration_as_lines_configuration(configuration::CdfsGraphConfi
             graph = configuration.graph,
             x_axis = configuration.fraction_axis,
             y_axis = configuration.value_axis,
-            style = configuration.style,
+            line_style = configuration.line_style,
             vertical_bands = configuration.fraction_bands,
             horizontal_bands = configuration.value_bands,
             show_legend = configuration.show_legend,
@@ -1478,20 +1553,21 @@ end
     @kwdef mutable struct BarGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
-        color::Maybe{AbstractString} = nothing
-        orientation::ValuesOrientation = VerticalValues
+        values_orientation::ValuesOrientation = VerticalValues
+        bars_color::Maybe{AbstractString} = nothing
         bars_gap::Maybe{Real} = nothing
     end
 
-Configure a graph for showing a single bar (histogram) graph. The `color` is chosen automatically. You can override it
-globally, or per-bar in the [`BarGraphData`](@ref). By default, the X axis is used for the bars and the Y axis for the
-values; this can be switched using the `orientation`. The `bars_gap` is the fraction of white space between bars.
+Configure a graph for showing a single bar (histogram) graph. The `bars_color` is chosen automatically. You can override
+it globally, or per-bar in the [`BarGraphData`](@ref). By default, the X axis is used for the bars and the Y axis for
+the values; this can be switched using the `values_orientation`. The `bars_gap` is the fraction of white space between
+bars.
 """
 @kwdef mutable struct BarGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
-    color::Maybe{AbstractString} = nothing
-    orientation::ValuesOrientation = VerticalValues
+    values_orientation::ValuesOrientation = VerticalValues
+    bars_color::Maybe{AbstractString} = nothing
     bars_gap::Maybe{Real} = nothing
 end
 
@@ -1500,10 +1576,10 @@ end
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         bar_axis_title::Maybe{AbstractString} = nothing
-        values::AbstractVector{<:Real}
-        names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-        hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
+        bars_values::AbstractVector{<:Real}
+        bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        bars_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+        bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
 
 The data for a single bar (histogram) graph.
@@ -1511,37 +1587,44 @@ The data for a single bar (histogram) graph.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
 `bar_axis_title` for the axes.
 
-If specified, the `names` and/or `colors` and/or `hovers` vectors must contain the same number of elements as the number
-of `values`.
+If specified, the `bars_names` and/or `bars_colors` and/or `bars_hovers` vectors must contain the same number of
+elements as the number of `bars_values`.
 """
 @kwdef mutable struct BarGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{<:Real}
-    names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-    hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
+    bars_values::AbstractVector{<:Real}
+    bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    bars_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
 
 function Validations.validate_object(data::BarGraphData)::Maybe{AbstractString}
-    if length(data.values) == 0
-        return "empty data.values vector"
+    if length(data.bars_values) == 0
+        return "empty data.bars_values vector"
     end
-    names = data.names
-    if names !== nothing && length(names) != length(data.values)
-        return "the data.names size: $(length(names))\n" *
-               "is different from the data.values size: $(length(data.values))"
+    names = data.bars_names
+    if names !== nothing && length(names) != length(data.bars_values)
+        return "the data.bars_names size: $(length(names))\n" *
+               "is different from the data.bars_values size: $(length(data.bars_values))"
     end
-    colors = data.colors
-    if colors !== nothing && length(colors) != length(data.values)
-        return "the data.colors size: $(length(colors))\n" *
-               "is different from the data.values size: $(length(data.values))"
+    colors = data.bars_colors
+    if colors !== nothing
+        if length(colors) != length(data.bars_values)
+            return "the data.bars_colors size: $(length(colors))\n" *
+                   "is different from the data.bars_values size: $(length(data.bars_values))"
+        end
+        for (color_index, color) in enumerate(colors)
+            if !is_valid_color(color)
+                return "invalid data.bars_colors[$(color_index)]: $(color)"
+            end
+        end
     end
-    hovers = data.hovers
-    if hovers !== nothing && length(hovers) != length(data.values)
-        return "the data.hovers size: $(length(hovers))\n" *
-               "is different from the data.values size: $(length(data.values))"
+    hovers = data.bars_hovers
+    if hovers !== nothing && length(hovers) != length(data.bars_values)
+        return "the data.bars_hovers size: $(length(hovers))\n" *
+               "is different from the data.bars_values size: $(length(data.bars_values))"
     end
     return nothing
 end
@@ -1555,15 +1638,14 @@ function render(
     assert_valid_object(configuration)
 
     trace = bar_trace(
-        data,
         configuration;
-        values = data.values,
-        color = data.colors !== nothing ? data.colors : configuration.color,
-        hover = data.hovers,
-        names = data.names,
+        values = data.bars_values,
+        color = data.bars_colors !== nothing ? data.bars_colors : configuration.bars_color,
+        hover = data.bars_hovers,
+        names = data.bars_names,
     )
 
-    layout = bar_layout(data, configuration; has_tick_names = data.names !== nothing, show_legend = false)
+    layout = bar_layout(data, configuration; has_tick_names = data.bars_names !== nothing, show_legend = false)
     figure = plot(trace, layout)
     write_figure_to_file(figure, configuration.graph, output_file)
 
@@ -1575,7 +1657,7 @@ end
         graph::GraphConfiguration = GraphConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         color::Maybe{AbstractString} = nothing
-        orientation::ValuesOrientation = VerticalValues
+        values_orientation::ValuesOrientation = VerticalValues
         bars_gap::Maybe{Real} = nothing
         show_legend::Bool = false
         stacking::Maybe{Stacking} = nothing
@@ -1588,7 +1670,7 @@ without the `color` field (which makes no sense when multiple series are shown),
 @kwdef mutable struct BarsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
-    orientation::ValuesOrientation = VerticalValues
+    values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
     show_legend::Bool = false
     stacking::Maybe{Stacking} = nothing
@@ -1611,6 +1693,9 @@ function Validations.validate_object(
             end
         end
     end
+    if message === nothing && configuration isa BarGraphConfiguration
+        message = validate_color("configuration.bars_color", configuration.bars_color)
+    end
     return message
 end
 
@@ -1620,11 +1705,11 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         bar_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
-        values::AbstractString{<:AbstractVector{<:Real}}
+        series_values::AbstractString{<:AbstractVector{<:Real}}
         names::Maybe{AbstractVector{<:AbstractString}} = nothing
         colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
-        bar_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
 
 The data for a multiple bars (histograms) graph.
@@ -1632,53 +1717,63 @@ The data for a multiple bars (histograms) graph.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title`,
 `bar_axis_title` for the axes, and the `legend_title` (if `show_legend` is set in [`BarsGraphConfiguration`](@ref).
 
-All the `values` vectors must be of the same size. If specified, the `bar_names` vector must contain the same number of
-elements. If specified, the `names` and/or `colors` and/or `hovers` vectors must contain the same number of elements as
-the number of`values` vectors (that is, the number of series).
+All the `series_values` vectors must be of the same size. If specified, the `names` vector must contain the same number
+of elements. If specified, the `bars_names` and/or `colors` and/or `hovers` vectors must contain the same number of
+elements as the number of `series_values` vectors.
 """
 @kwdef mutable struct BarsGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    values::AbstractVector{<:AbstractVector{<:Real}}
-    names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-    hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
-    bar_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    series_values::AbstractVector{<:AbstractVector{<:Real}}
+    series_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    series_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    series_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
+    bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
 
 function Validations.validate_object(data::BarsGraphData)::Maybe{AbstractString}
-    n_series = length(data.values)
+    n_series = length(data.series_values)
     if n_series == 0
-        return "empty data.values vector"
+        return "empty data.series_values vector"
     end
-    n_values = length(data.values[1])
-    for (index, values) in enumerate(data.values)
-        if length(values) != n_values
-            return "the data.values[$(index)] size: $(length(values))\n" *
-                   "is different from the data.values[1] size: $(n_values)"
+    n_bars = length(data.series_values[1])
+    for (index, bars_values) in enumerate(data.series_values)
+        if length(bars_values) != n_bars
+            return "the data.series_values[$(index)] size: $(length(bars_values))\n" *
+                   "is different from the data.series_values[1] size: $(n_bars)"
         end
     end
-    if n_values == 0
-        return "empty data.values vectors"
+    if n_bars == 0
+        return "empty data.series_values vectors"
     end
-    names = data.names
+    names = data.series_names
     if names !== nothing && length(names) != n_series
-        return "the data.names size: $(length(names))\n" * "is different from the data.values size: $(n_series)"
+        return "the data.series_names size: $(length(names))\n" *
+               "is different from the data.series_values size: $(n_series)"
     end
-    colors = data.colors
-    if colors !== nothing && length(colors) != n_series
-        return "the data.colors size: $(length(colors))\n" * "is different from the data.values size: $(n_series)"
+    colors = data.series_colors
+    if colors !== nothing
+        if length(colors) != n_series
+            return "the data.series_colors size: $(length(colors))\n" *
+                   "is different from the data.series_values size: $(n_series)"
+        end
+        for (color_index, color) in enumerate(colors)
+            if !is_valid_color(color)
+                return "invalid data.series_colors[$(color_index)]: $(color)"
+            end
+        end
     end
-    hovers = data.hovers
+    hovers = data.series_hovers
     if hovers !== nothing && length(hovers) != n_series
-        return "the data.hovers size: $(length(hovers))\n" * "is different from the data.values size: $(n_series)"
+        return "the data.series_hovers size: $(length(hovers))\n" *
+               "is different from the data.series_values size: $(n_series)"
     end
-    bar_names = data.bar_names
-    if bar_names !== nothing && length(bar_names) != n_values
-        return "the data.bar_names size: $(length(bar_names))\n" *
-               "is different from the data.values[:] size: $(n_values)"
+    bars_names = data.bars_names
+    if bars_names !== nothing && length(bars_names) != n_bars
+        return "the data.bars_names size: $(length(bars_names))\n" *
+               "is different from the data.series_values[:] size: $(n_bars)"
     end
     return nothing
 end
@@ -1693,28 +1788,31 @@ function render(
 
     stacking = configuration.stacking
     if stacking === nothing
-        values = data.values
+        series_values = data.series_values
     else
-        for (series_index, values) in enumerate(data.values)
-            for (bar_index, value) in enumerate(values)
-                @assert value >= 0 "negative stacked data.values[$(series_index),$(bar_index)]: $(value)"
+        for (series_index, bars_values) in enumerate(data.series_values)
+            for (bar_index, value) in enumerate(bars_values)
+                @assert value >= 0 "negative stacked data.series_values[$(series_index),$(bar_index)]: $(value)"
             end
         end
-        values = stacked_values(stacking, data.values)
+        series_values = stacked_values(stacking, data.series_values)
     end
 
     traces = Vector{GenericTrace}()
-    for index in 1:length(data.values)
+    for index in 1:length(data.series_values)
         push!(
             traces,
             bar_trace(
-                data,
                 configuration;
-                values = values[index],
-                color = data.colors !== nothing ? data.colors[index] : nothing,
-                hover = data.hovers !== nothing ? fill(data.hovers[index], length(values[1])) : nothing,
-                names = data.bar_names,
-                name = data.names !== nothing ? data.names[index] : "Series $(index)",
+                values = series_values[index],
+                color = data.series_colors !== nothing ? data.series_colors[index] : nothing,
+                hover = if data.series_hovers !== nothing
+                    fill(data.series_hovers[index], length(series_values[index]))
+                else
+                    nothing
+                end,
+                names = data.bars_names,
+                name = data.series_names !== nothing ? data.series_names[index] : "Series $(index)",
                 legend_title = data.legend_title,
             ),
         )
@@ -1723,7 +1821,7 @@ function render(
     layout = bar_layout(
         data,
         configuration;
-        has_tick_names = data.bar_names !== nothing,
+        has_tick_names = data.bars_names !== nothing,
         show_legend = configuration.show_legend,
         stacked = configuration.stacking !== nothing,
     )
@@ -1733,14 +1831,14 @@ function render(
     return figure
 end
 
-function stacked_values(stacking::Stacking, values::T)::T where {(T <: AbstractVector{<:AbstractVector{<:Real}})}
+function stacked_values(stacking::Stacking, series_values::T)::T where {(T <: AbstractVector{<:AbstractVector{<:Real}})}
     if stacking == StackValues
-        return values
+        return series_values
     end
 
-    total_values = zeros(eltype(eltype(values)), length(values[1]))
-    for series_values in values
-        total_values .+= series_values
+    total_values = zeros(eltype(eltype(series_values)), length(series_values[1]))
+    for bars_values in series_values
+        total_values .+= bars_values
     end
 
     if stacking == StackPercents
@@ -1748,11 +1846,10 @@ function stacked_values(stacking::Stacking, values::T)::T where {(T <: AbstractV
     end
     total_values[total_values .== 0] .= 1
 
-    return [series_values ./= total_values for series_values in values]
+    return [bars_values ./= total_values for bars_values in series_values]
 end
 
 function bar_trace(
-    data::Union{BarGraphData, BarsGraphData},
     configuration::Union{BarGraphConfiguration, BarsGraphConfiguration};
     values::AbstractVector{<:Real},
     color::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}}},
@@ -1761,12 +1858,12 @@ function bar_trace(
     name::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
 )::GenericTrace
-    if configuration.orientation == HorizontalValues
+    if configuration.values_orientation == HorizontalValues
         xs = values
-        ys = names !== nothing ? names : ["Bar $(index)" for index in 1:length(data.values)]
+        ys = names !== nothing ? names : ["Bar $(index)" for index in 1:length(values)]
         orientation = "h"
-    elseif configuration.orientation == VerticalValues
-        xs = names !== nothing ? names : ["Bar $(index)" for index in 1:length(data.values)]
+    elseif configuration.values_orientation == VerticalValues
+        xs = names !== nothing ? names : ["Bar $(index)" for index in 1:length(values)]
         ys = values
         orientation = "v"
     else
@@ -1792,7 +1889,7 @@ function bar_layout(
     show_legend::Bool,
     stacked::Bool = false,
 )::Layout
-    if configuration.orientation == HorizontalValues
+    if configuration.values_orientation == HorizontalValues
         xaxis_showgrid = configuration.graph.show_grid
         xaxis_showticklabels = configuration.graph.show_ticks
         xaxis_title = data.value_axis_title
@@ -1804,7 +1901,7 @@ function bar_layout(
         yaxis_title = data.bar_axis_title
         yaxis_range = nothing
         yaxis_type = nothing
-    elseif configuration.orientation == VerticalValues
+    elseif configuration.values_orientation == VerticalValues
         xaxis_showgrid = false
         xaxis_showticklabels = has_tick_names
         xaxis_title = data.bar_axis_title
@@ -1979,6 +2076,11 @@ function Validations.validate_object(
         if length(color_palette) == 0
             return "empty configuration.$(of_what).color_palette"
         end
+        for (index, (_, color)) in enumerate(color_palette)
+            if color != "" && !is_valid_color(color)
+                return "invalid configuration.$(of_what).color_palette[$(index)] color: $(color)"
+            end
+        end
         if eltype(color_palette) <: Tuple{<:Real, <:AbstractString}
             cmin = minimum([value for (value, _) in color_palette])
             cmax = maximum([value for (value, _) in color_palette])
@@ -1994,6 +2096,11 @@ function Validations.validate_object(
             return "reversed categorical configuration.$(of_what).color_palette"
         end
     end
+
+    if !is_valid_color(configuration.color)
+        return "invalid configuration.$(of_what).color: $(configuration.color)"
+    end
+
     return nothing
 end
 
@@ -2002,7 +2109,7 @@ end
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
-        style::PointsStyleConfiguration = PointsStyleConfiguration()
+        points_style::PointsStyleConfiguration = PointsStyleConfiguration()
         border_style::PointsStyleConfiguration = PointsStyleConfiguration()
         edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
         vertical_bands::BandsConfiguration = BandsConfiguration()
@@ -2014,10 +2121,10 @@ Configure a graph for showing a scatter graph of points.
 
 Using the `vertical_bands`, `horizontal_bands` and/or `diagonal_bands` you can partition the graph into regions. The
 `diagonal_bands` can only be used if both axes are linear or both axes are in log scale; they also unify the ranges of
-the X and Y axes. If the axes are in log scale, the `line_offset` of the `diagonal_bands` are multiplicative instead of
+the X and Y axes. If the axes are in log scale, the `offset` of the `diagonal_bands` are multiplicative instead of
 additive, and must be positive.
 
-The `border_style` is used if the [`PointsGraphData`](@ref) contains either the `border_colors` and/or `border_sizes`.
+The `border_style` is used if the [`PointsGraphData`](@ref) contains either the `borders_colors` and/or `borders_sizes`.
 This allows displaying some additional data per point.
 
 !!! note
@@ -2031,7 +2138,7 @@ This allows displaying some additional data per point.
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    points_style::PointsStyleConfiguration = PointsStyleConfiguration()
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
     edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
@@ -2043,6 +2150,7 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
     @assert configuration.edges_style.color_palette === nothing "not implemented: points edges_style color_palette"
     @assert !configuration.edges_style.color_scale.reverse_scale "not implemented: points edges_style.color_scale.reverse_scale"
     @assert !configuration.edges_style.color_scale.show_scale "not implemented: points edges_style.color_scale.show_scale"
+    @assert !configuration.edges_style.size_scale.show_scale "not implemented: points edges_style.size_scale.show_scale"
 
     message = validate_object(configuration.graph)
     if message === nothing
@@ -2052,7 +2160,7 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
         message = validate_object("y", configuration.y_axis)
     end
     if message === nothing
-        message = validate_object("style", configuration.style)
+        message = validate_object("points_style", configuration.points_style)
     end
     if message === nothing
         message = validate_object("border_style", configuration.border_style)
@@ -2077,9 +2185,9 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
     if message === nothing &&
        (configuration.x_axis.log_regularization === nothing) != (configuration.y_axis.log_regularization === nothing) &&
        (
-           configuration.diagonal_bands.low.line_offset !== nothing ||
-           configuration.diagonal_bands.middle.line_offset !== nothing ||
-           configuration.diagonal_bands.high.line_offset !== nothing
+           configuration.diagonal_bands.low_band_style.offset !== nothing ||
+           configuration.diagonal_bands.middle_band_style.offset !== nothing ||
+           configuration.diagonal_bands.high_band_style.offset !== nothing
        )
         message = "configuration.diagonal_bands specified for a combination of linear and log scale axes"
     end
@@ -2100,13 +2208,13 @@ end
         y_axis_title::Maybe{AbstractString} = nothing
         scale_title::Maybe{AbstractString} = nothing
         border_scale_title::Maybe{AbstractString} = nothing
-        xs::AbstractVector{<:Real}
-        ys::AbstractVector{<:Real}
-        colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
+        points_xs::AbstractVector{<:Real}
+        points_ys::AbstractVector{<:Real}
+        points_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
         sizes::Maybe{AbstractVector{<:Real}} = nothing
         hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
-        border_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
-        border_sizes::Maybe{AbstractVector{<:Real}} = nothing
+        borders_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
+        borders_sizes::Maybe{AbstractVector{<:Real}} = nothing
         edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
         edges_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         edges_sizes::Maybe{AbstractVector{<:Real}} = nothing
@@ -2117,16 +2225,16 @@ The data for a scatter graph of points.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
 `y_axis_title` for the axes.
 
-The `xs` and `ys` vectors must be of the same size. If specified, the `colors` `sizes` and/or `hovers` vectors must also
-be of the same size. The `colors` can be either color names or a numeric value; if the latter, then the configuration's
-`color_palette` is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown in interactive graphs
-(or when saving an HTML file).
+The `points_xs` and `points_ys` vectors must be of the same size. If specified, the `points_colors` `sizes` and/or `hovers`
+vectors must also be of the same size. The `points_colors` can be either color names or a numeric value; if the latter, then
+the configuration's `color_palette` is used. Sizes are the diameter in pixels (1/96th of an inch). Hovers are only shown
+in interactive graphs (or when saving an HTML file).
 
-The `border_colors` and `border_sizes` can be used to display additional data per point. The border size is in addition
+The `borders_colors` and `borders_sizes` can be used to display additional data per point. The border size is in addition
 to the point size.
 
 The `scale_title` and `border_scale_title` are only used if `show_scale` is set for the relevant color scales. You can't
-specify `show_scale` if there is no `colors` data or if the `colors` contain explicit color names.
+specify `show_scale` if there is no `points_colors` data or if the `points_colors` contain explicit color names.
 
 It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
 [`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
@@ -2141,80 +2249,81 @@ categorical `color_palette`) will not be shown.
     y_axis_title::Maybe{AbstractString} = nothing
     scale_title::Maybe{AbstractString} = nothing
     border_scale_title::Maybe{AbstractString} = nothing
-    xs::AbstractVector{<:Real}
-    ys::AbstractVector{<:Real}
-    colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
-    sizes::Maybe{AbstractVector{<:Real}} = nothing
-    hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
-    border_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
-    border_sizes::Maybe{AbstractVector{<:Real}} = nothing
-    edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
+    points_xs::AbstractVector{<:Real}
+    points_ys::AbstractVector{<:Real}
+    points_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
+    points_sizes::Maybe{AbstractVector{<:Real}} = nothing
+    points_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
+    borders_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
+    borders_sizes::Maybe{AbstractVector{<:Real}} = nothing
+    edges_points::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
     edges_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
     edges_sizes::Maybe{AbstractVector{<:Real}} = nothing
 end
 
 function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractString}
-    if length(data.xs) != length(data.ys)
-        return "the data.xs size: $(length(data.xs))\n" * "is different from the data.ys size: $(length(data.ys))"
+    if length(data.points_xs) != length(data.points_ys)
+        return "the data.points_xs size: $(length(data.points_xs))\n" *
+               "is different from the data.points_ys size: $(length(data.points_ys))"
     end
 
-    colors = data.colors
-    if colors !== nothing && length(colors) != length(data.xs)
-        return "the data.colors size: $(length(colors))\n" *
-               "is different from the data.xs and data.ys size: $(length(data.xs))"
+    colors = data.points_colors
+    if colors !== nothing && length(colors) != length(data.points_xs)
+        return "the data.points_colors size: $(length(colors))\n" *
+               "is different from the data.points_xs and data.points_ys size: $(length(data.points_xs))"
     end
 
-    sizes = data.sizes
+    sizes = data.points_sizes
     if sizes !== nothing
-        if length(sizes) != length(data.xs)
-            return "the data.sizes size: $(length(sizes))\n" *
-                   "is different from the data.xs and data.ys size: $(length(data.xs))"
+        if length(sizes) != length(data.points_xs)
+            return "the data.points_sizes size: $(length(sizes))\n" *
+                   "is different from the data.points_xs and data.points_ys size: $(length(data.points_xs))"
         end
 
         for (index, size) in enumerate(sizes)
             if size < 0.0
-                return "negative data.sizes[$(index)]: $(size)"
+                return "negative data.points_sizes[$(index)]: $(size)"
             end
         end
     end
 
-    border_colors = data.border_colors
-    if border_colors !== nothing && length(border_colors) != length(data.xs)
-        return "the data.border_colors size: $(length(border_colors))\n" *
-               "is different from the data.xs and data.ys size: $(length(data.xs))"
+    borders_colors = data.borders_colors
+    if borders_colors !== nothing && length(borders_colors) != length(data.points_xs)
+        return "the data.borders_colors size: $(length(borders_colors))\n" *
+               "is different from the data.points_xs and data.points_ys size: $(length(data.points_xs))"
     end
 
-    border_sizes = data.border_sizes
-    if border_sizes !== nothing
-        if length(border_sizes) != length(data.xs)
-            return "the data.border_sizes size: $(length(border_sizes))\n" *
-                   "is different from the data.xs and data.ys size: $(length(data.xs))"
+    borders_sizes = data.borders_sizes
+    if borders_sizes !== nothing
+        if length(borders_sizes) != length(data.points_xs)
+            return "the data.borders_sizes size: $(length(borders_sizes))\n" *
+                   "is different from the data.points_xs and data.points_ys size: $(length(data.points_xs))"
         end
 
-        for (index, border_size) in enumerate(border_sizes)
+        for (index, border_size) in enumerate(borders_sizes)
             if border_size < 0.0
-                return "negative data.border_sizes[$(index)]: $(border_size)"
+                return "negative data.borders_sizes[$(index)]: $(border_size)"
             end
         end
     end
 
-    hovers = data.hovers
-    if hovers !== nothing && length(hovers) != length(data.xs)
-        return "the data.hovers size: $(length(hovers))\n" *
-               "is different from the data.xs and data.ys size: $(length(data.xs))"
+    hovers = data.points_hovers
+    if hovers !== nothing && length(hovers) != length(data.points_xs)
+        return "the data.points_hovers size: $(length(hovers))\n" *
+               "is different from the data.points_xs and data.points_ys size: $(length(data.points_xs))"
     end
 
-    edges = data.edges
-    if edges !== nothing
-        for (index, (from_point, to_point)) in enumerate(edges)
-            if from_point < 1 || length(data.xs) < from_point
-                return "data.edges[$(index)] from invalid point: $(from_point)"
+    edges_points = data.edges_points
+    if edges_points !== nothing
+        for (index, (from_point, to_point)) in enumerate(edges_points)
+            if from_point < 1 || length(data.points_xs) < from_point
+                return "data.edges_points[$(index)] from invalid point: $(from_point)"
             end
-            if to_point < 1 || length(data.xs) < to_point
-                return "data.edges[$(index)] to invalid point: $(to_point)"
+            if to_point < 1 || length(data.points_xs) < to_point
+                return "data.edges_points[$(index)] to invalid point: $(to_point)"
             end
             if from_point == to_point
-                return "data.edges[$(index)] from point to itself: $(from_point)"
+                return "data.edges_points[$(index)] from point to itself: $(from_point)"
             end
         end
     end
@@ -2233,10 +2342,10 @@ function render(
 
     traces = Vector{GenericTrace}()
 
-    minimum_x = minimum(data.xs)
-    minimum_y = minimum(data.ys)
-    maximum_x = maximum(data.xs)
-    maximum_y = maximum(data.ys)
+    minimum_x = minimum(data.points_xs)
+    minimum_y = minimum(data.points_ys)
+    maximum_x = maximum(data.points_xs)
+    maximum_y = maximum(data.points_ys)
 
     push_fill_vertical_bands_traces(traces, configuration.vertical_bands, minimum_x, minimum_y, maximum_x, maximum_y)
     push_fill_horizontal_bands_traces(
@@ -2258,9 +2367,9 @@ function render(
             configuration.y_axis.log_regularization !== nothing,
     )
 
-    sizes = fix_sizes(data.sizes, configuration.style)
+    sizes = fix_sizes(data.points_sizes, configuration.points_style)
 
-    if data.border_colors !== nothing || data.border_sizes !== nothing
+    if data.borders_colors !== nothing || data.borders_sizes !== nothing
         marker_size = border_marker_size(data, configuration, sizes)
         if marker_size isa AbstractVector{<:Real}
             marker_size_mask = marker_size .> 0  # NOJET
@@ -2270,11 +2379,11 @@ function render(
 
         color_palette = configuration.border_style.color_palette
         if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-            border_colors = data.border_colors
-            @assert border_colors isa AbstractVector{<:AbstractString}
+            borders_colors = data.borders_colors
+            @assert borders_colors isa AbstractVector{<:AbstractString}
             for (value, color) in color_palette
                 if color != ""
-                    mask = border_colors .== value
+                    mask = borders_colors .== value
                     if marker_size_mask !== nothing
                         mask .&= marker_size_mask
                     end
@@ -2299,9 +2408,9 @@ function render(
                 end
             end
         else
-            border_colors = data.border_colors
-            if border_colors isa AbstractVector{<:AbstractString}
-                mask = border_colors .!= ""
+            borders_colors = data.borders_colors
+            if borders_colors isa AbstractVector{<:AbstractString}
+                mask = borders_colors .!= ""
                 if mask !== nothing && marker_size_mask !== nothing
                     mask .&= marker_size_mask
                 end
@@ -2315,8 +2424,8 @@ function render(
                     data;
                     x_log_regularization = configuration.x_axis.log_regularization,
                     y_log_regularization = configuration.y_axis.log_regularization,
-                    color = if border_colors !== nothing
-                        fix_colors(border_colors, configuration.border_style.color_scale.log_regularization)
+                    color = if borders_colors !== nothing
+                        fix_colors(borders_colors, configuration.border_style.color_scale.log_regularization)
                     else
                         configuration.border_style.color
                     end,
@@ -2337,11 +2446,11 @@ function render(
         marker_size_mask = nothing
     end
 
-    color_palette = configuration.style.color_palette
+    color_palette = configuration.points_style.color_palette
     if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         for (value, color) in color_palette
             if color != ""
-                colors = data.colors
+                colors = data.points_colors
                 @assert colors isa AbstractVector{<:AbstractString}
                 mask = colors .== value
                 if marker_size_mask !== nothing
@@ -2357,7 +2466,7 @@ function render(
                             color = color,
                             marker_size = sizes,
                             coloraxis = nothing,
-                            points_style = configuration.style,
+                            points_style = configuration.points_style,
                             scale_title = data.scale_title,
                             legend_group = "points",
                             mask = mask,
@@ -2368,7 +2477,7 @@ function render(
             end
         end
     else
-        colors = data.colors
+        colors = data.points_colors
         if colors isa AbstractVector{<:AbstractString}
             mask = colors .!= ""
             if marker_size_mask !== nothing
@@ -2386,13 +2495,13 @@ function render(
                     x_log_regularization = configuration.x_axis.log_regularization,
                     y_log_regularization = configuration.y_axis.log_regularization,
                     color = if colors !== nothing
-                        fix_colors(colors, configuration.style.color_scale.log_regularization)
+                        fix_colors(colors, configuration.points_style.color_scale.log_regularization)
                     else
-                        configuration.style.color
+                        configuration.points_style.color
                     end,
                     marker_size = sizes,
                     coloraxis = "coloraxis",
-                    points_style = configuration.style,
+                    points_style = configuration.points_style,
                     scale_title = data.scale_title,
                     legend_group = "points",
                     mask = mask,
@@ -2401,30 +2510,39 @@ function render(
         end
     end
 
-    edges = data.edges
-    if edges !== nothing
-        for index in 1:length(edges)
+    edges_points = data.edges_points
+    if edges_points !== nothing
+        for index in 1:length(edges_points)
             push!(traces, edge_trace(data, configuration.edges_style; index = index))
         end
     end
 
-    for band in
-        (configuration.vertical_bands.low, configuration.vertical_bands.middle, configuration.vertical_bands.high)
-        if band.line_offset !== nothing && band.line_color !== nothing
+    for band in (
+        configuration.vertical_bands.low_band_style,
+        configuration.vertical_bands.middle_band_style,
+        configuration.vertical_bands.high_band_style,
+    )
+        if band.offset !== nothing && band.width !== nothing
             push!(traces, vertical_line_trace(band, minimum_y, maximum_y))
         end
     end
 
-    for band in
-        (configuration.horizontal_bands.low, configuration.horizontal_bands.middle, configuration.horizontal_bands.high)
-        if band.line_offset !== nothing && band.line_color !== nothing
+    for band in (
+        configuration.horizontal_bands.low_band_style,
+        configuration.horizontal_bands.middle_band_style,
+        configuration.horizontal_bands.high_band_style,
+    )
+        if band.offset !== nothing && band.width !== nothing
             push!(traces, horizontal_line_trace(band, minimum_x, maximum_x))
         end
     end
 
-    for band in
-        (configuration.diagonal_bands.low, configuration.diagonal_bands.middle, configuration.diagonal_bands.high)
-        if band.line_offset !== nothing && band.line_color !== nothing
+    for band in (
+        configuration.diagonal_bands.low_band_style,
+        configuration.diagonal_bands.middle_band_style,
+        configuration.diagonal_bands.high_band_style,
+    )
+        if band.offset !== nothing && band.width !== nothing
             push!(
                 traces,
                 diagonal_line_trace(
@@ -2452,84 +2570,6 @@ function render(
     return figure
 end
 
-function assert_valid_render(data::PointsGraphData, configuration::PointsGraphConfiguration)::Nothing
-    x_log_regularization = configuration.x_axis.log_regularization
-    if x_log_regularization !== nothing
-        for (index, x) in enumerate(data.xs)
-            @assert x + x_log_regularization > 0 "log of non-positive data.xs[$(index)]: $(x + x_log_regularization)"
-        end
-    end
-
-    y_log_regularization = configuration.y_axis.log_regularization
-    if y_log_regularization !== nothing
-        for (index, y) in enumerate(data.ys)
-            @assert y + y_log_regularization > 0 "log of non-positive data.ys[$(index)]: $(y + y_log_regularization)"
-        end
-    end
-
-    color_palette = configuration.style.color_palette
-    if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.colors isa AbstractVector{<:AbstractString} "categorical style.color_palette for non-string data.colors"
-        scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
-        for (index, color) in enumerate(data.colors)
-            if color != ""
-                @assert color in scale_colors "categorical style.color_palette does not contain data.colors[$(index)]: $(color)"
-            end
-        end
-    end
-
-    border_color_palette = configuration.border_style.color_palette
-    if border_color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractVector{<:AbstractString} (
-            "categorical borders_style.color_palette for non-string data.border_colors"
-        )
-        border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_palette])
-        for (index, color) in enumerate(data.border_colors)
-            if color != ""
-                @assert color in border_scale_colors "categorical border_style.color_palette does not contain data.colors[$(index)]: $(color)"
-            end
-        end
-    end
-
-    if configuration.style.color_scale.show_scale
-        @assert data.colors !== nothing "no data.colors specified for configuration.style.color_scale.show_scale"
-        @assert !(data.colors isa AbstractVector{<:AbstractString}) ||
-                configuration.style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.colors specified for configuration.style.color_scale.show_scale"
-        )
-    end
-
-    if configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractVector{<:AbstractString} "categorical color_palette for non-string data.border_colors"
-    end
-
-    if configuration.border_style.color_scale.show_scale
-        @assert data.border_colors !== nothing "no data.border_colors specified for configuration.border_style.color_scale.show_scale"
-        @assert !(data.border_colors isa AbstractVector{<:AbstractString}) ||
-                configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.border_colors specified for configuration.border_style.color_scale.show_scale"
-        )
-    end
-
-    if configuration.style.color_scale.log_regularization !== nothing
-        colors = data.colors
-        @assert colors isa AbstractVector{<:Real} "non-real colors with log scale"
-        index = argmin(colors)
-        minimal_color = colors[index] + configuration.style.color_scale.log_regularization
-        @assert minimal_color > 0 "log of non-positive data.colors[$(index)]: $(minimal_color)"
-    end
-
-    if configuration.border_style.color_scale.log_regularization !== nothing
-        border_colors = data.border_colors
-        @assert border_colors isa AbstractVector{<:Real} "non-real border colors with log scale"
-        index = argmin(border_colors)
-        minimal_color = border_colors[index] + configuration.style.color_scale.log_regularization
-        @assert minimal_color > 0 "log of non-positive data.border_colors[$(index)]: $(minimal_color)"
-    end
-
-    return nothing
-end
-
 function push_fill_vertical_bands_traces(
     traces::Vector{GenericTrace},
     configuration::BandsConfiguration,
@@ -2538,42 +2578,42 @@ function push_fill_vertical_bands_traces(
     maximum_x::Real,
     maximum_y::Real,
 )::Nothing
-    if configuration.low.line_offset !== nothing && configuration.low.fill_color !== nothing
+    if configuration.low_band_style.offset !== nothing && configuration.low_band_style.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
-                [minimum_x, configuration.low.line_offset, configuration.low.line_offset, minimum_x],
+                [minimum_x, configuration.low_band_style.offset, configuration.low_band_style.offset, minimum_x],
                 [minimum_y, minimum_y, maximum_y, maximum_y];
-                color = configuration.low.fill_color,
+                line_color = configuration.low_band_style.color,
             ),
         )
     end
 
-    if configuration.high.line_offset !== nothing && configuration.high.fill_color !== nothing
+    if configuration.high_band_style.offset !== nothing && configuration.high_band_style.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
-                [maximum_x, configuration.high.line_offset, configuration.high.line_offset, maximum_x],
+                [maximum_x, configuration.high_band_style.offset, configuration.high_band_style.offset, maximum_x],
                 [minimum_y, minimum_y, maximum_y, maximum_y];
-                color = configuration.high.fill_color,
+                line_color = configuration.high_band_style.color,
             ),
         )
     end
 
-    if configuration.high.line_offset !== nothing &&
-       configuration.low.line_offset !== nothing &&
-       configuration.middle.fill_color !== nothing
+    if configuration.high_band_style.offset !== nothing &&
+       configuration.low_band_style.offset !== nothing &&
+       configuration.middle_band_style.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
                 [
-                    configuration.low.line_offset,
-                    configuration.high.line_offset,
-                    configuration.high.line_offset,
-                    configuration.low.line_offset,
+                    configuration.low_band_style.offset,
+                    configuration.high_band_style.offset,
+                    configuration.high_band_style.offset,
+                    configuration.low_band_style.offset,
                 ],
                 [minimum_y, minimum_y, maximum_y, maximum_y];
-                color = configuration.middle.fill_color,
+                line_color = configuration.middle_band_style.color,
             ),
         )
     end
@@ -2589,42 +2629,42 @@ function push_fill_horizontal_bands_traces(
     maximum_x::Real,
     maximum_y::Real,
 )::Nothing
-    if configuration.low.line_offset !== nothing && configuration.low.fill_color !== nothing
+    if configuration.low_band_style.offset !== nothing && configuration.low_band_style.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
                 [minimum_x, minimum_x, maximum_x, maximum_x],
-                [minimum_y, configuration.low.line_offset, configuration.low.line_offset, minimum_y];
-                color = configuration.low.fill_color,
+                [minimum_y, configuration.low_band_style.offset, configuration.low_band_style.offset, minimum_y];
+                line_color = configuration.low_band_style.color,
             ),
         )
     end
 
-    if configuration.high.line_offset !== nothing && configuration.high.fill_color !== nothing
+    if configuration.high_band_style.offset !== nothing && configuration.high_band_style.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
                 [minimum_x, minimum_x, maximum_x, maximum_x],
-                [maximum_y, configuration.high.line_offset, configuration.high.line_offset, maximum_y];
-                color = configuration.high.fill_color,
+                [maximum_y, configuration.high_band_style.offset, configuration.high_band_style.offset, maximum_y];
+                line_color = configuration.high_band_style.color,
             ),
         )
     end
 
-    if configuration.high.line_offset !== nothing &&
-       configuration.low.line_offset !== nothing &&
-       configuration.middle.fill_color !== nothing
+    if configuration.high_band_style.offset !== nothing &&
+       configuration.low_band_style.offset !== nothing &&
+       configuration.middle_band_style.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
                 [minimum_x, minimum_x, maximum_x, maximum_x],
                 [
-                    configuration.low.line_offset,
-                    configuration.high.line_offset,
-                    configuration.high.line_offset,
-                    configuration.low.line_offset,
+                    configuration.low_band_style.offset,
+                    configuration.high_band_style.offset,
+                    configuration.high_band_style.offset,
+                    configuration.low_band_style.offset,
                 ];
-                color = configuration.middle.fill_color,
+                line_color = configuration.middle_band_style.color,
             ),
         )
     end
@@ -2641,49 +2681,49 @@ function push_fill_diagonal_bands_traces(
     maximum_y::Real;
     log_scale::Bool,
 )::Nothing
-    if configuration.low.line_offset !== nothing && configuration.low.fill_color !== nothing
+    if configuration.low_band_style.offset !== nothing && configuration.low_band_style.is_filled
         push!(  # NOJET
             traces,
-            low_diagonal_trace(
-                configuration.low.line_offset,
+            fill_low_diagonal_trace(
+                configuration.low_band_style.offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
                 maximum_y;
-                color = configuration.low.fill_color,
+                line_color = configuration.low_band_style.color,
                 log_scale = log_scale,
             ),
         )
     end
 
-    if configuration.high.line_offset !== nothing && configuration.high.fill_color !== nothing
+    if configuration.high_band_style.offset !== nothing && configuration.high_band_style.is_filled
         push!(  # NOJET
             traces,
-            high_diagonal_trace(
-                configuration.high.line_offset,
+            fill_high_diagonal_trace(
+                configuration.high_band_style.offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
                 maximum_y;
-                color = configuration.high.fill_color,
+                line_color = configuration.high_band_style.color,
                 log_scale = log_scale,
             ),
         )
     end
 
-    if configuration.high.line_offset !== nothing &&
-       configuration.low.line_offset !== nothing &&
-       configuration.middle.fill_color !== nothing
+    if configuration.high_band_style.offset !== nothing &&
+       configuration.low_band_style.offset !== nothing &&
+       configuration.middle_band_style.is_filled
         push!(  # NOJET
             traces,
-            middle_diagonal_trace(
-                configuration.low.line_offset,
-                configuration.high.line_offset,
+            fill_middle_diagonal_trace(
+                configuration.low_band_style.offset,
+                configuration.high_band_style.offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
                 maximum_y;
-                color = configuration.middle.fill_color,
+                line_color = configuration.middle_band_style.color,
                 log_scale = log_scale,
             ),
         )
@@ -2692,68 +2732,68 @@ function push_fill_diagonal_bands_traces(
     return nothing
 end
 
-function low_diagonal_trace(
-    line_offset::Real,
+function fill_low_diagonal_trace(
+    offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real;
-    color::AbstractString,
+    line_color::Maybe{AbstractString},
     log_scale::Bool,
 )::GenericTrace
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
     threshold, increase, decrease = band_operations(log_scale)
-    if line_offset < threshold
+    if offset < threshold
         return fill_trace(
-            [decrease(minimum_xy, line_offset), maximum_xy, maximum_xy],
-            [minimum_xy, increase(maximum_xy, line_offset), minimum_xy];
-            color = color,
+            [decrease(minimum_xy, offset), maximum_xy, maximum_xy],
+            [minimum_xy, increase(maximum_xy, offset), minimum_xy];
+            line_color = line_color,
         )
     else
         return fill_trace(
-            [minimum_xy, maximum_xy, maximum_xy, decrease(maximum_xy, line_offset), minimum_xy],
-            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, increase(minimum_xy, line_offset)];
-            color = color,
+            [minimum_xy, maximum_xy, maximum_xy, decrease(maximum_xy, offset), minimum_xy],
+            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, increase(minimum_xy, offset)];
+            line_color = line_color,
         )
     end
 end
 
-function high_diagonal_trace(
-    line_offset::Real,
+function fill_high_diagonal_trace(
+    offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real;
-    color::AbstractString,
+    line_color::Maybe{AbstractString},
     log_scale::Bool,
 )::GenericTrace
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
     threshold, increase, decrease = band_operations(log_scale)
-    if line_offset < threshold
+    if offset < threshold
         return fill_trace(
-            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, decrease(minimum_xy, line_offset)],
-            [minimum_xy, maximum_xy, maximum_xy, increase(maximum_xy, line_offset), minimum_xy];
-            color = color,
+            [minimum_xy, minimum_xy, maximum_xy, maximum_xy, decrease(minimum_xy, offset)],
+            [minimum_xy, maximum_xy, maximum_xy, increase(maximum_xy, offset), minimum_xy];
+            line_color = line_color,
         )
     else
         return fill_trace(
-            [minimum_xy, decrease(maximum_xy, line_offset), minimum_xy],
-            [increase(minimum_xy, line_offset), maximum_xy, maximum_xy];
-            color = color,
+            [minimum_xy, decrease(maximum_xy, offset), minimum_xy],
+            [increase(minimum_xy, offset), maximum_xy, maximum_xy];
+            line_color = line_color,
         )
     end
 end
 
-function middle_diagonal_trace(
+function fill_middle_diagonal_trace(
     low_offset::Real,
     high_offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real;
-    color::AbstractString,
+    line_color::Maybe{AbstractString},
     log_scale::Bool,
 )::GenericTrace
     minimum_xy = min(minimum_x, minimum_y)
@@ -2763,13 +2803,13 @@ function middle_diagonal_trace(
         return fill_trace(
             [decrease(minimum_xy, high_offset), decrease(minimum_xy, low_offset), maximum_xy, maximum_xy],
             [minimum_xy, minimum_xy, increase(maximum_xy, low_offset), increase(maximum_xy, high_offset)];
-            color = color,
+            line_color = line_color,
         )
     elseif low_offset > threshold
         return fill_trace(
             [minimum_xy, minimum_xy, decrease(maximum_xy, high_offset), decrease(maximum_xy, low_offset)],
             [increase(minimum_xy, low_offset), increase(minimum_xy, high_offset), maximum_xy, maximum_xy];
-            color = color,
+            line_color = line_color,
         )
     else
         return fill_trace(
@@ -2789,13 +2829,33 @@ function middle_diagonal_trace(
                 maximum_xy,
                 increase(minimum_xy, high_offset),
             ];
-            color = color,
+            line_color = line_color,
         )
     end
 end
 
-function fill_trace(xs::AbstractVector{<:Real}, ys::AbstractVector{<:Real}; color::AbstractString)::GenericTrace
-    return scatter(; x = xs, y = ys, fill = "toself", fillcolor = color, name = "", mode = "none")
+function fill_trace(
+    points_xs::AbstractVector{<:Real},
+    points_ys::AbstractVector{<:Real};
+    line_color::Maybe{AbstractString},
+)::GenericTrace
+    return scatter(;
+        x = points_xs,
+        y = points_ys,
+        fill = "toself",
+        fillcolor = fill_color(line_color),
+        name = "",
+        mode = "none",
+    )
+end
+
+function fill_color(::Nothing)::Nothing
+    return nothing
+end
+
+function fill_color(line_color::AbstractString)::AbstractString
+    rgba = parse(RGBA, line_color)
+    return hex(RGBA(rgba.r, rgba.g, rgba.b, rgba.alpha * 0.5), :RRGGBBAA)
 end
 
 function points_trace(
@@ -2812,8 +2872,8 @@ function points_trace(
     name::Maybe{AbstractString} = nothing,
 )::GenericTrace
     return scatter(;
-        x = masked_data(data.xs, mask) .+ (x_log_regularization === nothing ? 0 : x_log_regularization),
-        y = masked_data(data.ys, mask) .+ (y_log_regularization === nothing ? 0 : y_log_regularization),
+        x = masked_data(data.points_xs, mask) .+ (x_log_regularization === nothing ? 0 : x_log_regularization),
+        y = masked_data(data.points_ys, mask) .+ (y_log_regularization === nothing ? 0 : y_log_regularization),
         marker_size = masked_data(marker_size, mask),
         marker_color = color !== nothing ? masked_data(color, mask) : points_style.color,
         marker_colorscale = if points_style.color_palette isa AbstractVector ||
@@ -2832,17 +2892,17 @@ function points_trace(
         legendgroup = legend_group,
         legendgrouptitle_text = scale_title,
         name = name !== nothing ? name : points_style.color_scale.show_scale ? "Trace" : "",
-        text = data.hovers,
-        hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
+        text = data.points_hovers,
+        hovertemplate = data.points_hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
     )
 end
 
 function edge_trace(data::PointsGraphData, edges_style::PointsStyleConfiguration; index::Int)::GenericTrace
-    from_point, to_point = data.edges[index]
+    from_point, to_point = data.edges_points[index]
     return scatter(;
-        x = [data.xs[from_point], data.xs[to_point]],
-        y = [data.ys[from_point], data.ys[to_point]],
+        x = [data.points_xs[from_point], data.points_xs[to_point]],
+        y = [data.points_ys[from_point], data.points_ys[to_point]],
         line_width = if data.edges_sizes !== nothing
             data.edges_sizes[index]
         else
@@ -2860,72 +2920,61 @@ function edge_trace(data::PointsGraphData, edges_style::PointsStyleConfiguration
     )
 end
 
-function vertical_line_trace(
-    band_region_configuration::BandRegionConfiguration,
-    minimum_y::Real,
-    maximum_y::Real,
-)::GenericTrace
-    @assert band_region_configuration.line_offset !== nothing
-    @assert band_region_configuration.line_color !== nothing
+function vertical_line_trace(configuration::BandStyleConfiguration, minimum_y::Real, maximum_y::Real)::GenericTrace
+    @assert configuration.offset !== nothing
     return scatter(;
-        x = [band_region_configuration.line_offset, band_region_configuration.line_offset],
+        x = [configuration.offset, configuration.offset],
         y = [minimum_y, maximum_y],
-        line_width = band_region_configuration.line_width,
-        line_color = band_region_configuration.line_color,
-        line_dash = band_region_configuration.line_is_dashed ? "dash" : nothing,
+        line_width = configuration.width,
+        line_color = configuration.color !== nothing ? configuration.color : "black",
+        line_dash = configuration.is_dashed ? "dash" : nothing,
         showlegend = false,
         mode = "lines",
     )
 end
 
-function horizontal_line_trace(
-    band_region_configuration::BandRegionConfiguration,
-    minimum_x::Real,
-    maximum_x::Real,
-)::GenericTrace
-    @assert band_region_configuration.line_offset !== nothing
-    @assert band_region_configuration.line_color !== nothing
+function horizontal_line_trace(configuration::BandStyleConfiguration, minimum_x::Real, maximum_x::Real)::GenericTrace
+    @assert configuration.offset !== nothing
     return scatter(;
         x = [minimum_x, maximum_x],
-        y = [band_region_configuration.line_offset, band_region_configuration.line_offset],
-        line_width = band_region_configuration.line_width,
-        line_color = band_region_configuration.line_color,
-        line_dash = band_region_configuration.line_is_dashed ? "dash" : nothing,
+        y = [configuration.offset, configuration.offset],
+        line_width = configuration.width,
+        line_color = configuration.color !== nothing ? configuration.color : "black",
+        line_dash = configuration.is_dashed ? "dash" : nothing,
         showlegend = false,
         mode = "lines",
     )
 end
 
 function diagonal_line_trace(
-    band_region_configuration::BandRegionConfiguration,
+    configuration::BandStyleConfiguration,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real;
     log_scale::Bool,
 )::GenericTrace
-    line_offset = band_region_configuration.line_offset
-    @assert line_offset !== nothing
-    @assert band_region_configuration.line_color !== nothing
+    offset = configuration.offset
+    @assert offset !== nothing
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
 
     threshold, increase, decrease = band_operations(log_scale)
 
-    if line_offset < threshold
-        x = [decrease(minimum_xy, line_offset), maximum_xy]
-        y = [minimum_xy, increase(maximum_xy, line_offset)]
+    if offset < threshold
+        x = [decrease(minimum_xy, offset), maximum_xy]
+        y = [minimum_xy, increase(maximum_xy, offset)]
     else
-        x = [minimum_xy, decrease(maximum_xy, line_offset)]
-        y = [increase(minimum_xy, line_offset), maximum_xy]
+        x = [minimum_xy, decrease(maximum_xy, offset)]
+        y = [increase(minimum_xy, offset), maximum_xy]
     end
 
     return scatter(;
         x = x,
         y = y,
-        line_width = band_region_configuration.line_width,
-        line_color = band_region_configuration.line_color,
-        line_dash = band_region_configuration.line_is_dashed ? "dash" : nothing,
+        line_width = configuration.width,
+        line_color = configuration.color !== nothing ? configuration.color : "black",
+        line_dash = configuration.is_dashed ? "dash" : nothing,
         showlegend = false,
         mode = "lines",
     )
@@ -3118,7 +3167,7 @@ end
 """
     @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
-        style::PointsStyleConfiguration = PointsStyleConfiguration()
+        points_style::PointsStyleConfiguration = PointsStyleConfiguration()
         border_style::PointsStyleConfiguration = PointsStyleConfiguration()
     end
 
@@ -3132,14 +3181,14 @@ graph size vs. the point sizes for best results, as Plotly's defaults aren't ver
 """
 @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    style::PointsStyleConfiguration = PointsStyleConfiguration()
+    points_style::PointsStyleConfiguration = PointsStyleConfiguration()
     border_style::PointsStyleConfiguration = PointsStyleConfiguration()
 end
 
 function Validations.validate_object(configuration::GridGraphConfiguration)::Maybe{AbstractString}
     message = validate_object(configuration.graph)
     if message === nothing
-        message = validate_object("style", configuration.style)
+        message = validate_object("points_style", configuration.points_style)
     end
     if message === nothing
         message = validate_object("border_style", configuration.border_style)
@@ -3156,11 +3205,11 @@ end
         border_scale_title::Maybe{AbstractString} = nothing
         columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
-        sizes::Maybe{AbstractMatrix{<:Real}} = nothing
-        hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
-        border_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
-        border_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
+        points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+        points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
+        points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
+        borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+        borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
     end
 
 The data for a graph showing a grid of points (e.g. for correlations).
@@ -3176,23 +3225,24 @@ and Y coordinates are given. Instead each matrix entry is plotted as a point at 
     border_scale_title::Maybe{AbstractString} = nothing
     columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
-    sizes::Maybe{AbstractMatrix{<:Real}} = nothing
-    hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
-    border_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
-    border_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
+    points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+    points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
+    points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
+    borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+    borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
 end
 
 function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
-    colors = data.colors
-    sizes = data.sizes
+    colors = data.points_colors
+    sizes = data.points_sizes
 
     if colors === nothing && sizes === nothing
-        return "neither data.colors nor data.sizes specified for grid points"
+        return "neither data.points_colors nor data.points_sizes specified for grid points"
     end
 
     if colors !== nothing && sizes !== nothing && size(colors) != size(sizes)
-        return "the data.colors size: $(size(colors))\n" * "is different from the data.sizes size: $(size(sizes))"
+        return "the data.points_colors size: $(size(colors))\n" *
+               "is different from the data.points_sizes size: $(size(sizes))"
     end
 
     if colors !== nothing
@@ -3208,39 +3258,39 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
             for column_index in 1:n_columns
                 point_size = sizes[row_index, column_index]
                 if point_size < 0
-                    return "negative data.sizes[$(row_index),$(column_index)]: $(point_size)"
+                    return "negative data.points_sizes[$(row_index),$(column_index)]: $(point_size)"
                 end
             end
         end
     end
 
-    border_colors = data.border_colors
-    if border_colors !== nothing && size(border_colors) != grid_size
-        return "the data.border_colors size: $(size(border_colors))\n" *
-               "is different from the data.colors and/or data.sizes size: $(grid_size)"
+    borders_colors = data.borders_colors
+    if borders_colors !== nothing && size(borders_colors) != grid_size
+        return "the data.borders_colors size: $(size(borders_colors))\n" *
+               "is different from the data.points_colors and/or data.points_sizes size: $(grid_size)"
     end
 
-    border_sizes = data.border_sizes
-    if border_sizes !== nothing && size(border_sizes) != grid_size
-        return "the data.borders_sizes size: $(size(border_sizes))\n" *
-               "is different from the data.colors and/or data.sizes size: $(grid_size)"
+    borders_sizes = data.borders_sizes
+    if borders_sizes !== nothing && size(borders_sizes) != grid_size
+        return "the data.borders_sizes size: $(size(borders_sizes))\n" *
+               "is different from the data.points_colors and/or data.points_sizes size: $(grid_size)"
     end
 
-    if border_sizes !== nothing
+    if borders_sizes !== nothing
         for row_index in 1:n_rows
             for column_index in 1:n_columns
-                border_size = border_sizes[row_index, column_index]
+                border_size = borders_sizes[row_index, column_index]
                 if border_size < 0
-                    return "negative data.border_sizes[$(row_index),$(column_index)]: $(border_size)"
+                    return "negative data.borders_sizes[$(row_index),$(column_index)]: $(border_size)"
                 end
             end
         end
     end
 
-    hovers = data.hovers
+    hovers = data.points_hovers
     if hovers !== nothing && size(hovers) != grid_size
-        return "the data.hovers size: $(size(hovers))\n" *
-               "is different from the data.colors and/or data.sizes size: $(grid_size)"
+        return "the data.points_hovers size: $(size(hovers))\n" *
+               "is different from the data.points_colors and/or data.points_sizes size: $(grid_size)"
     end
 
     return nothing
@@ -3255,19 +3305,19 @@ function render(
     assert_valid_object(configuration)
     assert_valid_render(data, configuration)
 
-    if data.sizes !== nothing
-        n_rows, n_columns = size(data.sizes)
+    if data.points_sizes !== nothing
+        n_rows, n_columns = size(data.points_sizes)
     else
-        @assert data.colors !== nothing
-        n_rows, n_columns = size(data.colors)
+        @assert data.points_colors !== nothing
+        n_rows, n_columns = size(data.points_colors)
     end
 
     traces = Vector{GenericTrace}()
 
-    sizes = fix_sizes(data.sizes, configuration.style)
+    sizes = fix_sizes(data.points_sizes, configuration.points_style)
 
-    border_colors = data.border_colors
-    if border_colors !== nothing || data.border_sizes !== nothing
+    borders_colors = data.borders_colors
+    if borders_colors !== nothing || data.borders_sizes !== nothing
         marker_size = border_marker_size(data, configuration, sizes)
         if marker_size isa AbstractVector{<:Real}
             marker_size_mask = marker_size .> 0
@@ -3277,10 +3327,10 @@ function render(
 
         color_palette = configuration.border_style.color_palette
         if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-            @assert border_colors isa AbstractMatrix{<:AbstractString}
+            @assert borders_colors isa AbstractMatrix{<:AbstractString}
             for (value, color) in color_palette
                 if color != ""
-                    mask = vec(border_colors) .== value
+                    mask = vec(borders_colors) .== value
                     if marker_size_mask !== nothing
                         mask .&= marker_size_mask
                     end
@@ -3305,9 +3355,9 @@ function render(
                 end
             end
         else
-            border_colors = data.border_colors
-            if border_colors isa AbstractMatrix{<:AbstractString}
-                mask = vec(border_colors) .!= ""
+            borders_colors = data.borders_colors
+            if borders_colors isa AbstractMatrix{<:AbstractString}
+                mask = vec(borders_colors) .!= ""
                 if marker_size_mask !== nothing
                     mask .&= marker_size_mask
                 end
@@ -3322,8 +3372,8 @@ function render(
                         data = data,
                         n_rows = n_rows,
                         n_columns = n_columns,
-                        color = if border_colors !== nothing
-                            fix_colors(border_colors, configuration.border_style.color_scale.log_regularization)
+                        color = if borders_colors !== nothing
+                            fix_colors(borders_colors, configuration.border_style.color_scale.log_regularization)
                         else
                             configuration.border_style.color
                         end,
@@ -3345,9 +3395,9 @@ function render(
         marker_size_mask = nothing
     end
 
-    color_palette = configuration.style.color_palette
+    color_palette = configuration.points_style.color_palette
     if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        colors = data.colors
+        colors = data.points_colors
         @assert colors isa AbstractMatrix{<:AbstractString}
         for (value, color) in color_palette
             if color != ""
@@ -3365,7 +3415,7 @@ function render(
                             color = color,
                             marker_size = sizes,
                             coloraxis = nothing,
-                            points_style = configuration.style,
+                            points_style = configuration.points_style,
                             scale_title = data.scale_title,
                             legend_group = "points",
                             mask = mask,
@@ -3376,7 +3426,7 @@ function render(
             end
         end
     else
-        colors = data.colors
+        colors = data.points_colors
         if colors isa AbstractMatrix{<:AbstractString}
             mask = vec(colors) .!= ""
             if marker_size_mask !== nothing
@@ -3394,13 +3444,13 @@ function render(
                     n_rows = n_rows,
                     n_columns = n_columns,
                     color = if colors !== nothing
-                        fix_colors(colors, configuration.style.color_scale.log_regularization)
+                        fix_colors(colors, configuration.points_style.color_scale.log_regularization)
                     else
-                        configuration.style.color
+                        configuration.points_style.color
                     end,
                     marker_size = sizes,
                     coloraxis = "coloraxis",
-                    points_style = configuration.style,
+                    points_style = configuration.points_style,
                     scale_title = data.scale_title,
                     mask = mask,
                     legend_group = "points",
@@ -3432,62 +3482,144 @@ function render(
     return figure
 end
 
+function assert_valid_render(data::PointsGraphData, configuration::PointsGraphConfiguration)::Nothing
+    x_log_regularization = configuration.x_axis.log_regularization
+    if x_log_regularization !== nothing
+        for (index, x) in enumerate(data.points_xs)
+            @assert x + x_log_regularization > 0 "log of non-positive data.points_xs[$(index)]: $(x + x_log_regularization)"
+        end
+    end
+
+    y_log_regularization = configuration.y_axis.log_regularization
+    if y_log_regularization !== nothing
+        for (index, y) in enumerate(data.points_ys)
+            @assert y + y_log_regularization > 0 "log of non-positive data.points_ys[$(index)]: $(y + y_log_regularization)"
+        end
+    end
+
+    assert_valid_vector_colors(
+        "data.points_colors",
+        data.points_colors,
+        "configuration.points_style",
+        configuration.points_style,
+    )
+    assert_valid_vector_colors(
+        "data.borders_colors",
+        data.borders_colors,
+        "configuration.border_style",
+        configuration.border_style,
+    )
+
+    return nothing
+end
+
 function assert_valid_render(data::GridGraphData, configuration::GridGraphConfiguration)::Nothing
-    if data.sizes !== nothing
-        n_rows, n_columns = size(data.sizes)
+    assert_valid_matrix_colors(
+        "data.points_colors",
+        data.points_colors,
+        "configuration.points_style",
+        configuration.points_style,
+    )
+    assert_valid_matrix_colors(
+        "data.borders_colors",
+        data.borders_colors,
+        "configuration.border_style",
+        configuration.border_style,
+    )
+
+    return nothing
+end
+
+function assert_valid_vector_colors(
+    what_colors::AbstractString,
+    colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}},
+    what_configuration::AbstractString,
+    configuration::PointsStyleConfiguration,
+)::Nothing
+    color_palette = configuration.color_palette
+    if colors isa AbstractVector{<:AbstractString}
+        if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
+            for (index, color) in enumerate(colors)
+                if color != ""
+                    @assert color in scale_colors "categorical $(what_configuration).color_palette does not contain $(what_colors)[$(index)]: $(color)"
+                end
+            end
+        else
+            for (index, color) in enumerate(colors)
+                if color != ""
+                    @assert is_valid_color(color) "invalid $(what_colors)[$(index)]: $(color)"
+                end
+            end
+        end
     else
-        @assert data.colors !== nothing
-        n_rows, n_columns = size(data.colors)
+        @assert !(color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}) "non-string $(what_colors) for categorical $(what_configuration).color_pallete"
     end
 
-    color_palette = configuration.style.color_palette
-    if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.colors isa AbstractMatrix{<:AbstractString} "categorical style.color_palette for non-string data.colors"
-        scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
-        for column_index in 1:n_columns
+    if configuration.color_scale.show_scale
+        @assert colors !== nothing "no $(what_colors) specified for $(what_configuration).color_scale.show_scale"
+        @assert !(colors isa AbstractVector{<:AbstractString}) ||
+                configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit $(what_colors) specified for $(what_configuration).color_scale.show_scale"
+        )
+    end
+
+    if configuration.color_scale.log_regularization !== nothing
+        @assert colors isa AbstractVector{<:Real} "non-real $(what_colors) with $(what_configuration).color_scale.log_regularization"
+        index = argmin(colors)  # NOJET
+        minimal_color = colors[index] + configuration.color_scale.log_regularization
+        @assert minimal_color > 0 "log of non-positive $(what_colors)[$(index)]: $(minimal_color)"
+    end
+
+    return nothing
+end
+
+function assert_valid_matrix_colors(
+    what_colors::AbstractString,
+    colors::Maybe{Union{AbstractMatrix{<:AbstractString}, AbstractMatrix{<:Real}}},
+    what_configuration::AbstractString,
+    configuration::PointsStyleConfiguration,
+)::Nothing
+    color_palette = configuration.color_palette
+    if colors isa AbstractMatrix{<:AbstractString}
+        n_rows, n_columns = size(colors)
+        if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
             for row_index in 1:n_rows
-                color = data.colors[row_index, column_index]
-                if color != ""
-                    @assert color in scale_colors "categorical style.color_palette does not contain data.colors[$(row_index),$(column_index)]: $(color)"
+                for column_index in 1:n_columns
+                    color = colors[row_index, column_index]
+                    if color != ""
+                        @assert color in scale_colors "categorical $(what_configuration).color_palette does not contain $(what_colors)[$(row_index),$(column_index))]: $(color)"
+                    end
+                end
+            end
+        else
+            for row_index in 1:n_rows
+                for column_index in 1:n_columns
+                    color = colors[row_index, column_index]
+                    if color != ""
+                        @assert is_valid_color(color) "invalid $(what_colors)[$(row_index),$(column_index)]: $(color)"
+                    end
                 end
             end
         end
+    else
+        @assert !(color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}) "non-string $(what_colors) for categorical $(what_configuration).color_pallete"
     end
 
-    border_color_palette = configuration.border_style.color_palette
-    if border_color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractMatrix{<:AbstractString} (
-            "categorical borders_style.color_palette for non-string data.border_colors"
-        )
-        border_scale_colors = Set{AbstractString}([value for (value, _) in border_color_palette])
-        for column_index in 1:n_columns
-            for row_index in 1:n_rows
-                color = data.border_colors[row_index, column_index]
-                if color != ""
-                    @assert color in border_scale_colors "categorical border_style.color_palette does not contain data.border_colors[$(row_index),$(column_index)]: $(color)"
-                end
-            end
-        end
-    end
-
-    if configuration.style.color_scale.show_scale
-        @assert data.colors !== nothing "no data.colors specified for configuration.style.color_scale.show_scale"
-        @assert !(data.colors isa AbstractMatrix{<:AbstractString}) ||
-                configuration.style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.colors specified for configuration.style.color_scale.show_scale"
+    if configuration.color_scale.show_scale
+        @assert colors !== nothing "no $(what_colors) specified for $(what_configuration).color_scale.show_scale"
+        @assert !(colors isa AbstractMatrix{<:AbstractString}) ||
+                configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
+            "explicit $(what_colors) specified for $(what_configuration).color_scale.show_scale"
         )
     end
 
-    if configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        @assert data.border_colors isa AbstractMatrix{<:AbstractString} "categorical color_palette for non-string data.border_colors"
-    end
-
-    if configuration.border_style.color_scale.show_scale
-        @assert data.border_colors !== nothing "no data.border_colors specified for configuration.border_style.color_scale.show_scale"
-        @assert !(data.border_colors isa AbstractMatrix{<:AbstractString}) ||
-                configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit data.border_colors specified for configuration.border_style.color_scale.show_scale"
-        )
+    if configuration.color_scale.log_regularization !== nothing
+        @assert colors isa AbstractMatrix{<:Real} "non-real $(what_colors) with $(what_configuration).color_scale.log_regularization"
+        row_index, column_index = argmin(colors).I
+        minimal_color = colors[row_index, column_index] + configuration.color_scale.log_regularization
+        @assert minimal_color > 0 "log of non-positive $(what_colors)[$(row_index),$(column_index)]: $(minimal_color)"
     end
 
     return nothing
@@ -3527,8 +3659,8 @@ function grid_trace(;
         legendgroup = legend_group,
         legendgrouptitle_text = scale_title,
         name = name !== nothing ? name : points_style.color_scale.show_scale ? "Trace" : "",
-        text = masked_data(data.hovers, mask),
-        hovertemplate = data.hovers === nothing ? nothing : "%{text}<extra></extra>",
+        text = masked_data(data.points_hovers, mask),
+        hovertemplate = data.points_hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
     )
 end
@@ -3554,9 +3686,9 @@ function masked_xs(
     n_columns::Integer,
     mask::Maybe{Union{AbstractVector{Bool}, BitVector}},
 )::Vector{Int}
-    xs = Matrix{Int}(undef, n_rows, n_columns)
-    xs .= transpose(1:n_columns)
-    return masked_data(xs, mask)
+    points_xs = Matrix{Int}(undef, n_rows, n_columns)
+    points_xs .= transpose(1:n_columns)
+    return masked_data(points_xs, mask)
 end
 
 function masked_ys(
@@ -3564,9 +3696,9 @@ function masked_ys(
     n_columns::Integer,
     mask::Maybe{Union{AbstractVector{Bool}, BitVector}},
 )::Vector{Int}
-    ys = Matrix{Int}(undef, n_rows, n_columns)
-    ys .= 1:n_rows
-    return masked_data(ys, mask)
+    points_ys = Matrix{Int}(undef, n_rows, n_columns)
+    points_ys .= 1:n_rows
+    return masked_data(points_ys, mask)
 end
 
 function points_layout(;
@@ -3577,8 +3709,9 @@ function points_layout(;
     rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
     columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
 )::Layout
-    color_tickvals, color_ticktext = log_color_scale_ticks(data.colors, configuration.style)
-    border_color_tickvals, border_color_ticktext = log_color_scale_ticks(data.border_colors, configuration.border_style)
+    color_tickvals, color_ticktext = log_color_scale_ticks(data.points_colors, configuration.points_style)
+    border_color_tickvals, border_color_ticktext =
+        log_color_scale_ticks(data.borders_colors, configuration.border_style)
     x_tickvals, x_ticknames = xy_ticks(columns_names)
     y_tickvals, y_ticknames = xy_ticks(rows_names)
     return Layout(;  # NOJET
@@ -3599,13 +3732,13 @@ function points_layout(;
         yaxis_tickvals = y_tickvals,
         yaxis_ticktext = y_ticknames,
         showlegend = (
-            configuration.style.color_scale.show_scale &&
-            configuration.style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            configuration.points_style.color_scale.show_scale &&
+            configuration.points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ) || (
             configuration.border_style.color_scale.show_scale &&
             configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        legend_x = if configuration.style.color_scale.show_scale &&
+        legend_x = if configuration.points_style.color_scale.show_scale &&
                       configuration.border_style.color_scale.show_scale &&
                       configuration.border_style.color_palette isa
                       AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
@@ -3614,34 +3747,34 @@ function points_layout(;
             nothing
         end,
         coloraxis2_colorbar_x = if (
-            configuration.border_style.color_scale.show_scale && configuration.style.color_scale.show_scale
+            configuration.border_style.color_scale.show_scale && configuration.points_style.color_scale.show_scale
         )
             1.2
         else
             nothing  # NOJET
         end,
-        coloraxis_showscale = configuration.style.color_scale.show_scale && !(
-            configuration.style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        coloraxis_showscale = configuration.points_style.color_scale.show_scale && !(
+            configuration.points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        coloraxis_reversescale = configuration.style.color_scale.reverse_scale,
+        coloraxis_reversescale = configuration.points_style.color_scale.reverse_scale,
         coloraxis_colorscale = normalized_color_palette(
-            configuration.style.color_palette,
-            configuration.style.color_scale,
+            configuration.points_style.color_palette,
+            configuration.points_style.color_scale,
         ),
         coloraxis_cmin = lowest_color(
-            configuration.style.color_palette,
-            configuration.style.color_scale.minimum,
-            configuration.style.color_scale.log_regularization,
+            configuration.points_style.color_palette,
+            configuration.points_style.color_scale.minimum,
+            configuration.points_style.color_scale.log_regularization,
         ),
         coloraxis_cmax = highest_color(
-            configuration.style.color_palette,
-            configuration.style.color_scale.maximum,
-            configuration.style.color_scale.log_regularization,
+            configuration.points_style.color_palette,
+            configuration.points_style.color_scale.maximum,
+            configuration.points_style.color_scale.log_regularization,
         ),
         coloraxis_colorbar_title_text = data.scale_title,
         coloraxis_colorbar_tickvals = color_tickvals,
         coloraxis_colorbar_ticktext = color_ticktext,
-        coloraxis2_showscale = (data.border_colors !== nothing || data.border_sizes !== nothing) &&
+        coloraxis2_showscale = (data.borders_colors !== nothing || data.borders_sizes !== nothing) &&
                                configuration.border_style.color_scale.show_scale &&
                                !(
                                    configuration.border_style.color_palette isa
@@ -3674,23 +3807,23 @@ function border_marker_size(
     sizes::Maybe{Union{Real, AbstractVector{<:Real}}},
 )::Union{Real, Vector{<:Real}}
     sizes = sizes
-    border_sizes = fix_sizes(data.border_sizes, configuration.border_style)
+    borders_sizes = fix_sizes(data.borders_sizes, configuration.border_style)
 
-    if border_sizes === nothing
+    if borders_sizes === nothing
         border_marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
         @assert border_marker_size !== nothing
         if sizes === nothing
-            points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
+            points_marker_size = configuration.points_style.size !== nothing ? configuration.points_style.size : 4.0
             return points_marker_size + 2 * border_marker_size
         else
             return sizes .+ 2 * border_marker_size
         end
     else
         if sizes === nothing
-            points_marker_size = configuration.style.size !== nothing ? configuration.style.size : 4.0
-            return 2 .* border_sizes .+ points_marker_size
+            points_marker_size = configuration.points_style.size !== nothing ? configuration.points_style.size : 4.0
+            return 2 .* borders_sizes .+ points_marker_size
         else
-            return 2 .* border_sizes .+ sizes
+            return 2 .* borders_sizes .+ sizes
         end
     end
 end

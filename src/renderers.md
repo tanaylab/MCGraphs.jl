@@ -20,7 +20,7 @@ MCGraphs.Renderers.PointsStyleConfiguration
 MCGraphs.Renderers.ScaleConfiguration
 MCGraphs.Renderers.SizeRangeConfiguration
 MCGraphs.Renderers.BandsConfiguration
-MCGraphs.Renderers.BandRegionConfiguration
+MCGraphs.Renderers.BandStyleConfiguration
 ```
 
 ## Grid
