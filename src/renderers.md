@@ -16,11 +16,11 @@ MCGraphs.Renderers.ValuesOrientation
 ```@docs
 MCGraphs.Renderers.PointsGraphData
 MCGraphs.Renderers.PointsGraphConfiguration
-MCGraphs.Renderers.PointsStyleConfiguration
+MCGraphs.Renderers.PointsConfiguration
 MCGraphs.Renderers.ScaleConfiguration
 MCGraphs.Renderers.SizeRangeConfiguration
 MCGraphs.Renderers.BandsConfiguration
-MCGraphs.Renderers.BandStyleConfiguration
+MCGraphs.Renderers.BandConfiguration
 ```
 
 ## Grid
@@ -37,7 +37,7 @@ MCGraphs.Renderers.LineGraphData
 MCGraphs.Renderers.LinesGraphData
 MCGraphs.Renderers.LineGraphConfiguration
 MCGraphs.Renderers.LinesGraphConfiguration
-MCGraphs.Renderers.LineStyleConfiguration
+MCGraphs.Renderers.LineConfiguration
 MCGraphs.Renderers.Stacking
 ```
 
@@ -67,7 +67,7 @@ MCGraphs.Renderers.DistributionGraphData
 MCGraphs.Renderers.DistributionsGraphData
 MCGraphs.Renderers.DistributionGraphConfiguration
 MCGraphs.Renderers.DistributionsGraphConfiguration
-MCGraphs.Renderers.DistributionStyleConfiguration
+MCGraphs.Renderers.DistributionConfiguration
 ```
 
 ## Index

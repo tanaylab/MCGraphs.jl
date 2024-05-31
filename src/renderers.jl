@@ -5,12 +5,21 @@ This provides a selection of basic graph types needed for metacells visualizatio
 containing all the data for the graph, and a separate `struct` containing the configuration of the graph. The rendering
 function takes both and either returns a JavaScript blob needed to create the interactive graph, or writes the graph to
 a file.
+
+TODO:
+
+  - Sizes legends.
+  - Heatmaps.
+  - Heatmap subplots as annotations for bar graph.
+  - Heatmap subplots as annotations for heatmaps.
 """
 module Renderers
 
 export AbstractGraphConfiguration
 export AbstractGraphData
 export AxisConfiguration
+export BandConfiguration
+export BandsConfiguration
 export BarGraphConfiguration
 export BarGraphData
 export BarsGraphConfiguration
@@ -22,23 +31,26 @@ export CdfGraphData
 export CdfUpToValue
 export CdfsGraphConfiguration
 export CdfsGraphData
+export DistributionConfiguration
 export DistributionGraphConfiguration
 export DistributionGraphData
-export DistributionStyleConfiguration
 export DistributionsGraphConfiguration
 export DistributionsGraphData
+export Figure
 export GraphConfiguration
 export GridGraphConfiguration
 export GridGraphData
 export HorizontalValues
+export LineConfiguration
 export LineGraphConfiguration
 export LineGraphData
-export LineStyleConfiguration
 export LinesGraphConfiguration
 export LinesGraphData
+export PointsConfiguration
 export PointsGraphConfiguration
 export PointsGraphData
-export PointsStyleConfiguration
+export ScaleConfiguration
+export SizeRangeConfiguration
 export StackFractions
 export StackPercents
 export StackValues
@@ -84,7 +96,7 @@ The orientation of the values axis in a distribution or bars graph:
 @enum ValuesOrientation HorizontalValues VerticalValues
 
 """
-    @kwdef mutable struct GraphConfiguration <: ObjectWithValidation
+    @kwdef mutable struct GraphConfiguration
         width::Maybe{Int} = nothing
         height::Maybe{Int} = nothing
         template::AbstractString = "simple_white"
@@ -102,7 +114,7 @@ By default, `show_grid` and `show_ticks` are set.
 The default `template` is "simple_white" which is the cleanest. The `show_grid` and `show_ticks` can be used to disable
 the grid and/or ticks for an even cleaner (but less informative) look.
 """
-@kwdef mutable struct GraphConfiguration <: ObjectWithValidation
+@kwdef mutable struct GraphConfiguration
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
     template::AbstractString = "simple_white"
@@ -110,13 +122,13 @@ the grid and/or ticks for an even cleaner (but less informative) look.
     show_ticks::Bool = true
 end
 
-function Validations.validate_object(configuration::GraphConfiguration)::Maybe{AbstractString}
-    width = configuration.width
+function validate_graph_configuration(graph_configuration::GraphConfiguration)::Maybe{AbstractString}
+    width = graph_configuration.width
     if width !== nothing && width <= 0
         return "non-positive configuration.graph.width: $(width)"
     end
 
-    height = configuration.height
+    height = graph_configuration.height
     if height !== nothing && height <= 0
         return "non-positive configuration.graph.height: $(height)"
     end
@@ -125,7 +137,7 @@ function Validations.validate_object(configuration::GraphConfiguration)::Maybe{A
 end
 
 """
-    @kwdef mutable struct AxisConfiguration <: ObjectWithValidation
+    @kwdef mutable struct AxisConfiguration
         minimum::Maybe{Real} = nothing
         maximum::Maybe{Real} = nothing
         log_regularization::Maybe{AbstractFloat} = nothing,
@@ -138,22 +150,22 @@ If `log_regularization` is set, it is added to the coordinate to avoid zero valu
 10) scale. To help with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is "close enough" to
 2x for intuitive reading of the ratios).
 """
-@kwdef mutable struct AxisConfiguration <: ObjectWithValidation
+@kwdef mutable struct AxisConfiguration
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
     log_regularization::Maybe{AbstractFloat} = nothing
 end
 
-function Validations.validate_object(name::AbstractString, configuration::AxisConfiguration)::Maybe{AbstractString}
-    minimum = configuration.minimum
-    maximum = configuration.maximum
+function validate_axis_configuration(name::AbstractString, axis_configuration::AxisConfiguration)::Maybe{AbstractString}
+    minimum = axis_configuration.minimum
+    maximum = axis_configuration.maximum
 
     if minimum !== nothing && maximum !== nothing && maximum <= minimum
         return "configuration.$(name)_axis.maximum: $(maximum)\n" *
                "is not larger than configuration.$(name)_axis.minimum: $(minimum)"
     end
 
-    log_regularization = configuration.log_regularization
+    log_regularization = axis_configuration.log_regularization
     if log_regularization !== nothing
         if log_regularization < 0
             return "negative configuration.$(name)_axis.log_regularization: $(log_regularization)"
@@ -172,7 +184,7 @@ function Validations.validate_object(name::AbstractString, configuration::AxisCo
 end
 
 """
-    @kwdef mutable struct DistributionStyleConfiguration <: ObjectWithValidation
+    @kwdef mutable struct DistributionConfiguration
         values_orientation::ValuesOrientation = VerticalValues
         show_box::Bool = true
         show_violin::Bool = false
@@ -200,7 +212,7 @@ In addition to the (combination) of the above, if `show_outliers`, also show the
 The `color` is chosen automatically by default. When showing multiple distributions, you can override it per each one in
 the [`DistributionsGraphData`](@ref).
 """
-@kwdef mutable struct DistributionStyleConfiguration <: ObjectWithValidation
+@kwdef mutable struct DistributionConfiguration
     values_orientation::ValuesOrientation = VerticalValues
     show_box::Bool = true
     show_violin::Bool = false
@@ -209,16 +221,20 @@ the [`DistributionsGraphData`](@ref).
     color::Maybe{AbstractString} = nothing
 end
 
-function Validations.validate_object(configuration::DistributionStyleConfiguration)::Maybe{AbstractString}
-    if !configuration.show_box && !configuration.show_violin && !configuration.show_curve
-        return "must specify at least one of: configuration.distribution_style.show_box, configuration.distribution_style.show_violin, configuration.distribution_style.show_curve"
+function validate_distribution_configuration(
+    distribution_configuration::DistributionConfiguration,
+)::Maybe{AbstractString}
+    if !distribution_configuration.show_box &&
+       !distribution_configuration.show_violin &&
+       !distribution_configuration.show_curve
+        return "must specify at least one of: configuration.distribution.show_box, configuration.distribution.show_violin, configuration.distribution.show_curve"
     end
 
-    if configuration.show_violin && configuration.show_curve
-        return "must not specify both of: configuration.distribution_style.show_violin, configuration.distribution_style.show_curve"
+    if distribution_configuration.show_violin && distribution_configuration.show_curve
+        return "must not specify both of: configuration.distribution.show_violin, configuration.distribution.show_curve"
     end
 
-    return validate_color("configuration.distribution_style.color", configuration.color)
+    return validate_color("configuration.distribution.color", distribution_configuration.color)
 end
 
 function validate_color(what::AbstractString, color::Maybe{AbstractString})::Maybe{AbstractString}
@@ -245,7 +261,7 @@ end
 """
     @kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
-        distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+        distribution::DistributionConfiguration = DistributionConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
     end
 
@@ -257,17 +273,17 @@ possible to specify the color of each one in the [`DistributionsGraphData`](@ref
 """
 @kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    distribution::DistributionConfiguration = DistributionConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 
 function Validations.validate_object(configuration::DistributionGraphConfiguration)::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
+    message = validate_graph_configuration(configuration.graph)
     if message === nothing
-        message = validate_object(configuration.distribution_style)
+        message = validate_distribution_configuration(configuration.distribution)
     end
     if message === nothing
-        message = validate_object("value", configuration.value_axis)
+        message = validate_axis_configuration("value", configuration.value_axis)
     end
     return message
 end
@@ -275,7 +291,7 @@ end
 """
     @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
-        distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+        distribution::DistributionConfiguration = DistributionConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         show_legend::Bool = false
         distributions_gap::Maybe{Real} = nothing
@@ -294,7 +310,7 @@ the fraction of white space between the distributions.
 """
 @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    distribution::DistributionConfiguration = DistributionConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
     distributions_gap::Maybe{Real} = nothing
@@ -302,12 +318,12 @@ the fraction of white space between the distributions.
 end
 
 function Validations.validate_object(configuration::DistributionsGraphConfiguration)::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
+    message = validate_graph_configuration(configuration.graph)
     if message === nothing
-        message = validate_object(configuration.distribution_style)
+        message = validate_distribution_configuration(configuration.distribution)
     end
     if message === nothing
-        message = validate_object("value", configuration.value_axis)
+        message = validate_axis_configuration("value", configuration.value_axis)
     end
     if message === nothing
         distributions_gap = configuration.distributions_gap
@@ -451,7 +467,7 @@ function render(
     trace = distribution_trace(;  # NOJET
         distribution_values = data.distribution_values,
         distribution_name = data.distribution_name === nothing ? "Trace" : data.distribution_name,
-        color = configuration.distribution_style.color,
+        color = configuration.distribution.color,
         legend_title = nothing,
         configuration = configuration,
         overlay_distributions = false,
@@ -477,7 +493,7 @@ function render(
 )::Figure
     assert_valid_object(data)
     assert_valid_object(configuration)
-    if configuration.distributions_gap !== nothing && configuration.distribution_style.show_curve
+    if configuration.distributions_gap !== nothing && configuration.distribution.show_curve
         @warn "setting the distributions_gap for curve is buggy in plotly"
     end
 
@@ -491,7 +507,7 @@ function render(
                 data.distributions_names[index]
             end,
             color = if data.distributions_colors === nothing
-                configuration.distribution_style.color
+                configuration.distribution.color
             else
                 data.distributions_colors[index]
             end,
@@ -523,17 +539,17 @@ function distribution_trace(;
     overlay_distributions::Bool,
 )::GenericTrace
     style = (
-        (configuration.distribution_style.show_box ? BOX : 0) |
-        (configuration.distribution_style.show_violin ? VIOLIN : 0) |
-        (configuration.distribution_style.show_curve ? CURVE : 0)
+        (configuration.distribution.show_box ? BOX : 0) |
+        (configuration.distribution.show_violin ? VIOLIN : 0) |
+        (configuration.distribution.show_curve ? CURVE : 0)
     )
 
-    if configuration.distribution_style.values_orientation == VerticalValues
+    if configuration.distribution.values_orientation == VerticalValues
         x = nothing
         y = distribution_values
         x0 = overlay_distributions ? " " : nothing
         y0 = nothing
-    elseif configuration.distribution_style.values_orientation == HorizontalValues
+    elseif configuration.distribution.values_orientation == HorizontalValues
         x = distribution_values
         y = nothing
         x0 = nothing
@@ -542,7 +558,7 @@ function distribution_trace(;
         @assert false
     end
 
-    points = configuration.distribution_style.show_outliers ? "outliers" : false
+    points = configuration.distribution.show_outliers ? "outliers" : false
     tracer = style == BOX ? box : violin
 
     return tracer(;
@@ -550,8 +566,8 @@ function distribution_trace(;
         y = y,
         x0 = x0,
         y0 = y0,
-        side = configuration.distribution_style.show_curve ? "positive" : nothing,
-        box_visible = configuration.distribution_style.show_box,
+        side = configuration.distribution.show_curve ? "positive" : nothing,
+        box_visible = configuration.distribution.show_box,
         boxpoints = points,
         points = points,
         name = distribution_name,
@@ -567,7 +583,7 @@ function distribution_layout(
     show_legend::Bool,
     distributions_gap::Maybe{Real},
 )::Layout
-    if configuration.distribution_style.values_orientation == VerticalValues
+    if configuration.distribution.values_orientation == VerticalValues
         xaxis_showticklabels = has_tick_names
         xaxis_showgrid = false
         xaxis_title = data.trace_axis_title
@@ -578,7 +594,7 @@ function distribution_layout(
         yaxis_title = data.value_axis_title
         yaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
         yaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
-    elseif configuration.distribution_style.values_orientation == HorizontalValues
+    elseif configuration.distribution.values_orientation == HorizontalValues
         xaxis_showticklabels = configuration.graph.show_ticks
         xaxis_showgrid = configuration.graph.show_grid
         xaxis_title = data.value_axis_title
@@ -615,7 +631,7 @@ function distribution_layout(
 end
 
 """
-    @kwdef mutable struct LineStyleConfiguration <: ObjectWithValidation
+    @kwdef mutable struct LineConfiguration
         width::Maybe{Real} = 1
         is_filled::Bool = false
         is_dashed::Bool = false
@@ -628,26 +644,26 @@ By default, a solid line is shown; if `is_dashed`, the line will be dashed. If `
 line is filled. If the `width` is set to `nothing`, no line is shown (and `is_filled` must be set). By default, the
 `color` is chosen automatically.
 """
-@kwdef mutable struct LineStyleConfiguration <: ObjectWithValidation
+@kwdef mutable struct LineConfiguration
     width::Maybe{Real} = 1
     is_filled::Bool = false
     is_dashed::Bool = false
     color::Maybe{AbstractString} = nothing
 end
 
-function Validations.validate_object(configuration::LineStyleConfiguration)::Maybe{AbstractString}
-    width = configuration.width
+function validate_line_configuration(line_configuration::LineConfiguration)::Maybe{AbstractString}
+    width = line_configuration.width
     if width !== nothing && width <= 0
-        return "non-positive configuration.line_style.width: $(width)"
+        return "non-positive configuration.line.width: $(width)"
     end
-    if width === nothing && !configuration.is_filled
-        return "either configuration.line_style.width or configuration.line_style.is_filled must be specified"
+    if width === nothing && !line_configuration.is_filled
+        return "either configuration.line.width or configuration.line.is_filled must be specified"
     end
-    return validate_color("configuration.line_style.color", configuration.color)
+    return validate_color("configuration.line.color", line_configuration.color)
 end
 
 """
-    @kwdef mutable struct BandStyleConfiguration <: ObjectWithValidation
+    @kwdef mutable struct BandConfiguration
         offset::Maybe{Real} = nothing
         color::Maybe{AbstractString} = nothing
         width::Maybe{Real} = 1.0
@@ -655,14 +671,14 @@ end
         is_filled::Bool = false
     end
 
-Configure a region of the graph defined by some band of values. This is the same as a `LineStyleConfiguration` (for
+Configure a region of the graph defined by some band of values. This is the same as a `LineConfiguration` (for
 controlling the style of the line drawn for the band) with the addition of the `offset` of the line's position. We allow
 up to three bands in a complete [`BandsConfiguration`](@ref). The low and high bands are defined as below and above
 their line's `offset`, and do not exist if the `offset` is not specified. The middle band is defined to be between these
 two lines (and therefore only exists if both are specified). Its `offset` defined a center line, if one is to be
 displayed, and is therefore optional.
 """
-@kwdef mutable struct BandStyleConfiguration <: ObjectWithValidation
+@kwdef mutable struct BandConfiguration
     offset::Maybe{Real} = nothing
     color::Maybe{AbstractString} = nothing
     width::Maybe{Real} = 1.0
@@ -670,74 +686,74 @@ displayed, and is therefore optional.
     is_filled::Bool = false
 end
 
-function Validations.validate_object(
+function validate_band_configuration(
     of_what::AbstractString,
     of_which::AbstractString,
-    configuration::BandStyleConfiguration,
+    band_configuration::BandConfiguration,
     log_scale::Bool,
 )::Maybe{AbstractString}
-    if configuration.width !== nothing && configuration.width <= 0
-        return "non-positive configuration.$(of_what).$(of_which).width: $(configuration.width)"
+    if band_configuration.width !== nothing && band_configuration.width <= 0
+        return "non-positive configuration.$(of_what).$(of_which).width: $(band_configuration.width)"
     end
-    if log_scale && configuration.offset !== nothing && configuration.offset <= 0
-        return "log of non-positive configuration.$(of_what).$(of_which).offset: $(configuration.offset)"
+    if log_scale && band_configuration.offset !== nothing && band_configuration.offset <= 0
+        return "log of non-positive configuration.$(of_what).$(of_which).offset: $(band_configuration.offset)"
     end
-    if !is_valid_color(configuration.color)
-        return "invalid configuration.$(of_what).$(of_which).color: $(configuration.color)"
+    if !is_valid_color(band_configuration.color)
+        return "invalid configuration.$(of_what).$(of_which).color: $(band_configuration.color)"
     end
     return nothing
 end
 
 """
-    @kwdef mutable struct BandsConfiguration <: ObjectWithValidation
-        low_band_style::BandStyleConfiguration = BandStyleConfiguration(is_dashed = true)
-        middle_band_style::BandStyleConfiguration = BandStyleConfiguration()
-        high_band_style::BandStyleConfiguration = BandStyleConfiguration(is_dashed = true)
+    @kwdef mutable struct BandsConfiguration
+        low::BandConfiguration = BandConfiguration(is_dashed = true)
+        middle::BandConfiguration = BandConfiguration()
+        high::BandConfiguration = BandConfiguration(is_dashed = true)
     end
 
-Configure the partition of the graph up to three band regions. The `low_band_style` and `high_band_style` are for the
-"outer" regions (so their lines are at their border, dashed by default) and the `middle_band_style` is for the "inner"
-region between them (so its line is inside it, solid by default).
+Configure the partition of the graph up to three band regions. The `low` and `high` bands are for the "outer" regions
+(so their lines are at their border, dashed by default) and the `middle` band is for the "inner" region between them (so
+its line is inside it, solid by default).
 """
-@kwdef mutable struct BandsConfiguration <: ObjectWithValidation
-    low_band_style::BandStyleConfiguration = BandStyleConfiguration(; is_dashed = true)
-    middle_band_style::BandStyleConfiguration = BandStyleConfiguration()
-    high_band_style::BandStyleConfiguration = BandStyleConfiguration(; is_dashed = true)
+@kwdef mutable struct BandsConfiguration
+    low::BandConfiguration = BandConfiguration(; is_dashed = true)
+    middle::BandConfiguration = BandConfiguration()
+    high::BandConfiguration = BandConfiguration(; is_dashed = true)
 end
 
-function Validations.validate_object(
+function validate_bands_configuration(
     of_what::AbstractString,
-    configuration::BandsConfiguration,
+    bands_configuration::BandsConfiguration,
     log_scale::Bool,
 )::Maybe{AbstractString}
-    message = validate_object(of_what, "low_band_style", configuration.low_band_style, log_scale)
+    message = validate_band_configuration(of_what, "low", bands_configuration.low, log_scale)
     if message === nothing
-        message = validate_object(of_what, "middle_band_style", configuration.middle_band_style, log_scale)
+        message = validate_band_configuration(of_what, "middle", bands_configuration.middle, log_scale)
     end
     if message === nothing
-        message = validate_object(of_what, "high_band_style", configuration.high_band_style, log_scale)
+        message = validate_band_configuration(of_what, "high", bands_configuration.high, log_scale)
     end
     if message !== nothing
         return message
     end
 
-    low_line_offset = configuration.low_band_style.offset
-    middle_line_offset = configuration.middle_band_style.offset
-    high_line_offset = configuration.high_band_style.offset
+    low_line_offset = bands_configuration.low.offset
+    middle_line_offset = bands_configuration.middle.offset
+    high_line_offset = bands_configuration.high.offset
 
     if low_line_offset !== nothing && middle_line_offset !== nothing && low_line_offset >= middle_line_offset
-        return "configuration.$(of_what).low_band_style.offset: $(low_line_offset)\n" *
-               "is not less than configuration.$(of_what).middle_band_style.offset: $(low_line_offset)"
+        return "configuration.$(of_what).low.offset: $(low_line_offset)\n" *
+               "is not less than configuration.$(of_what).middle.offset: $(low_line_offset)"
     end
 
     if middle_line_offset !== nothing && high_line_offset !== nothing && middle_line_offset >= high_line_offset
-        return "configuration.$(of_what).high_band_style.offset: $(high_line_offset)\n" *
-               "is not greater than configuration.$(of_what).middle_band_style.offset: $(middle_line_offset)"
+        return "configuration.$(of_what).high.offset: $(high_line_offset)\n" *
+               "is not greater than configuration.$(of_what).middle.offset: $(middle_line_offset)"
     end
 
     if low_line_offset !== nothing && high_line_offset !== nothing && low_line_offset >= high_line_offset
-        return "configuration.$(of_what).low_band_style.offset: $(low_line_offset)\n" *
-               "is not less than configuration.$(of_what).high_band_style.offset: $(high_line_offset)"
+        return "configuration.$(of_what).low.offset: $(low_line_offset)\n" *
+               "is not less than configuration.$(of_what).high.offset: $(high_line_offset)"
     end
 
     return nothing
@@ -748,7 +764,7 @@ end
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
-        line_style::LineStyleConfiguration = LineStyleConfiguration()
+        line::LineConfiguration = LineConfiguration()
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
     end
@@ -759,7 +775,7 @@ Configure a graph for showing line plots.
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    line::LineConfiguration = LineConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
 end
@@ -807,10 +823,8 @@ function render(
 
     traces = Vector{GenericTrace}()
 
-    minimum_x = minimum(data.points_xs)
-    minimum_y = minimum(data.points_ys)
-    maximum_x = maximum(data.points_xs)
-    maximum_y = maximum(data.points_ys)
+    minimum_x, maximum_x = range_of([data.points_xs], configuration.x_axis.log_regularization; apply_log = false)
+    minimum_y, maximum_y = range_of([data.points_ys], configuration.y_axis.log_regularization; apply_log = false)
 
     push_fill_vertical_bands_traces(traces, configuration.vertical_bands, minimum_x, minimum_y, maximum_x, maximum_y)
     push_fill_horizontal_bands_traces(
@@ -822,43 +836,45 @@ function render(
         maximum_y,
     )
 
-    push!(traces, line_trace(data, configuration.line_style))
+    push!(traces, line_trace(data, configuration.line))
 
-    for band in (
-        configuration.vertical_bands.low_band_style,
-        configuration.vertical_bands.middle_band_style,
-        configuration.vertical_bands.high_band_style,
-    )
+    for band in
+        (configuration.vertical_bands.low, configuration.vertical_bands.middle, configuration.vertical_bands.high)
         if band.offset !== nothing && band.width !== nothing
             push!(traces, vertical_line_trace(band, minimum_y, maximum_y))
         end
     end
 
-    for band in (
-        configuration.horizontal_bands.low_band_style,
-        configuration.horizontal_bands.middle_band_style,
-        configuration.horizontal_bands.high_band_style,
-    )
+    for band in
+        (configuration.horizontal_bands.low, configuration.horizontal_bands.middle, configuration.horizontal_bands.high)
         if band.offset !== nothing && band.width !== nothing
             push!(traces, horizontal_line_trace(band, minimum_x, maximum_x))
         end
     end
 
-    layout = lines_layout(data, configuration; show_legend = false)
+    layout = lines_layout(
+        data,
+        minimum_x,
+        minimum_y,
+        maximum_x,
+        maximum_y;
+        configuration = configuration,
+        show_legend = false,
+    )
     figure = plot(traces, layout)
     write_figure_to_file(figure, configuration.graph, output_file)
 
     return figure
 end
 
-function line_trace(data::LineGraphData, line_style::LineStyleConfiguration)::GenericTrace
+function line_trace(data::LineGraphData, line::LineConfiguration)::GenericTrace
     return scatter(;
         x = data.points_xs,
         y = data.points_ys,
-        line_color = line_style.color,
-        line_width = line_style.width === nothing ? 0 : line_style.width,
-        line_dash = line_style.is_dashed ? "dash" : nothing,
-        fill = line_style.is_filled ? "tozeroy" : nothing,
+        line_color = line.color,
+        line_width = line.width === nothing ? 0 : line.width,
+        line_dash = line.is_dashed ? "dash" : nothing,
+        fill = line.is_filled ? "tozeroy" : nothing,
         name = "",
         mode = "lines",
     )
@@ -880,7 +896,7 @@ If stacking multiple data sets, how:
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
-        line_style::LineStyleConfiguration = LineStyleConfiguration()
+        line::LineConfiguration = LineConfiguration()
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
         show_legend::Bool = false
@@ -895,7 +911,7 @@ regardless of what its actual setting is.
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    line::LineConfiguration = LineConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
@@ -905,25 +921,25 @@ end
 function Validations.validate_object(
     configuration::Union{LineGraphConfiguration, LinesGraphConfiguration},
 )::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
+    message = validate_graph_configuration(configuration.graph)
     if message === nothing
-        message = validate_object("x", configuration.x_axis)
+        message = validate_axis_configuration("x", configuration.x_axis)
     end
     if message === nothing
-        message = validate_object("y", configuration.y_axis)
+        message = validate_axis_configuration("y", configuration.y_axis)
     end
     if message === nothing
-        message = validate_object(configuration.line_style)
+        message = validate_line_configuration(configuration.line)
     end
     if message === nothing
-        message = validate_object(
+        message = validate_bands_configuration(
             "vertical_bands",
             configuration.vertical_bands,
             configuration.x_axis.log_regularization !== nothing,
         )
     end
     if message === nothing
-        message = validate_object(
+        message = validate_bands_configuration(
             "horizontal_bands",
             configuration.horizontal_bands,
             configuration.y_axis.log_regularization !== nothing,
@@ -959,7 +975,7 @@ top-to-bottom order.
 
 The `lines_names`, `lines_colors`, `lines_widths`, `lines_are_filled` and `lines_are_dashed` arrays must have the same
 number of entries (one per line). The `lines_colors` are restricted to explicit colors; therefore the color scale
-options of the `line_style` must not be used.
+options of the `line` must not be used.
 """
 @kwdef mutable struct LinesGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
@@ -1063,6 +1079,19 @@ function render(
 
     traces = Vector{GenericTrace}()
 
+    minimum_x, maximum_x = range_of(data.lines_xs, configuration.x_axis.log_regularization; apply_log = false)
+    minimum_y, maximum_y = range_of(data.lines_ys, configuration.y_axis.log_regularization; apply_log = false)
+
+    push_fill_vertical_bands_traces(traces, configuration.vertical_bands, minimum_x, minimum_y, maximum_x, maximum_y)
+    push_fill_horizontal_bands_traces(
+        traces,
+        configuration.horizontal_bands,
+        minimum_x,
+        minimum_y,
+        maximum_x,
+        maximum_y,
+    )
+
     for index in 1:length(data.lines_xs)
         push!(
             traces,
@@ -1077,7 +1106,29 @@ function render(
         )
     end
 
-    layout = lines_layout(data, configuration; show_legend = configuration.show_legend)
+    for band in
+        (configuration.vertical_bands.low, configuration.vertical_bands.middle, configuration.vertical_bands.high)
+        if band.offset !== nothing && band.width !== nothing
+            push!(traces, vertical_line_trace(band, minimum_y, maximum_y))
+        end
+    end
+
+    for band in
+        (configuration.horizontal_bands.low, configuration.horizontal_bands.middle, configuration.horizontal_bands.high)
+        if band.offset !== nothing && band.width !== nothing
+            push!(traces, horizontal_line_trace(band, minimum_x, maximum_x))
+        end
+    end
+
+    layout = lines_layout(
+        data,
+        minimum_x,
+        minimum_y,
+        maximum_x,
+        maximum_y;
+        configuration = configuration,
+        show_legend = configuration.show_legend,
+    )
     figure = plot(traces, layout)
     write_figure_to_file(figure, configuration.graph, output_file)
 
@@ -1162,24 +1213,22 @@ function lines_trace(
     return scatter(;
         x = points_xs,
         y = points_ys,
-        line_color = data.lines_colors !== nothing ? data.lines_colors[index] : configuration.line_style.color,
+        line_color = data.lines_colors !== nothing ? data.lines_colors[index] : configuration.line.color,
         line_width = if data.lines_widths !== nothing
             data.lines_widths[index]
-        elseif configuration.line_style.width === nothing
+        elseif configuration.line.width === nothing
             0
         else
-            configuration.line_style.width  # NOJET
+            configuration.line.width  # NOJET
         end,
         line_dash = if (
-            data.lines_are_dashed !== nothing ? data.lines_are_dashed[index] : configuration.line_style.is_dashed
+            data.lines_are_dashed !== nothing ? data.lines_are_dashed[index] : configuration.line.is_dashed
         )
             "dash"
         else
             nothing
         end,
-        fill = if !(
-            data.lines_are_filled !== nothing ? data.lines_are_filled[index] : configuration.line_style.is_filled
-        )
+        fill = if !(data.lines_are_filled !== nothing ? data.lines_are_filled[index] : configuration.line.is_filled)
             nothing
         elseif index == length(data.lines_xs)
             "tozeroy"
@@ -1203,22 +1252,35 @@ end
 
 function lines_layout(
     data::Union{LinesGraphData, LineGraphData},
-    configuration::Union{LinesGraphConfiguration, LineGraphConfiguration};
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real;
+    configuration::Union{LinesGraphConfiguration, LineGraphConfiguration},
     show_legend::Bool,
 )::Layout
+    x_axis = configuration.x_axis
+    y_axis = configuration.y_axis
+
     return Layout(;  # NOJET
         title = data.graph_title,
         template = configuration.graph.template,
         xaxis_showgrid = configuration.graph.show_grid,
         xaxis_showticklabels = configuration.graph.show_ticks,
         xaxis_title = data.x_axis_title,
-        xaxis_range = (configuration.x_axis.minimum, configuration.x_axis.maximum),
-        xaxis_type = configuration.x_axis.log_regularization !== nothing ? "log" : nothing,
+        xaxis_range = (
+            x_axis.minimum !== nothing ? x_axis.minimum : minimum_x,
+            x_axis.maximum !== nothing ? x_axis.maximum : maximum_x,
+        ),
+        xaxis_type = x_axis.log_regularization !== nothing ? "log" : nothing,
         yaxis_showgrid = configuration.graph.show_grid,
         yaxis_showticklabels = configuration.graph.show_ticks,
         yaxis_title = data.y_axis_title,
-        yaxis_range = (configuration.y_axis.minimum, configuration.y_axis.maximum),
-        yaxis_type = configuration.y_axis.log_regularization !== nothing ? "log" : nothing,
+        yaxis_range = (
+            y_axis.minimum !== nothing ? y_axis.minimum : minimum_y,
+            y_axis.maximum !== nothing ? y_axis.maximum : maximum_y,
+        ),
+        yaxis_type = y_axis.log_regularization !== nothing ? "log" : nothing,
         showlegend = show_legend,
     )
 end
@@ -1237,7 +1299,7 @@ The direction of the CDF graph:
         graph::GraphConfiguration = GraphConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         fraction_axis::AxisConfiguration = AxisConfiguration()
-        line_style::LineStyleConfiguration = LineStyleConfiguration()
+        line::LineConfiguration = LineConfiguration()
         values_orientation::ValuesOrientation = HorizontalValues
         cdf_direction::CdfDirection = CdfUpToValue
         value_bands::BandsConfiguration = BandsConfiguration()
@@ -1256,7 +1318,7 @@ CDF graphs are internally converted to line graphs for rendering.
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
-    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    line::LineConfiguration = LineConfiguration()
     values_orientation::ValuesOrientation = HorizontalValues
     cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
@@ -1334,7 +1396,7 @@ function cdf_configuration_as_line_configuration(configuration::CdfGraphConfigur
             graph = configuration.graph,
             x_axis = configuration.value_axis,
             y_axis = configuration.fraction_axis,
-            line_style = configuration.line_style,
+            line = configuration.line,
             vertical_bands = configuration.value_bands,
             horizontal_bands = configuration.fraction_bands,
         )
@@ -1343,7 +1405,7 @@ function cdf_configuration_as_line_configuration(configuration::CdfGraphConfigur
             graph = configuration.graph,
             x_axis = configuration.fraction_axis,
             y_axis = configuration.value_axis,
-            line_style = configuration.line_style,
+            line = configuration.line,
             vertical_bands = configuration.fraction_bands,
             horizontal_bands = configuration.value_bands,
         )
@@ -1355,7 +1417,7 @@ end
         graph::GraphConfiguration = GraphConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         fraction_axis::AxisConfiguration = AxisConfiguration()
-        line_style::LineStyleConfiguration = LineStyleConfiguration()
+        line::LineConfiguration = LineConfiguration()
         values_orientation::ValuesOrientation = HorizontalValues
         cdf_direction::CdfDirection = CdfUpToValue
         value_bands::BandsConfiguration = BandsConfiguration()
@@ -1372,7 +1434,7 @@ CDF graphs are internally converted to line graphs for rendering.
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
-    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    line::LineConfiguration = LineConfiguration()
     values_orientation::ValuesOrientation = HorizontalValues
     cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
@@ -1384,25 +1446,25 @@ end
 function Validations.validate_object(
     configuration::Union{CdfGraphConfiguration, CdfsGraphConfiguration},
 )::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
+    message = validate_graph_configuration(configuration.graph)
     if message === nothing
-        message = validate_object("value", configuration.value_axis)
+        message = validate_axis_configuration("value", configuration.value_axis)
     end
     if message === nothing
-        message = validate_object("fraction", configuration.fraction_axis)
+        message = validate_axis_configuration("fraction", configuration.fraction_axis)
     end
     if message === nothing
-        message = validate_object(configuration.line_style)
+        message = validate_line_configuration(configuration.line)
     end
     if message === nothing
-        message = validate_object(
+        message = validate_bands_configuration(
             "value_bands",
             configuration.value_bands,
             configuration.value_axis.log_regularization !== nothing,
         )
     end
     if message === nothing
-        message = validate_object(
+        message = validate_bands_configuration(
             "fraction_bands",
             configuration.fraction_bands,
             configuration.fraction_axis.log_regularization !== nothing,
@@ -1531,7 +1593,7 @@ function cdfs_configuration_as_lines_configuration(configuration::CdfsGraphConfi
             graph = configuration.graph,
             x_axis = configuration.value_axis,
             y_axis = configuration.fraction_axis,
-            line_style = configuration.line_style,
+            line = configuration.line,
             vertical_bands = configuration.value_bands,
             horizontal_bands = configuration.fraction_bands,
             show_legend = configuration.show_legend,
@@ -1541,7 +1603,7 @@ function cdfs_configuration_as_lines_configuration(configuration::CdfsGraphConfi
             graph = configuration.graph,
             x_axis = configuration.fraction_axis,
             y_axis = configuration.value_axis,
-            line_style = configuration.line_style,
+            line = configuration.line,
             vertical_bands = configuration.fraction_bands,
             horizontal_bands = configuration.value_bands,
             show_legend = configuration.show_legend,
@@ -1679,9 +1741,9 @@ end
 function Validations.validate_object(
     configuration::Union{BarGraphConfiguration, BarsGraphConfiguration},
 )::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
+    message = validate_graph_configuration(configuration.graph)
     if message === nothing
-        message = validate_object("value", configuration.value_axis)
+        message = validate_axis_configuration("value", configuration.value_axis)
     end
     if message === nothing
         bars_gap = configuration.bars_gap
@@ -1937,7 +1999,7 @@ function bar_layout(
 end
 
 """
-    @kwdef mutable struct ScaleConfiguration <: ObjectWithValidation
+    @kwdef mutable struct ScaleConfiguration
         minimum::Maybe{Real} = nothing
         maximum::Maybe{Real} = nothing
         log_regularization::Maybe{AbstractFloat} = nothing
@@ -1950,7 +2012,7 @@ the fields are only relevant for continuous scales. By default, the `minimum` an
 automatically by the data. Setting `log_regularization` converts the scale to a log scale, using the (non-negative)
 regularization to avoid log of zero values. If `reverse_scale` is set, the direction of the color scale is reversed.
 """
-@kwdef mutable struct ScaleConfiguration <: ObjectWithValidation
+@kwdef mutable struct ScaleConfiguration
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
     log_regularization::Maybe{AbstractFloat} = nothing
@@ -1958,19 +2020,19 @@ regularization to avoid log of zero values. If `reverse_scale` is set, the direc
     show_scale::Bool = false
 end
 
-function Validations.validate_object(
+function validate_scale_configuration(
     of_what::AbstractString,
     of_which::AbstractString,
-    configuration::ScaleConfiguration,
+    scale_configuration::ScaleConfiguration,
 )::Maybe{AbstractString}
-    minimum = configuration.minimum
-    maximum = configuration.maximum
+    minimum = scale_configuration.minimum
+    maximum = scale_configuration.maximum
     if minimum !== nothing && maximum !== nothing && maximum <= minimum
         return "configuration.$(of_what).$(of_which).maximum: $(maximum)\n" *
                "is not larger than configuration.$(of_what).$(of_which).minimum: $(minimum)"
     end
 
-    log_regularization = configuration.log_regularization
+    log_regularization = scale_configuration.log_regularization
     if log_regularization !== nothing
         if log_regularization < 0
             return "negative configuration.$(of_what).$(of_which).log_regularization: $(log_regularization)"
@@ -1989,7 +2051,7 @@ function Validations.validate_object(
 end
 
 """
-    @kwdef mutable struct SizeRangeConfiguration <: ObjectWithValidation
+    @kwdef mutable struct SizeRangeConfiguration
         smallest::Maybe{Real} = nothing
         largest::Maybe{Real} = nothing
     end
@@ -1998,17 +2060,17 @@ Configure the range of sizes in pixels (1/96th of an inch) to map the sizes data
 the scale is linear, then we assume the sizes data is just the size in pixels. Otherwise, by default we use 2 pixels for
 the `smallest` size and make the `largest` size be 8 pixels larger than the `smallest` size.
 """
-@kwdef mutable struct SizeRangeConfiguration <: ObjectWithValidation
+@kwdef mutable struct SizeRangeConfiguration
     smallest::Maybe{Real} = nothing
     largest::Maybe{Real} = nothing
 end
 
-function Validations.validate_object(
+function validate_size_range(
     of_what::AbstractString,
-    configuration::SizeRangeConfiguration,
+    size_range_configuration::SizeRangeConfiguration,
 )::Maybe{AbstractString}
-    smallest = configuration.smallest
-    largest = configuration.largest
+    smallest = size_range_configuration.smallest
+    largest = size_range_configuration.largest
     if smallest !== nothing && largest !== nothing && largest <= smallest
         return "configuration.$(of_what).size_range.largest: $(largest)\n" *
                "is not larger than configuration.$(of_what).size_range.smallest: $(smallest)"
@@ -2017,7 +2079,7 @@ function Validations.validate_object(
 end
 
 """
-    @kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
+    @kwdef mutable struct PointsConfiguration
         color::Maybe{AbstractString} = nothing
         color_scale::ScaleConfiguration = ScaleConfiguration()
         color_palette::Maybe{Union{
@@ -2036,7 +2098,7 @@ edges, the `size` is the width of the line). You can override this by specifying
 vector of (value, color) tuples for a continuous (numeric value) scale or categorical (string value) scales. For sizes,
 the `size_range` is applied. The `color_scale` and `size_scale` configurations further control the color scales.
 """
-@kwdef mutable struct PointsStyleConfiguration <: ObjectWithValidation
+@kwdef mutable struct PointsConfiguration
     color::Maybe{AbstractString} = nothing
     color_scale::ScaleConfiguration = ScaleConfiguration()
     color_palette::Maybe{
@@ -2051,27 +2113,27 @@ the `size_range` is applied. The `color_scale` and `size_scale` configurations f
     size_range::SizeRangeConfiguration = SizeRangeConfiguration()
 end
 
-function Validations.validate_object(
+function validate_points_configuration(
     of_what::AbstractString,
-    configuration::PointsStyleConfiguration,
+    points_configuration::PointsConfiguration,
 )::Maybe{AbstractString}
-    message = validate_object(of_what, "color_scale", configuration.color_scale)
+    message = validate_scale_configuration(of_what, "color_scale", points_configuration.color_scale)
     if message === nothing
-        message = validate_object(of_what, "size_scale", configuration.size_scale)
+        message = validate_scale_configuration(of_what, "size_scale", points_configuration.size_scale)
     end
     if message === nothing
-        message = validate_object(of_what, configuration.size_range)
+        message = validate_size_range(of_what, points_configuration.size_range)
     end
     if message !== nothing
         return message
     end
 
-    size = configuration.size
+    size = points_configuration.size
     if size !== nothing && size <= 0
         return "non-positive configuration.$(of_what).size: $(size)"
     end
 
-    color_palette = configuration.color_palette
+    color_palette = points_configuration.color_palette
     if color_palette isa AbstractVector
         if length(color_palette) == 0
             return "empty configuration.$(of_what).color_palette"
@@ -2087,18 +2149,18 @@ function Validations.validate_object(
             if cmin == cmax
                 return "single configuration.$(of_what).color_palette value: $(cmax)"
             end
-            log_color_scale_regularization = configuration.color_scale.log_regularization
+            log_color_scale_regularization = points_configuration.color_scale.log_regularization
             if log_color_scale_regularization !== nothing && cmin + log_color_scale_regularization <= 0
                 index = argmin(color_palette)
                 return "log of non-positive configuration.$(of_what).color_palette[$(index)]: $(cmin + log_color_scale_regularization)"
             end
-        elseif configuration.color_scale.reverse_scale
+        elseif points_configuration.color_scale.reverse_scale
             return "reversed categorical configuration.$(of_what).color_palette"
         end
     end
 
-    if !is_valid_color(configuration.color)
-        return "invalid configuration.$(of_what).color: $(configuration.color)"
+    if !is_valid_color(points_configuration.color)
+        return "invalid configuration.$(of_what).color: $(points_configuration.color)"
     end
 
     return nothing
@@ -2109,9 +2171,9 @@ end
         graph::GraphConfiguration = GraphConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
-        points_style::PointsStyleConfiguration = PointsStyleConfiguration()
-        border_style::PointsStyleConfiguration = PointsStyleConfiguration()
-        edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
+        points::PointsConfiguration = PointsConfiguration()
+        border::PointsConfiguration = PointsConfiguration()
+        edges::PointsConfiguration = PointsConfiguration()
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
         diagonal_bands::BandsConfiguration = BandsConfiguration()
@@ -2124,59 +2186,59 @@ Using the `vertical_bands`, `horizontal_bands` and/or `diagonal_bands` you can p
 the X and Y axes. If the axes are in log scale, the `offset` of the `diagonal_bands` are multiplicative instead of
 additive, and must be positive.
 
-The `border_style` is used if the [`PointsGraphData`](@ref) contains either the `borders_colors` and/or `borders_sizes`.
+The `border` is used if the [`PointsGraphData`](@ref) contains either the `borders_colors` and/or `borders_sizes`.
 This allows displaying some additional data per point.
 
 !!! note
 
     There is no `show_legend` for a [`GraphConfiguration`](@ref) of a points graph. Instead you probably want to set the
-    `show_scale` of the `color_scale` (and/or of the `border_style` and/or `edges_style`). In addition, the color scale
-    options of the `edges_style` must not be set, as the `edges_colors` of [`PointsGraphData`](@ref) is restricted to
+    `show_scale` of the `color_scale` (and/or of the `border` and/or `edges`). In addition, the color scale
+    options of the `edges` must not be set, as the `edges_colors` of [`PointsGraphData`](@ref) is restricted to
     explicit colors.
 """
 @kwdef mutable struct PointsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    points_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    points::PointsConfiguration = PointsConfiguration()
+    border::PointsConfiguration = PointsConfiguration()
+    edges::PointsConfiguration = PointsConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     diagonal_bands::BandsConfiguration = BandsConfiguration()
 end
 
 function Validations.validate_object(configuration::PointsGraphConfiguration)::Maybe{AbstractString}
-    @assert configuration.edges_style.color_palette === nothing "not implemented: points edges_style color_palette"
-    @assert !configuration.edges_style.color_scale.reverse_scale "not implemented: points edges_style.color_scale.reverse_scale"
-    @assert !configuration.edges_style.color_scale.show_scale "not implemented: points edges_style.color_scale.show_scale"
-    @assert !configuration.edges_style.size_scale.show_scale "not implemented: points edges_style.size_scale.show_scale"
+    @assert configuration.edges.color_palette === nothing "not implemented: points edges color_palette"
+    @assert !configuration.edges.color_scale.reverse_scale "not implemented: points edges.color_scale.reverse_scale"
+    @assert !configuration.edges.color_scale.show_scale "not implemented: points edges.color_scale.show_scale"
+    @assert !configuration.edges.size_scale.show_scale "not implemented: points edges.size_scale.show_scale"
 
-    message = validate_object(configuration.graph)
+    message = validate_graph_configuration(configuration.graph)
     if message === nothing
-        message = validate_object("x", configuration.x_axis)
+        message = validate_axis_configuration("x", configuration.x_axis)
     end
     if message === nothing
-        message = validate_object("y", configuration.y_axis)
+        message = validate_axis_configuration("y", configuration.y_axis)
     end
     if message === nothing
-        message = validate_object("points_style", configuration.points_style)
+        message = validate_points_configuration("points", configuration.points)
     end
     if message === nothing
-        message = validate_object("border_style", configuration.border_style)
+        message = validate_points_configuration("border", configuration.border)
     end
     if message === nothing
-        message = validate_object("edges_style", configuration.edges_style)
+        message = validate_points_configuration("edges", configuration.edges)
     end
     if message === nothing
-        message = validate_object(
+        message = validate_bands_configuration(
             "vertical_bands",
             configuration.vertical_bands,
             configuration.x_axis.log_regularization !== nothing,
         )
     end
     if message === nothing
-        message = validate_object(
+        message = validate_bands_configuration(
             "horizontal_bands",
             configuration.horizontal_bands,
             configuration.y_axis.log_regularization !== nothing,
@@ -2185,14 +2247,14 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
     if message === nothing &&
        (configuration.x_axis.log_regularization === nothing) != (configuration.y_axis.log_regularization === nothing) &&
        (
-           configuration.diagonal_bands.low_band_style.offset !== nothing ||
-           configuration.diagonal_bands.middle_band_style.offset !== nothing ||
-           configuration.diagonal_bands.high_band_style.offset !== nothing
+           configuration.diagonal_bands.low.offset !== nothing ||
+           configuration.diagonal_bands.middle.offset !== nothing ||
+           configuration.diagonal_bands.high.offset !== nothing
        )
         message = "configuration.diagonal_bands specified for a combination of linear and log scale axes"
     end
     if message === nothing
-        message = validate_object(
+        message = validate_bands_configuration(
             "diagonal_bands",
             configuration.diagonal_bands,
             configuration.x_axis.log_regularization !== nothing || configuration.y_axis.log_regularization !== nothing,
@@ -2206,8 +2268,10 @@ end
         graph_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
-        scale_title::Maybe{AbstractString} = nothing
-        border_scale_title::Maybe{AbstractString} = nothing
+        points_colors_title::Maybe{AbstractString} = nothing
+        points_sizes_title::Maybe{AbstractString} = nothing
+        border_colors_title::Maybe{AbstractString} = nothing
+        border_sizes_title::Maybe{AbstractString} = nothing
         points_xs::AbstractVector{<:Real}
         points_ys::AbstractVector{<:Real}
         points_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
@@ -2233,10 +2297,11 @@ in interactive graphs (or when saving an HTML file).
 The `borders_colors` and `borders_sizes` can be used to display additional data per point. The border size is in addition
 to the point size.
 
-The `scale_title` and `border_scale_title` are only used if `show_scale` is set for the relevant color scales. You can't
-specify `show_scale` if there is no `points_colors` data or if the `points_colors` contain explicit color names.
+The `points_colors_title`, `points_sizes_title`, `border_colors_title` and `border_sizes_title` are only used if
+`show_scale` is set for the relevant color scales. You can't specify `show_scale` if there is no `points_colors` data or
+if the `points_colors` contain explicit color names.
 
-It is possible to draw straight `edges` between specific point pairs. In this case the `edges_style` of the
+It is possible to draw straight `edges` between specific point pairs. In this case the `edges` of the
 [`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
 The `edges_colors` are restricted to explicit colors, not a color scale.
 
@@ -2247,8 +2312,10 @@ categorical `color_palette`) will not be shown.
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
-    scale_title::Maybe{AbstractString} = nothing
-    border_scale_title::Maybe{AbstractString} = nothing
+    points_colors_title::Maybe{AbstractString} = nothing
+    points_sizes_title::Maybe{AbstractString} = nothing
+    border_colors_title::Maybe{AbstractString} = nothing
+    border_sizes_title::Maybe{AbstractString} = nothing
     points_xs::AbstractVector{<:Real}
     points_ys::AbstractVector{<:Real}
     points_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
@@ -2342,10 +2409,8 @@ function render(
 
     traces = Vector{GenericTrace}()
 
-    minimum_x = minimum(data.points_xs)
-    minimum_y = minimum(data.points_ys)
-    maximum_x = maximum(data.points_xs)
-    maximum_y = maximum(data.points_ys)
+    minimum_x, maximum_x = range_of([data.points_xs], configuration.x_axis.log_regularization; apply_log = false)
+    minimum_y, maximum_y = range_of([data.points_ys], configuration.y_axis.log_regularization; apply_log = false)
 
     push_fill_vertical_bands_traces(traces, configuration.vertical_bands, minimum_x, minimum_y, maximum_x, maximum_y)
     push_fill_horizontal_bands_traces(
@@ -2367,7 +2432,7 @@ function render(
             configuration.y_axis.log_regularization !== nothing,
     )
 
-    sizes = fix_sizes(data.points_sizes, configuration.points_style)
+    sizes = fix_sizes(data.points_sizes, configuration.points)
 
     if data.borders_colors !== nothing || data.borders_sizes !== nothing
         marker_size = border_marker_size(data, configuration, sizes)
@@ -2377,7 +2442,7 @@ function render(
             marker_size_mask = nothing
         end
 
-        color_palette = configuration.border_style.color_palette
+        color_palette = configuration.border.color_palette
         if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
             borders_colors = data.borders_colors
             @assert borders_colors isa AbstractVector{<:AbstractString}
@@ -2397,8 +2462,8 @@ function render(
                                 color = color,
                                 marker_size = marker_size,
                                 coloraxis = nothing,
-                                points_style = configuration.border_style,
-                                scale_title = data.border_scale_title,
+                                points_configuration = configuration.border,
+                                colors_title = data.border_colors_title,
                                 legend_group = "borders",
                                 mask = mask,
                                 name = value,
@@ -2425,14 +2490,14 @@ function render(
                     x_log_regularization = configuration.x_axis.log_regularization,
                     y_log_regularization = configuration.y_axis.log_regularization,
                     color = if borders_colors !== nothing
-                        fix_colors(borders_colors, configuration.border_style.color_scale.log_regularization)
+                        fix_colors(borders_colors, configuration.border.color_scale.log_regularization)
                     else
-                        configuration.border_style.color
+                        configuration.border.color
                     end,
                     marker_size = marker_size,
                     coloraxis = "coloraxis2",
-                    points_style = configuration.border_style,
-                    scale_title = data.border_scale_title,
+                    points_configuration = configuration.border,
+                    colors_title = data.border_colors_title,
                     legend_group = "borders",
                     mask = mask,
                 ),
@@ -2446,7 +2511,7 @@ function render(
         marker_size_mask = nothing
     end
 
-    color_palette = configuration.points_style.color_palette
+    color_palette = configuration.points.color_palette
     if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         for (value, color) in color_palette
             if color != ""
@@ -2466,8 +2531,8 @@ function render(
                             color = color,
                             marker_size = sizes,
                             coloraxis = nothing,
-                            points_style = configuration.points_style,
-                            scale_title = data.scale_title,
+                            points_configuration = configuration.points,
+                            colors_title = data.points_colors_title,
                             legend_group = "points",
                             mask = mask,
                             name = value,
@@ -2495,14 +2560,14 @@ function render(
                     x_log_regularization = configuration.x_axis.log_regularization,
                     y_log_regularization = configuration.y_axis.log_regularization,
                     color = if colors !== nothing
-                        fix_colors(colors, configuration.points_style.color_scale.log_regularization)
+                        fix_colors(colors, configuration.points.color_scale.log_regularization)
                     else
-                        configuration.points_style.color
+                        configuration.points.color
                     end,
                     marker_size = sizes,
                     coloraxis = "coloraxis",
-                    points_style = configuration.points_style,
-                    scale_title = data.scale_title,
+                    points_configuration = configuration.points,
+                    colors_title = data.points_colors_title,
                     legend_group = "points",
                     mask = mask,
                 ),
@@ -2513,35 +2578,26 @@ function render(
     edges_points = data.edges_points
     if edges_points !== nothing
         for index in 1:length(edges_points)
-            push!(traces, edge_trace(data, configuration.edges_style; index = index))
+            push!(traces, edge_trace(data, configuration.edges; index = index))
         end
     end
 
-    for band in (
-        configuration.vertical_bands.low_band_style,
-        configuration.vertical_bands.middle_band_style,
-        configuration.vertical_bands.high_band_style,
-    )
+    for band in
+        (configuration.vertical_bands.low, configuration.vertical_bands.middle, configuration.vertical_bands.high)
         if band.offset !== nothing && band.width !== nothing
             push!(traces, vertical_line_trace(band, minimum_y, maximum_y))
         end
     end
 
-    for band in (
-        configuration.horizontal_bands.low_band_style,
-        configuration.horizontal_bands.middle_band_style,
-        configuration.horizontal_bands.high_band_style,
-    )
+    for band in
+        (configuration.horizontal_bands.low, configuration.horizontal_bands.middle, configuration.horizontal_bands.high)
         if band.offset !== nothing && band.width !== nothing
             push!(traces, horizontal_line_trace(band, minimum_x, maximum_x))
         end
     end
 
-    for band in (
-        configuration.diagonal_bands.low_band_style,
-        configuration.diagonal_bands.middle_band_style,
-        configuration.diagonal_bands.high_band_style,
-    )
+    for band in
+        (configuration.diagonal_bands.low, configuration.diagonal_bands.middle, configuration.diagonal_bands.high)
         if band.offset !== nothing && band.width !== nothing
             push!(
                 traces,
@@ -2558,11 +2614,15 @@ function render(
         end
     end
 
-    layout = points_layout(;
-        data = data,
+    layout = points_layout(
+        data,
+        minimum_x,
+        minimum_y,
+        maximum_x,
+        maximum_y;
         configuration = configuration,
-        x_axis = configuration.x_axis,
-        y_axis = configuration.y_axis,
+        x_axis_configuration = configuration.x_axis,
+        y_axis_configuration = configuration.y_axis,
     )
     figure = plot(traces, layout)
     write_figure_to_file(figure, configuration.graph, output_file)
@@ -2572,48 +2632,48 @@ end
 
 function push_fill_vertical_bands_traces(
     traces::Vector{GenericTrace},
-    configuration::BandsConfiguration,
+    bands_configuration::BandsConfiguration,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real,
 )::Nothing
-    if configuration.low_band_style.offset !== nothing && configuration.low_band_style.is_filled
+    if bands_configuration.low.offset !== nothing && bands_configuration.low.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
-                [minimum_x, configuration.low_band_style.offset, configuration.low_band_style.offset, minimum_x],
+                [minimum_x, bands_configuration.low.offset, bands_configuration.low.offset, minimum_x],
                 [minimum_y, minimum_y, maximum_y, maximum_y];
-                line_color = configuration.low_band_style.color,
+                line_color = bands_configuration.low.color,
             ),
         )
     end
 
-    if configuration.high_band_style.offset !== nothing && configuration.high_band_style.is_filled
+    if bands_configuration.high.offset !== nothing && bands_configuration.high.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
-                [maximum_x, configuration.high_band_style.offset, configuration.high_band_style.offset, maximum_x],
+                [maximum_x, bands_configuration.high.offset, bands_configuration.high.offset, maximum_x],
                 [minimum_y, minimum_y, maximum_y, maximum_y];
-                line_color = configuration.high_band_style.color,
+                line_color = bands_configuration.high.color,
             ),
         )
     end
 
-    if configuration.high_band_style.offset !== nothing &&
-       configuration.low_band_style.offset !== nothing &&
-       configuration.middle_band_style.is_filled
+    if bands_configuration.high.offset !== nothing &&
+       bands_configuration.low.offset !== nothing &&
+       bands_configuration.middle.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
                 [
-                    configuration.low_band_style.offset,
-                    configuration.high_band_style.offset,
-                    configuration.high_band_style.offset,
-                    configuration.low_band_style.offset,
+                    bands_configuration.low.offset,
+                    bands_configuration.high.offset,
+                    bands_configuration.high.offset,
+                    bands_configuration.low.offset,
                 ],
                 [minimum_y, minimum_y, maximum_y, maximum_y];
-                line_color = configuration.middle_band_style.color,
+                line_color = bands_configuration.middle.color,
             ),
         )
     end
@@ -2623,48 +2683,48 @@ end
 
 function push_fill_horizontal_bands_traces(
     traces::Vector{GenericTrace},
-    configuration::BandsConfiguration,
+    bands_configuration::BandsConfiguration,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real,
 )::Nothing
-    if configuration.low_band_style.offset !== nothing && configuration.low_band_style.is_filled
+    if bands_configuration.low.offset !== nothing && bands_configuration.low.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
                 [minimum_x, minimum_x, maximum_x, maximum_x],
-                [minimum_y, configuration.low_band_style.offset, configuration.low_band_style.offset, minimum_y];
-                line_color = configuration.low_band_style.color,
+                [minimum_y, bands_configuration.low.offset, bands_configuration.low.offset, minimum_y];
+                line_color = bands_configuration.low.color,
             ),
         )
     end
 
-    if configuration.high_band_style.offset !== nothing && configuration.high_band_style.is_filled
+    if bands_configuration.high.offset !== nothing && bands_configuration.high.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
                 [minimum_x, minimum_x, maximum_x, maximum_x],
-                [maximum_y, configuration.high_band_style.offset, configuration.high_band_style.offset, maximum_y];
-                line_color = configuration.high_band_style.color,
+                [maximum_y, bands_configuration.high.offset, bands_configuration.high.offset, maximum_y];
+                line_color = bands_configuration.high.color,
             ),
         )
     end
 
-    if configuration.high_band_style.offset !== nothing &&
-       configuration.low_band_style.offset !== nothing &&
-       configuration.middle_band_style.is_filled
+    if bands_configuration.high.offset !== nothing &&
+       bands_configuration.low.offset !== nothing &&
+       bands_configuration.middle.is_filled
         push!(  # NOJET
             traces,
             fill_trace(
                 [minimum_x, minimum_x, maximum_x, maximum_x],
                 [
-                    configuration.low_band_style.offset,
-                    configuration.high_band_style.offset,
-                    configuration.high_band_style.offset,
-                    configuration.low_band_style.offset,
+                    bands_configuration.low.offset,
+                    bands_configuration.high.offset,
+                    bands_configuration.high.offset,
+                    bands_configuration.low.offset,
                 ];
-                line_color = configuration.middle_band_style.color,
+                line_color = bands_configuration.middle.color,
             ),
         )
     end
@@ -2674,56 +2734,56 @@ end
 
 function push_fill_diagonal_bands_traces(
     traces::Vector{GenericTrace},
-    configuration::BandsConfiguration,
+    bands_configuration::BandsConfiguration,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real;
     log_scale::Bool,
 )::Nothing
-    if configuration.low_band_style.offset !== nothing && configuration.low_band_style.is_filled
+    if bands_configuration.low.offset !== nothing && bands_configuration.low.is_filled
         push!(  # NOJET
             traces,
             fill_low_diagonal_trace(
-                configuration.low_band_style.offset,
+                bands_configuration.low.offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
                 maximum_y;
-                line_color = configuration.low_band_style.color,
+                line_color = bands_configuration.low.color,
                 log_scale = log_scale,
             ),
         )
     end
 
-    if configuration.high_band_style.offset !== nothing && configuration.high_band_style.is_filled
+    if bands_configuration.high.offset !== nothing && bands_configuration.high.is_filled
         push!(  # NOJET
             traces,
             fill_high_diagonal_trace(
-                configuration.high_band_style.offset,
+                bands_configuration.high.offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
                 maximum_y;
-                line_color = configuration.high_band_style.color,
+                line_color = bands_configuration.high.color,
                 log_scale = log_scale,
             ),
         )
     end
 
-    if configuration.high_band_style.offset !== nothing &&
-       configuration.low_band_style.offset !== nothing &&
-       configuration.middle_band_style.is_filled
+    if bands_configuration.high.offset !== nothing &&
+       bands_configuration.low.offset !== nothing &&
+       bands_configuration.middle.is_filled
         push!(  # NOJET
             traces,
             fill_middle_diagonal_trace(
-                configuration.low_band_style.offset,
-                configuration.high_band_style.offset,
+                bands_configuration.low.offset,
+                bands_configuration.high.offset,
                 minimum_x,
                 minimum_y,
                 maximum_x,
                 maximum_y;
-                line_color = configuration.middle_band_style.color,
+                line_color = bands_configuration.middle.color,
                 log_scale = log_scale,
             ),
         )
@@ -2865,8 +2925,8 @@ function points_trace(
     color::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}, AbstractVector{<:Real}}},
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
     coloraxis::Maybe{AbstractString},
-    points_style::PointsStyleConfiguration,
-    scale_title::Maybe{AbstractString},
+    points_configuration::PointsConfiguration,
+    colors_title::Maybe{AbstractString},
     legend_group::AbstractString,
     mask::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
     name::Maybe{AbstractString} = nothing,
@@ -2875,30 +2935,30 @@ function points_trace(
         x = masked_data(data.points_xs, mask) .+ (x_log_regularization === nothing ? 0 : x_log_regularization),
         y = masked_data(data.points_ys, mask) .+ (y_log_regularization === nothing ? 0 : y_log_regularization),
         marker_size = masked_data(marker_size, mask),
-        marker_color = color !== nothing ? masked_data(color, mask) : points_style.color,
-        marker_colorscale = if points_style.color_palette isa AbstractVector ||
-                               points_style.color_scale.log_regularization !== nothing
+        marker_color = color !== nothing ? masked_data(color, mask) : points_configuration.color,
+        marker_colorscale = if points_configuration.color_palette isa AbstractVector ||
+                               points_configuration.color_scale.log_regularization !== nothing
             nothing
         else
-            points_style.color_palette
+            points_configuration.color_palette
         end,
         marker_coloraxis = coloraxis,
-        marker_showscale = points_style.color_scale.show_scale && !(
-            points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        marker_showscale = points_configuration.color_scale.show_scale && !(
+            points_configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        marker_reversescale = points_style.color_scale.reverse_scale,
-        showlegend = points_style.color_scale.show_scale &&
-                     points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        marker_reversescale = points_configuration.color_scale.reverse_scale,
+        showlegend = points_configuration.color_scale.show_scale &&
+                     points_configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
         legendgroup = legend_group,
-        legendgrouptitle_text = scale_title,
-        name = name !== nothing ? name : points_style.color_scale.show_scale ? "Trace" : "",
+        legendgrouptitle_text = colors_title,
+        name = name !== nothing ? name : points_configuration.color_scale.show_scale ? "Trace" : "",
         text = data.points_hovers,
         hovertemplate = data.points_hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
     )
 end
 
-function edge_trace(data::PointsGraphData, edges_style::PointsStyleConfiguration; index::Int)::GenericTrace
+function edge_trace(data::PointsGraphData, edges_configuration::PointsConfiguration; index::Int)::GenericTrace
     from_point, to_point = data.edges_points[index]
     return scatter(;
         x = [data.points_xs[from_point], data.points_xs[to_point]],
@@ -2906,12 +2966,12 @@ function edge_trace(data::PointsGraphData, edges_style::PointsStyleConfiguration
         line_width = if data.edges_sizes !== nothing
             data.edges_sizes[index]
         else
-            edges_style.size
+            edges_configuration.size
         end,
         line_color = if data.edges_colors !== nothing
             data.edges_colors[index]
-        elseif edges_style.color !== nothing
-            edges_style.color
+        elseif edges_configuration.color !== nothing
+            edges_configuration.color
         else
             "darkgrey"
         end,
@@ -2920,41 +2980,41 @@ function edge_trace(data::PointsGraphData, edges_style::PointsStyleConfiguration
     )
 end
 
-function vertical_line_trace(configuration::BandStyleConfiguration, minimum_y::Real, maximum_y::Real)::GenericTrace
-    @assert configuration.offset !== nothing
+function vertical_line_trace(band_configuration::BandConfiguration, minimum_y::Real, maximum_y::Real)::GenericTrace
+    @assert band_configuration.offset !== nothing
     return scatter(;
-        x = [configuration.offset, configuration.offset],
+        x = [band_configuration.offset, band_configuration.offset],
         y = [minimum_y, maximum_y],
-        line_width = configuration.width,
-        line_color = configuration.color !== nothing ? configuration.color : "black",
-        line_dash = configuration.is_dashed ? "dash" : nothing,
+        line_width = band_configuration.width,
+        line_color = band_configuration.color !== nothing ? band_configuration.color : "black",
+        line_dash = band_configuration.is_dashed ? "dash" : nothing,
         showlegend = false,
         mode = "lines",
     )
 end
 
-function horizontal_line_trace(configuration::BandStyleConfiguration, minimum_x::Real, maximum_x::Real)::GenericTrace
-    @assert configuration.offset !== nothing
+function horizontal_line_trace(band_configuration::BandConfiguration, minimum_x::Real, maximum_x::Real)::GenericTrace
+    @assert band_configuration.offset !== nothing
     return scatter(;
         x = [minimum_x, maximum_x],
-        y = [configuration.offset, configuration.offset],
-        line_width = configuration.width,
-        line_color = configuration.color !== nothing ? configuration.color : "black",
-        line_dash = configuration.is_dashed ? "dash" : nothing,
+        y = [band_configuration.offset, band_configuration.offset],
+        line_width = band_configuration.width,
+        line_color = band_configuration.color !== nothing ? band_configuration.color : "black",
+        line_dash = band_configuration.is_dashed ? "dash" : nothing,
         showlegend = false,
         mode = "lines",
     )
 end
 
 function diagonal_line_trace(
-    configuration::BandStyleConfiguration,
+    band_configuration::BandConfiguration,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real;
     log_scale::Bool,
 )::GenericTrace
-    offset = configuration.offset
+    offset = band_configuration.offset
     @assert offset !== nothing
     minimum_xy = min(minimum_x, minimum_y)
     maximum_xy = max(maximum_x, maximum_y)
@@ -2972,9 +3032,9 @@ function diagonal_line_trace(
     return scatter(;
         x = x,
         y = y,
-        line_width = configuration.width,
-        line_color = configuration.color !== nothing ? configuration.color : "black",
-        line_dash = configuration.is_dashed ? "dash" : nothing,
+        line_width = band_configuration.width,
+        line_color = band_configuration.color !== nothing ? band_configuration.color : "black",
+        line_dash = band_configuration.is_dashed ? "dash" : nothing,
         showlegend = false,
         mode = "lines",
     )
@@ -3014,20 +3074,26 @@ end
 
 function log_color_scale_ticks(
     colors::Maybe{Union{AbstractVector{<:Union{Real, AbstractString}}, AbstractMatrix{<:Union{Real, AbstractString}}}},
-    points_style::PointsStyleConfiguration,
+    points_configuration::PointsConfiguration,
 )::Tuple{Maybe{Vector{Float32}}, Maybe{Vector{String}}}
-    log_color_scale_regularization = points_style.color_scale.log_regularization
-    if log_color_scale_regularization === nothing || !points_style.color_scale.show_scale
+    log_color_scale_regularization = points_configuration.color_scale.log_regularization
+    if log_color_scale_regularization === nothing || !points_configuration.color_scale.show_scale
         return nothing, nothing
     else
         @assert colors isa AbstractVector{<:Real}
-        cmin =
-            lowest_color(points_style.color_palette, points_style.color_scale.minimum, log_color_scale_regularization)  # NOJET
+        cmin = lowest_color(
+            points_configuration.color_palette,
+            points_configuration.color_scale.minimum,
+            log_color_scale_regularization,
+        )  # NOJET
         if cmin === nothing
             cmin = log10(minimum(colors) + log_color_scale_regularization)
         end
-        cmax =
-            highest_color(points_style.color_palette, points_style.color_scale.maximum, log_color_scale_regularization)  # NOJET
+        cmax = highest_color(
+            points_configuration.color_palette,
+            points_configuration.color_scale.maximum,
+            log_color_scale_regularization,
+        )  # NOJET
         if cmax === nothing
             cmax = log10(maximum(colors) + log_color_scale_regularization)
         end
@@ -3159,16 +3225,20 @@ function write_figure_to_file(::Figure, ::GraphConfiguration, ::Nothing)::Nothin
     return nothing
 end
 
-function write_figure_to_file(figure::Figure, configuration::GraphConfiguration, output_file::AbstractString)::Nothing
-    savefig(figure, output_file; height = configuration.height, width = configuration.width)  # NOJET
+function write_figure_to_file(
+    figure::Figure,
+    graph_configuration::GraphConfiguration,
+    output_file::AbstractString,
+)::Nothing
+    savefig(figure, output_file; height = graph_configuration.height, width = graph_configuration.width)  # NOJET
     return nothing
 end
 
 """
     @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
-        points_style::PointsStyleConfiguration = PointsStyleConfiguration()
-        border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+        points::PointsConfiguration = PointsConfiguration()
+        border::PointsConfiguration = PointsConfiguration()
     end
 
 Configure a graph showing a grid of points (e.g. for correlations).
@@ -3181,17 +3251,17 @@ graph size vs. the point sizes for best results, as Plotly's defaults aren't ver
 """
 @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    points_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    points::PointsConfiguration = PointsConfiguration()
+    border::PointsConfiguration = PointsConfiguration()
 end
 
 function Validations.validate_object(configuration::GridGraphConfiguration)::Maybe{AbstractString}
-    message = validate_object(configuration.graph)
+    message = validate_graph_configuration(configuration.graph)
     if message === nothing
-        message = validate_object("points_style", configuration.points_style)
+        message = validate_points_configuration("points", configuration.points)
     end
     if message === nothing
-        message = validate_object("border_style", configuration.border_style)
+        message = validate_points_configuration("border", configuration.border)
     end
     return message
 end
@@ -3201,8 +3271,8 @@ end
         graph_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
-        scale_title::Maybe{AbstractString} = nothing
-        border_scale_title::Maybe{AbstractString} = nothing
+        points_colors_title::Maybe{AbstractString} = nothing
+        border_colors_title::Maybe{AbstractString} = nothing
         columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
@@ -3221,8 +3291,8 @@ and Y coordinates are given. Instead each matrix entry is plotted as a point at 
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
-    scale_title::Maybe{AbstractString} = nothing
-    border_scale_title::Maybe{AbstractString} = nothing
+    points_colors_title::Maybe{AbstractString} = nothing
+    border_colors_title::Maybe{AbstractString} = nothing
     columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
@@ -3314,7 +3384,7 @@ function render(
 
     traces = Vector{GenericTrace}()
 
-    sizes = fix_sizes(data.points_sizes, configuration.points_style)
+    sizes = fix_sizes(data.points_sizes, configuration.points)
 
     borders_colors = data.borders_colors
     if borders_colors !== nothing || data.borders_sizes !== nothing
@@ -3325,7 +3395,7 @@ function render(
             marker_size_mask = nothing
         end
 
-        color_palette = configuration.border_style.color_palette
+        color_palette = configuration.border.color_palette
         if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
             @assert borders_colors isa AbstractMatrix{<:AbstractString}
             for (value, color) in color_palette
@@ -3344,8 +3414,8 @@ function render(
                                 color = color,
                                 marker_size = marker_size,
                                 coloraxis = nothing,
-                                points_style = configuration.border_style,
-                                scale_title = data.border_scale_title,
+                                points_configuration = configuration.border,
+                                colors_title = data.border_colors_title,
                                 legend_group = "borders",
                                 mask = mask,
                                 name = value,
@@ -3373,14 +3443,14 @@ function render(
                         n_rows = n_rows,
                         n_columns = n_columns,
                         color = if borders_colors !== nothing
-                            fix_colors(borders_colors, configuration.border_style.color_scale.log_regularization)
+                            fix_colors(borders_colors, configuration.border.color_scale.log_regularization)
                         else
-                            configuration.border_style.color
+                            configuration.border.color
                         end,
                         marker_size = marker_size,
                         coloraxis = "coloraxis2",
-                        points_style = configuration.border_style,
-                        scale_title = data.border_scale_title,
+                        points_configuration = configuration.border,
+                        colors_title = data.border_colors_title,
                         mask = mask,
                         legend_group = "borders",
                     ),
@@ -3395,7 +3465,7 @@ function render(
         marker_size_mask = nothing
     end
 
-    color_palette = configuration.points_style.color_palette
+    color_palette = configuration.points.color_palette
     if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         colors = data.points_colors
         @assert colors isa AbstractMatrix{<:AbstractString}
@@ -3415,8 +3485,8 @@ function render(
                             color = color,
                             marker_size = sizes,
                             coloraxis = nothing,
-                            points_style = configuration.points_style,
-                            scale_title = data.scale_title,
+                            points_configuration = configuration.points,
+                            colors_title = data.points_colors_title,
                             legend_group = "points",
                             mask = mask,
                             name = value,
@@ -3444,14 +3514,14 @@ function render(
                     n_rows = n_rows,
                     n_columns = n_columns,
                     color = if colors !== nothing
-                        fix_colors(colors, configuration.points_style.color_scale.log_regularization)
+                        fix_colors(colors, configuration.points.color_scale.log_regularization)
                     else
-                        configuration.points_style.color
+                        configuration.points.color
                     end,
                     marker_size = sizes,
                     coloraxis = "coloraxis",
-                    points_style = configuration.points_style,
-                    scale_title = data.scale_title,
+                    points_configuration = configuration.points,
+                    colors_title = data.points_colors_title,
                     mask = mask,
                     legend_group = "points",
                 ),
@@ -3468,11 +3538,15 @@ function render(
         rows_names = [string(index) for index in 1:n_rows]
     end
 
-    layout = points_layout(;
-        data = data,
+    layout = points_layout(
+        data,
+        0.5,
+        0.5,
+        n_columns + 0.5,
+        n_rows + 0.5;
         configuration = configuration,
-        x_axis = AxisConfiguration(; minimum = 0.5, maximum = n_columns + 0.5),
-        y_axis = AxisConfiguration(; minimum = 0.5, maximum = n_rows + 0.5),
+        x_axis_configuration = AxisConfiguration(),
+        y_axis_configuration = AxisConfiguration(),
         rows_names = rows_names,
         columns_names = columns_names,
     )
@@ -3497,35 +3571,15 @@ function assert_valid_render(data::PointsGraphData, configuration::PointsGraphCo
         end
     end
 
-    assert_valid_vector_colors(
-        "data.points_colors",
-        data.points_colors,
-        "configuration.points_style",
-        configuration.points_style,
-    )
-    assert_valid_vector_colors(
-        "data.borders_colors",
-        data.borders_colors,
-        "configuration.border_style",
-        configuration.border_style,
-    )
+    assert_valid_vector_colors("data.points_colors", data.points_colors, "configuration.points", configuration.points)
+    assert_valid_vector_colors("data.borders_colors", data.borders_colors, "configuration.border", configuration.border)
 
     return nothing
 end
 
 function assert_valid_render(data::GridGraphData, configuration::GridGraphConfiguration)::Nothing
-    assert_valid_matrix_colors(
-        "data.points_colors",
-        data.points_colors,
-        "configuration.points_style",
-        configuration.points_style,
-    )
-    assert_valid_matrix_colors(
-        "data.borders_colors",
-        data.borders_colors,
-        "configuration.border_style",
-        configuration.border_style,
-    )
+    assert_valid_matrix_colors("data.points_colors", data.points_colors, "configuration.points", configuration.points)
+    assert_valid_matrix_colors("data.borders_colors", data.borders_colors, "configuration.border", configuration.border)
 
     return nothing
 end
@@ -3534,7 +3588,7 @@ function assert_valid_vector_colors(
     what_colors::AbstractString,
     colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}},
     what_configuration::AbstractString,
-    configuration::PointsStyleConfiguration,
+    configuration::PointsConfiguration,
 )::Nothing
     color_palette = configuration.color_palette
     if colors isa AbstractVector{<:AbstractString}
@@ -3578,7 +3632,7 @@ function assert_valid_matrix_colors(
     what_colors::AbstractString,
     colors::Maybe{Union{AbstractMatrix{<:AbstractString}, AbstractMatrix{<:Real}}},
     what_configuration::AbstractString,
-    configuration::PointsStyleConfiguration,
+    configuration::PointsConfiguration,
 )::Nothing
     color_palette = configuration.color_palette
     if colors isa AbstractMatrix{<:AbstractString}
@@ -3632,8 +3686,8 @@ function grid_trace(;
     color::Maybe{Union{AbstractString, AbstractMatrix{<:Union{<:AbstractString, Real}}}},
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
     coloraxis::Maybe{AbstractString},
-    points_style::PointsStyleConfiguration,
-    scale_title::Maybe{AbstractString},
+    points_configuration::PointsConfiguration,
+    colors_title::Maybe{AbstractString},
     legend_group::AbstractString,
     mask::Maybe{Union{Vector{Bool}, BitVector}} = nothing,
     name::Maybe{AbstractString} = nothing,
@@ -3642,23 +3696,23 @@ function grid_trace(;
         x = masked_xs(n_rows, n_columns, mask),
         y = masked_ys(n_rows, n_columns, mask),
         marker_size = masked_data(marker_size, mask),
-        marker_color = color !== nothing ? masked_data(color, mask) : points_style.color,
-        marker_colorscale = if points_style.color_palette isa AbstractVector ||
-                               points_style.color_scale.log_regularization !== nothing
+        marker_color = color !== nothing ? masked_data(color, mask) : points_configuration.color,
+        marker_colorscale = if points_configuration.color_palette isa AbstractVector ||
+                               points_configuration.color_scale.log_regularization !== nothing
             nothing
         else
-            points_style.color_palette
+            points_configuration.color_palette
         end,
         marker_coloraxis = coloraxis,
-        marker_showscale = points_style.color_scale.show_scale && !(
-            points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        marker_showscale = points_configuration.color_scale.show_scale && !(
+            points_configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        marker_reversescale = points_style.color_scale.reverse_scale,
-        showlegend = points_style.color_scale.show_scale &&
-                     points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
+        marker_reversescale = points_configuration.color_scale.reverse_scale,
+        showlegend = points_configuration.color_scale.show_scale &&
+                     points_configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}},
         legendgroup = legend_group,
-        legendgrouptitle_text = scale_title,
-        name = name !== nothing ? name : points_style.color_scale.show_scale ? "Trace" : "",
+        legendgrouptitle_text = colors_title,
+        name = name !== nothing ? name : points_configuration.color_scale.show_scale ? "Trace" : "",
         text = masked_data(data.points_hovers, mask),
         hovertemplate = data.points_hovers === nothing ? nothing : "%{text}<extra></extra>",
         mode = "markers",
@@ -3701,101 +3755,120 @@ function masked_ys(
     return masked_data(points_ys, mask)
 end
 
-function points_layout(;
+function points_layout(
     data::Union{PointsGraphData, GridGraphData},
+    minimum_x::Real,
+    minimum_y::Real,
+    maximum_x::Real,
+    maximum_y::Real;
     configuration::Union{PointsGraphConfiguration, GridGraphConfiguration},
-    x_axis::AxisConfiguration,
-    y_axis::AxisConfiguration,
+    x_axis_configuration::AxisConfiguration,
+    y_axis_configuration::AxisConfiguration,
     rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
     columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
 )::Layout
-    color_tickvals, color_ticktext = log_color_scale_ticks(data.points_colors, configuration.points_style)
-    border_color_tickvals, border_color_ticktext =
-        log_color_scale_ticks(data.borders_colors, configuration.border_style)
+    color_tickvals, color_ticktext = log_color_scale_ticks(data.points_colors, configuration.points)
+    border_color_tickvals, border_color_ticktext = log_color_scale_ticks(data.borders_colors, configuration.border)
     x_tickvals, x_ticknames = xy_ticks(columns_names)
     y_tickvals, y_ticknames = xy_ticks(rows_names)
+
+    if x_axis_configuration.log_regularization !== nothing
+        minimum_x = log10(minimum_x)
+        maximum_x = log10(maximum_x)
+    end
+
+    if y_axis_configuration.log_regularization !== nothing
+        minimum_y = log10(minimum_y)
+        maximum_y = log10(maximum_y)
+    end
+
     return Layout(;  # NOJET
         title = data.graph_title,
         template = configuration.graph.template,
         xaxis_showgrid = configuration.graph.show_grid,
         xaxis_showticklabels = configuration.graph.show_ticks,
         xaxis_title = data.x_axis_title,
-        xaxis_range = (x_axis.minimum, x_axis.maximum),
-        xaxis_type = x_axis.log_regularization !== nothing ? "log" : nothing,
+        xaxis_range = (
+            x_axis_configuration.minimum !== nothing ? x_axis_configuration.minimum : minimum_x,
+            x_axis_configuration.maximum !== nothing ? x_axis_configuration.maximum : maximum_x,
+        ),
+        xaxis_type = x_axis_configuration.log_regularization !== nothing ? "log" : nothing,
         xaxis_tickvals = x_tickvals,
         xaxis_ticktext = x_ticknames,
         yaxis_showgrid = configuration.graph.show_grid,
         yaxis_showticklabels = configuration.graph.show_ticks,
         yaxis_title = data.y_axis_title,
-        yaxis_range = (y_axis.minimum, y_axis.maximum),
-        yaxis_type = y_axis.log_regularization !== nothing ? "log" : nothing,
+        yaxis_range = (
+            y_axis_configuration.minimum !== nothing ? y_axis_configuration.minimum : minimum_y,
+            y_axis_configuration.maximum !== nothing ? y_axis_configuration.maximum : maximum_y,
+        ),
+        yaxis_type = y_axis_configuration.log_regularization !== nothing ? "log" : nothing,
         yaxis_tickvals = y_tickvals,
         yaxis_ticktext = y_ticknames,
         showlegend = (
-            configuration.points_style.color_scale.show_scale &&
-            configuration.points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            configuration.points.color_scale.show_scale &&
+            configuration.points.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ) || (
-            configuration.border_style.color_scale.show_scale &&
-            configuration.border_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            configuration.border.color_scale.show_scale &&
+            configuration.border.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        legend_x = if configuration.points_style.color_scale.show_scale &&
-                      configuration.border_style.color_scale.show_scale &&
-                      configuration.border_style.color_palette isa
-                      AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        legend_x = if configuration.points.color_scale.show_scale &&
+                      configuration.border.color_scale.show_scale &&
+                      configuration.border.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
             1.2
         else
             nothing
         end,
         coloraxis2_colorbar_x = if (
-            configuration.border_style.color_scale.show_scale && configuration.points_style.color_scale.show_scale
+            configuration.border.color_scale.show_scale && configuration.points.color_scale.show_scale
         )
             1.2
         else
             nothing  # NOJET
         end,
-        coloraxis_showscale = configuration.points_style.color_scale.show_scale && !(
-            configuration.points_style.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        coloraxis_showscale = configuration.points.color_scale.show_scale && !(
+            configuration.points.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         ),
-        coloraxis_reversescale = configuration.points_style.color_scale.reverse_scale,
+        coloraxis_reversescale = configuration.points.color_scale.reverse_scale,
         coloraxis_colorscale = normalized_color_palette(
-            configuration.points_style.color_palette,
-            configuration.points_style.color_scale,
+            configuration.points.color_palette,
+            configuration.points.color_scale,
         ),
         coloraxis_cmin = lowest_color(
-            configuration.points_style.color_palette,
-            configuration.points_style.color_scale.minimum,
-            configuration.points_style.color_scale.log_regularization,
+            configuration.points.color_palette,
+            configuration.points.color_scale.minimum,
+            configuration.points.color_scale.log_regularization,
         ),
         coloraxis_cmax = highest_color(
-            configuration.points_style.color_palette,
-            configuration.points_style.color_scale.maximum,
-            configuration.points_style.color_scale.log_regularization,
+            configuration.points.color_palette,
+            configuration.points.color_scale.maximum,
+            configuration.points.color_scale.log_regularization,
         ),
-        coloraxis_colorbar_title_text = data.scale_title,
+        coloraxis_colorbar_title_text = data.points_colors_title,
         coloraxis_colorbar_tickvals = color_tickvals,
         coloraxis_colorbar_ticktext = color_ticktext,
         coloraxis2_showscale = (data.borders_colors !== nothing || data.borders_sizes !== nothing) &&
-                               configuration.border_style.color_scale.show_scale &&
+                               configuration.border.color_scale.show_scale &&
                                !(
-                                   configuration.border_style.color_palette isa
+                                   configuration.border.color_palette isa
                                    AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
                                ),
-        coloraxis2_reversescale = configuration.border_style.color_scale.reverse_scale,
+        coloraxis2_reversescale = configuration.border.color_scale.reverse_scale,
         coloraxis2_colorscale = normalized_color_palette(
-            configuration.border_style.color_palette,
-            configuration.border_style.color_scale,
+            configuration.border.color_palette,
+            configuration.border.color_scale,
         ),
         coloraxis2_cmin = lowest_color(
-            configuration.border_style.color_palette,
-            configuration.border_style.color_scale.minimum,
-            configuration.border_style.color_scale.log_regularization,
+            configuration.border.color_palette,
+            configuration.border.color_scale.minimum,
+            configuration.border.color_scale.log_regularization,
         ),
         coloraxis2_cmax = highest_color(
-            configuration.border_style.color_palette,
-            configuration.border_style.color_scale.maximum,
-            configuration.border_style.color_scale.log_regularization,
+            configuration.border.color_palette,
+            configuration.border.color_scale.maximum,
+            configuration.border.color_scale.log_regularization,
         ),
-        coloraxis2_colorbar_title_text = data.border_scale_title,
+        coloraxis2_colorbar_title_text = data.border_colors_title,
         coloraxis2_colorbar_tickvals = border_color_tickvals,
         coloraxis2_colorbar_ticktext = border_color_ticktext,
     )
@@ -3807,20 +3880,20 @@ function border_marker_size(
     sizes::Maybe{Union{Real, AbstractVector{<:Real}}},
 )::Union{Real, Vector{<:Real}}
     sizes = sizes
-    borders_sizes = fix_sizes(data.borders_sizes, configuration.border_style)
+    borders_sizes = fix_sizes(data.borders_sizes, configuration.border)
 
     if borders_sizes === nothing
-        border_marker_size = configuration.border_style.size !== nothing ? configuration.border_style.size : 4.0
+        border_marker_size = configuration.border.size !== nothing ? configuration.border.size : 4.0
         @assert border_marker_size !== nothing
         if sizes === nothing
-            points_marker_size = configuration.points_style.size !== nothing ? configuration.points_style.size : 4.0
+            points_marker_size = configuration.points.size !== nothing ? configuration.points.size : 4.0
             return points_marker_size + 2 * border_marker_size
         else
             return sizes .+ 2 * border_marker_size
         end
     else
         if sizes === nothing
-            points_marker_size = configuration.points_style.size !== nothing ? configuration.points_style.size : 4.0
+            points_marker_size = configuration.points.size !== nothing ? configuration.points.size : 4.0
             return 2 .* borders_sizes .+ points_marker_size
         else
             return 2 .* borders_sizes .+ sizes
@@ -3830,23 +3903,25 @@ end
 
 function fix_sizes(
     sizes::Maybe{Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}}},
-    configuration::PointsStyleConfiguration,
+    points_configuration::PointsConfiguration,
 )::Maybe{Union{Real, Vector{<:Real}}}
     if sizes === nothing
-        return configuration.size
+        return points_configuration.size
     end
 
     sizes = vec(sizes)
 
-    smallest = configuration.size_range.smallest
-    largest = configuration.size_range.largest
-    log_regularization = configuration.size_scale.log_regularization
+    smallest = points_configuration.size_range.smallest
+    largest = points_configuration.size_range.largest
+    log_regularization = points_configuration.size_scale.log_regularization
     if smallest === nothing && largest === nothing && log_regularization === nothing
         return sizes
     end
 
-    smin = configuration.size_scale.minimum !== nothing ? configuration.size_scale.minimum : minimum(sizes)
-    smax = configuration.size_scale.maximum !== nothing ? configuration.size_scale.maximum : maximum(sizes)
+    smin =
+        points_configuration.size_scale.minimum !== nothing ? points_configuration.size_scale.minimum : minimum(sizes)
+    smax =
+        points_configuration.size_scale.maximum !== nothing ? points_configuration.size_scale.maximum : maximum(sizes)
 
     if log_regularization !== nothing
         smin = log10(smin + log_regularization)
@@ -3862,6 +3937,27 @@ function fix_sizes(
     end
 
     return (sizes .- smin) .* (largest - smallest) ./ (smax - smin) .+ smallest
+end
+
+function range_of(
+    values::AbstractVector{<:AbstractVector{<:Real}},
+    log_regularization::Maybe{Real};
+    apply_log::Bool,
+)::Tuple{Real, Real}
+    minimum_value = minimum([minimum(vector) for vector in values])
+    maximum_value = maximum([maximum(vector) for vector in values])
+    if log_regularization !== nothing
+        minimum_value = log10(minimum_value + log_regularization)
+        maximum_value = log10(maximum_value + log_regularization)
+    end
+    margin_value = (maximum_value - minimum_value) / 20.0
+    minimum_value -= margin_value
+    maximum_value += margin_value
+    if log_regularization !== nothing && !apply_log
+        minimum_value = 10^minimum_value
+        maximum_value = 10^maximum_value
+    end
+    return (minimum_value, maximum_value)
 end
 
 end  # module

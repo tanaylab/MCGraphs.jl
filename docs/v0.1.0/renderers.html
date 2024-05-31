@@ -179,6 +179,18 @@
 <code>struct
 </code> containing the configuration of the graph. The rendering function takes both and either returns a JavaScript blob needed to create the interactive graph, or writes the graph to a file.
 </p>
+<p>TODO:
+</p>
+<ul>
+<li>Sizes legends.
+</li>
+<li>Heatmaps.
+</li>
+<li>Heatmap subplots as annotations for bar graph.
+</li>
+<li>Heatmap subplots as annotations for heatmaps.
+</li>
+</ul>
 </div>
 </section>
 </article>
@@ -483,7 +495,7 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct GraphConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct GraphConfiguration
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
     template::AbstractString = &quot;simple_white&quot;
@@ -537,7 +549,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct AxisConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct AxisConfiguration
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
     log_regularization::Maybe{AbstractFloat} = nothing,
@@ -615,8 +627,10 @@ end
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
-    scale_title::Maybe{AbstractString} = nothing
-    border_scale_title::Maybe{AbstractString} = nothing
+    points_colors_title::Maybe{AbstractString} = nothing
+    points_sizes_title::Maybe{AbstractString} = nothing
+    border_colors_title::Maybe{AbstractString} = nothing
+    border_sizes_title::Maybe{AbstractString} = nothing
     points_xs::AbstractVector{&lt;:Real}
     points_ys::AbstractVector{&lt;:Real}
     points_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
@@ -663,9 +677,13 @@ end
 </code> can be used to display additional data per point. The border size is in addition to the point size.
 </p>
 <p>The 
-<code>scale_title
+<code>points_colors_title
+</code>, 
+<code>points_sizes_title
+</code>, 
+<code>border_colors_title
 </code> and 
-<code>border_scale_title
+<code>border_sizes_title
 </code> are only used if 
 <code>show_scale
 </code> is set for the relevant color scales. You can&#39;t specify 
@@ -679,7 +697,7 @@ end
 <p>It is possible to draw straight 
 <code>edges
 </code> between specific point pairs. In this case the 
-<code>edges_style
+<code>edges
 </code> of the 
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
 <code>PointsGraphConfiguration
@@ -717,9 +735,9 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    points_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    edges_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    points::PointsConfiguration = PointsConfiguration()
+    border::PointsConfiguration = PointsConfiguration()
+    edges::PointsConfiguration = PointsConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     diagonal_bands::BandsConfiguration = BandsConfiguration()
@@ -743,7 +761,7 @@ end
 </code> are multiplicative instead of additive, and must be positive.
 </p>
 <p>The 
-<code>border_style
+<code>border
 </code> is used if the 
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
 <code>PointsGraphData
@@ -769,11 +787,11 @@ end
 </code> of the 
 <code>color_scale
 </code> (and/or of the 
-<code>border_style
+<code>border
 </code> and/or 
-<code>edges_style
+<code>edges
 </code>). In addition, the color scale options of the 
-<code>edges_style
+<code>edges
 </code> must not be set, as the 
 <code>edges_colors
 </code> of 
@@ -791,8 +809,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.PointsStyleConfiguration" href="#MCGraphs.Renderers.PointsStyleConfiguration">
-<code>MCGraphs.Renderers.PointsStyleConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsConfiguration" href="#MCGraphs.Renderers.PointsConfiguration">
+<code>MCGraphs.Renderers.PointsConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -801,7 +819,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct PointsStyleConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct PointsConfiguration
     color::Maybe{AbstractString} = nothing
     color_scale::ScaleConfiguration = ScaleConfiguration()
     color_palette::Maybe{Union{
@@ -852,7 +870,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct ScaleConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct ScaleConfiguration
     minimum::Maybe{Real} = nothing
     maximum::Maybe{Real} = nothing
     log_regularization::Maybe{AbstractFloat} = nothing
@@ -890,7 +908,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct SizeRangeConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct SizeRangeConfiguration
     smallest::Maybe{Real} = nothing
     largest::Maybe{Real} = nothing
 end
@@ -921,20 +939,20 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct BandsConfiguration &lt;: ObjectWithValidation
-    low_band_style::BandStyleConfiguration = BandStyleConfiguration(is_dashed = true)
-    middle_band_style::BandStyleConfiguration = BandStyleConfiguration()
-    high_band_style::BandStyleConfiguration = BandStyleConfiguration(is_dashed = true)
+<code class="language-julia hljs">@kwdef mutable struct BandsConfiguration
+    low::BandConfiguration = BandConfiguration(is_dashed = true)
+    middle::BandConfiguration = BandConfiguration()
+    high::BandConfiguration = BandConfiguration(is_dashed = true)
 end
 </code>
 </pre>
 <p>Configure the partition of the graph up to three band regions. The 
-<code>low_band_style
+<code>low
 </code> and 
-<code>high_band_style
-</code> are for the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
-<code>middle_band_style
-</code> is for the &quot;inner&quot; region between them (so its line is inside it, solid by default).
+<code>high
+</code> bands are for the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
+<code>middle
+</code> band is for the &quot;inner&quot; region between them (so its line is inside it, solid by default).
 </p>
 </div>
 </section>
@@ -943,8 +961,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BandStyleConfiguration" href="#MCGraphs.Renderers.BandStyleConfiguration">
-<code>MCGraphs.Renderers.BandStyleConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.BandConfiguration" href="#MCGraphs.Renderers.BandConfiguration">
+<code>MCGraphs.Renderers.BandConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -953,7 +971,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct BandStyleConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct BandConfiguration
     offset::Maybe{Real} = nothing
     color::Maybe{AbstractString} = nothing
     width::Maybe{Real} = 1.0
@@ -963,7 +981,7 @@ end
 </code>
 </pre>
 <p>Configure a region of the graph defined by some band of values. This is the same as a 
-<code>LineStyleConfiguration
+<code>LineConfiguration
 </code> (for controlling the style of the line drawn for the band) with the addition of the 
 <code>offset
 </code> of the line&#39;s position. We allow up to three bands in a complete 
@@ -1007,8 +1025,8 @@ end
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
-    scale_title::Maybe{AbstractString} = nothing
-    border_scale_title::Maybe{AbstractString} = nothing
+    points_colors_title::Maybe{AbstractString} = nothing
+    border_colors_title::Maybe{AbstractString} = nothing
     columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     points_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
@@ -1046,8 +1064,8 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    points_style::PointsStyleConfiguration = PointsStyleConfiguration()
-    border_style::PointsStyleConfiguration = PointsStyleConfiguration()
+    points::PointsConfiguration = PointsConfiguration()
+    border::PointsConfiguration = PointsConfiguration()
 end
 </code>
 </pre>
@@ -1176,7 +1194,7 @@ end
 </code> arrays must have the same number of entries (one per line). The 
 <code>lines_colors
 </code> are restricted to explicit colors; therefore the color scale options of the 
-<code>line_style
+<code>line
 </code> must not be used.
 </p>
 </div>
@@ -1200,7 +1218,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    line::LineConfiguration = LineConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
 end
@@ -1229,7 +1247,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
-    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    line::LineConfiguration = LineConfiguration()
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
@@ -1254,8 +1272,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.LineStyleConfiguration" href="#MCGraphs.Renderers.LineStyleConfiguration">
-<code>MCGraphs.Renderers.LineStyleConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.LineConfiguration" href="#MCGraphs.Renderers.LineConfiguration">
+<code>MCGraphs.Renderers.LineConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -1264,7 +1282,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct LineStyleConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct LineConfiguration
     width::Maybe{Real} = 1
     is_filled::Bool = false
     is_dashed::Bool = false
@@ -1430,7 +1448,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
-    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    line::LineConfiguration = LineConfiguration()
     values_orientation::ValuesOrientation = HorizontalValues
     cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
@@ -1470,7 +1488,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
-    line_style::LineStyleConfiguration = LineStyleConfiguration()
+    line::LineConfiguration = LineConfiguration()
     values_orientation::ValuesOrientation = HorizontalValues
     cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
@@ -1823,7 +1841,7 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    distribution::DistributionConfiguration = DistributionConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 </code>
@@ -1865,7 +1883,7 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionsGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    distribution_style::DistributionStyleConfiguration = DistributionStyleConfiguration()
+    distribution::DistributionConfiguration = DistributionConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
     distributions_gap::Maybe{Real} = nothing
@@ -1906,8 +1924,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.DistributionStyleConfiguration" href="#MCGraphs.Renderers.DistributionStyleConfiguration">
-<code>MCGraphs.Renderers.DistributionStyleConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionConfiguration" href="#MCGraphs.Renderers.DistributionConfiguration">
+<code>MCGraphs.Renderers.DistributionConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -1916,7 +1934,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct DistributionStyleConfiguration &lt;: ObjectWithValidation
+<code class="language-julia hljs">@kwdef mutable struct DistributionConfiguration
     values_orientation::ValuesOrientation = VerticalValues
     show_box::Bool = true
     show_violin::Bool = false
@@ -1995,8 +2013,8 @@ end
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.BandStyleConfiguration">
-<code>MCGraphs.Renderers.BandStyleConfiguration
+<a href="renderers.html#MCGraphs.Renderers.BandConfiguration">
+<code>MCGraphs.Renderers.BandConfiguration
 </code>
 </a>
 </li>
@@ -2061,6 +2079,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.DistributionConfiguration">
+<code>MCGraphs.Renderers.DistributionConfiguration
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
 <code>MCGraphs.Renderers.DistributionGraphConfiguration
 </code>
@@ -2069,12 +2093,6 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
 <code>MCGraphs.Renderers.DistributionGraphData
-</code>
-</a>
-</li>
-<li>
-<a href="renderers.html#MCGraphs.Renderers.DistributionStyleConfiguration">
-<code>MCGraphs.Renderers.DistributionStyleConfiguration
 </code>
 </a>
 </li>
@@ -2115,6 +2133,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.LineConfiguration">
+<code>MCGraphs.Renderers.LineConfiguration
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
 <code>MCGraphs.Renderers.LineGraphConfiguration
 </code>
@@ -2123,12 +2147,6 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.LineGraphData">
 <code>MCGraphs.Renderers.LineGraphData
-</code>
-</a>
-</li>
-<li>
-<a href="renderers.html#MCGraphs.Renderers.LineStyleConfiguration">
-<code>MCGraphs.Renderers.LineStyleConfiguration
 </code>
 </a>
 </li>
@@ -2145,6 +2163,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.PointsConfiguration">
+<code>MCGraphs.Renderers.PointsConfiguration
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
 <code>MCGraphs.Renderers.PointsGraphConfiguration
 </code>
@@ -2153,12 +2177,6 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
 <code>MCGraphs.Renderers.PointsGraphData
-</code>
-</a>
-</li>
-<li>
-<a href="renderers.html#MCGraphs.Renderers.PointsStyleConfiguration">
-<code>MCGraphs.Renderers.PointsStyleConfiguration
 </code>
 </a>
 </li>

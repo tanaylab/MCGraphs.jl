@@ -166,8 +166,8 @@ nested_test("renderers") do
 
         nested_test("invalid") do
             nested_test("!style") do
-                configuration.distribution_style.show_box = false
-                @test_throws "must specify at least one of: configuration.distribution_style.show_box, configuration.distribution_style.show_violin, configuration.distribution_style.show_curve" render(
+                configuration.distribution.show_box = false
+                @test_throws "must specify at least one of: configuration.distribution.show_box, configuration.distribution.show_violin, configuration.distribution.show_curve" render(
                     data,
                     configuration,
                 )
@@ -193,9 +193,9 @@ nested_test("renderers") do
             end
 
             nested_test("curve&violin") do
-                configuration.distribution_style.show_curve = true
-                configuration.distribution_style.show_violin = true
-                @test_throws "must not specify both of: configuration.distribution_style.show_violin, configuration.distribution_style.show_curve" render(
+                configuration.distribution.show_curve = true
+                configuration.distribution.show_violin = true
+                @test_throws "must not specify both of: configuration.distribution.show_violin, configuration.distribution.show_curve" render(
                     data,
                     configuration,
                 )
@@ -233,7 +233,7 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.distribution_style.values_orientation = HorizontalValues
+                configuration.distribution.values_orientation = HorizontalValues
                 test_html(data, configuration, "distribution.box.horizontal.html")
                 return nothing
             end
@@ -245,18 +245,18 @@ nested_test("renderers") do
             end
 
             nested_test("outliers") do
-                configuration.distribution_style.show_outliers = true
+                configuration.distribution.show_outliers = true
                 test_html(data, configuration, "distribution.box.outliers.html")
                 return nothing
             end
 
             nested_test("!color") do
-                configuration.distribution_style.color = "oobleck"
-                @test_throws "invalid configuration.distribution_style.color: oobleck" render(data, configuration)
+                configuration.distribution.color = "oobleck"
+                @test_throws "invalid configuration.distribution.color: oobleck" render(data, configuration)
                 return nothing
             end
             nested_test("color") do
-                configuration.distribution_style.color = "red"
+                configuration.distribution.color = "red"
                 test_html(data, configuration, "distribution.box.color.html")
                 return nothing
             end
@@ -284,8 +284,8 @@ nested_test("renderers") do
         end
 
         nested_test("violin") do
-            configuration.distribution_style.show_box = false
-            configuration.distribution_style.show_violin = true
+            configuration.distribution.show_box = false
+            configuration.distribution.show_violin = true
 
             nested_test("()") do
                 test_html(data, configuration, "distribution.violin.html")
@@ -293,19 +293,19 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.distribution_style.values_orientation = HorizontalValues
+                configuration.distribution.values_orientation = HorizontalValues
                 test_html(data, configuration, "distribution.violin.horizontal.html")
                 return nothing
             end
 
             nested_test("outliers") do
-                configuration.distribution_style.show_outliers = true
+                configuration.distribution.show_outliers = true
                 test_html(data, configuration, "distribution.violin.outliers.html")
                 return nothing
             end
 
             nested_test("box") do
-                configuration.distribution_style.show_box = true
+                configuration.distribution.show_box = true
                 test_html(data, configuration, "distribution.violin.box.html")
                 return nothing
             end
@@ -318,8 +318,8 @@ nested_test("renderers") do
         end
 
         nested_test("curve") do
-            configuration.distribution_style.show_box = false
-            configuration.distribution_style.show_curve = true
+            configuration.distribution.show_box = false
+            configuration.distribution.show_curve = true
 
             nested_test("()") do
                 test_html(data, configuration, "distribution.curve.html")
@@ -327,19 +327,19 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.distribution_style.values_orientation = HorizontalValues
+                configuration.distribution.values_orientation = HorizontalValues
                 test_html(data, configuration, "distribution.curve.horizontal.html")
                 return nothing
             end
 
             nested_test("outliers") do
-                configuration.distribution_style.show_outliers = true
+                configuration.distribution.show_outliers = true
                 test_html(data, configuration, "distribution.curve.outliers.html")
                 return nothing
             end
 
             nested_test("box") do
-                configuration.distribution_style.show_box = true
+                configuration.distribution.show_box = true
                 test_html(data, configuration, "distribution.curve.box.html")
                 return nothing
             end
@@ -431,7 +431,7 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.distribution_style.values_orientation = HorizontalValues
+                configuration.distribution.values_orientation = HorizontalValues
                 test_html(data, configuration, "distributions.box.horizontal.html")
                 return nothing
             end
@@ -445,7 +445,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("horizontal") do
-                    configuration.distribution_style.values_orientation = HorizontalValues
+                    configuration.distribution.values_orientation = HorizontalValues
                     test_html(data, configuration, "distributions.box.overlay.horizontal.html")
                     return nothing
                 end
@@ -459,8 +459,8 @@ nested_test("renderers") do
         end
 
         nested_test("violin") do
-            configuration.distribution_style.show_box = false
-            configuration.distribution_style.show_violin = true
+            configuration.distribution.show_box = false
+            configuration.distribution.show_violin = true
 
             nested_test("()") do
                 test_html(data, configuration, "distributions.violin.html")
@@ -474,7 +474,7 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.distribution_style.values_orientation = HorizontalValues
+                configuration.distribution.values_orientation = HorizontalValues
                 test_html(data, configuration, "distributions.violin.horizontal.html")
                 return nothing
             end
@@ -488,7 +488,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("horizontal") do
-                    configuration.distribution_style.values_orientation = HorizontalValues
+                    configuration.distribution.values_orientation = HorizontalValues
                     test_html(data, configuration, "distributions.violin.overlay.horizontal.html")
                     return nothing
                 end
@@ -502,8 +502,8 @@ nested_test("renderers") do
         end
 
         nested_test("curve") do
-            configuration.distribution_style.show_box = false
-            configuration.distribution_style.show_curve = true
+            configuration.distribution.show_box = false
+            configuration.distribution.show_curve = true
 
             nested_test("()") do
                 test_html(data, configuration, "distributions.curve.html")
@@ -518,7 +518,7 @@ nested_test("renderers") do
             end
 
             nested_test("horizontal") do
-                configuration.distribution_style.values_orientation = HorizontalValues
+                configuration.distribution.values_orientation = HorizontalValues
                 test_html(data, configuration, "distributions.curve.horizontal.html")
                 return nothing
             end
@@ -532,7 +532,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("horizontal") do
-                    configuration.distribution_style.values_orientation = HorizontalValues
+                    configuration.distribution.values_orientation = HorizontalValues
                     test_html(data, configuration, "distributions.curve.overlay.horizontal.html")
                     return nothing
                 end
@@ -591,13 +591,13 @@ nested_test("renderers") do
 
         nested_test("invalid") do
             nested_test("!line_width") do
-                configuration.line_style.width = 0
-                @test_throws "non-positive configuration.line_style.width: 0" render(data, configuration)
+                configuration.line.width = 0
+                @test_throws "non-positive configuration.line.width: 0" render(data, configuration)
             end
 
             nested_test("!line_is_filled") do
-                configuration.line_style.width = nothing
-                @test_throws "either configuration.line_style.width or configuration.line_style.is_filled must be specified" render(
+                configuration.line.width = nothing
+                @test_throws "either configuration.line.width or configuration.line.is_filled must be specified" render(
                     data,
                     configuration,
                 )
@@ -618,32 +618,32 @@ nested_test("renderers") do
         end
 
         nested_test("dash") do
-            configuration.line_style.is_dashed = true
+            configuration.line.is_dashed = true
             test_html(data, configuration, "line.dash.html")
             return nothing
         end
 
         nested_test("size") do
-            configuration.line_style.width = 5
+            configuration.line.width = 5
             test_html(data, configuration, "line.size.html")
             return nothing
         end
 
         nested_test("color") do
-            configuration.line_style.color = "red"
+            configuration.line.color = "red"
             test_html(data, configuration, "line.color.html")
             return nothing
         end
 
         nested_test("fill_below") do
-            configuration.line_style.is_filled = true
+            configuration.line.is_filled = true
             test_html(data, configuration, "line.fill_below.html")
             return nothing
         end
 
         nested_test("fill_below!line") do
-            configuration.line_style.width = nothing
-            configuration.line_style.is_filled = true
+            configuration.line.width = nothing
+            configuration.line.is_filled = true
             test_html(data, configuration, "line.fill_below!line.html")
             return nothing
         end
@@ -656,9 +656,9 @@ nested_test("renderers") do
         end
 
         nested_test("vertical_lines") do
-            configuration.vertical_bands.low_band_style.offset = 0.75
-            configuration.vertical_bands.middle_band_style.offset = 1.25
-            configuration.vertical_bands.high_band_style.offset = 1.5
+            configuration.vertical_bands.low.offset = 0.75
+            configuration.vertical_bands.middle.offset = 1.25
+            configuration.vertical_bands.high.offset = 1.5
 
             nested_test("()") do
                 test_html(data, configuration, "line.vertical_lines.html")
@@ -666,66 +666,63 @@ nested_test("renderers") do
             end
 
             nested_test("colors") do
-                configuration.vertical_bands.low_band_style.color = "green"
-                configuration.vertical_bands.middle_band_style.color = "red"
-                configuration.vertical_bands.high_band_style.color = "blue"
+                configuration.vertical_bands.low.color = "green"
+                configuration.vertical_bands.middle.color = "red"
+                configuration.vertical_bands.high.color = "blue"
                 return test_html(data, configuration, "line.vertical_lines.colors.html")
             end
 
             nested_test("!colors") do
-                configuration.vertical_bands.low_band_style.color = "green"
-                configuration.vertical_bands.middle_band_style.color = "oobleck"
-                configuration.vertical_bands.high_band_style.color = "blue"
-                @test_throws "invalid configuration.vertical_bands.middle_band_style.color: oobleck" render(
-                    data,
-                    configuration,
-                )
+                configuration.vertical_bands.low.color = "green"
+                configuration.vertical_bands.middle.color = "oobleck"
+                configuration.vertical_bands.high.color = "blue"
+                @test_throws "invalid configuration.vertical_bands.middle.color: oobleck" render(data, configuration)
             end
         end
 
         nested_test("vertical_fills") do
-            configuration.vertical_bands.low_band_style.is_filled = true
-            configuration.vertical_bands.middle_band_style.is_filled = true
-            configuration.vertical_bands.high_band_style.is_filled = true
+            configuration.vertical_bands.low.is_filled = true
+            configuration.vertical_bands.middle.is_filled = true
+            configuration.vertical_bands.high.is_filled = true
 
-            configuration.vertical_bands.low_band_style.width = nothing
-            configuration.vertical_bands.middle_band_style.width = nothing
-            configuration.vertical_bands.high_band_style.width = nothing
+            configuration.vertical_bands.low.width = nothing
+            configuration.vertical_bands.middle.width = nothing
+            configuration.vertical_bands.high.width = nothing
 
-            configuration.vertical_bands.low_band_style.color = "green"
-            configuration.vertical_bands.middle_band_style.color = "red"
-            configuration.vertical_bands.high_band_style.color = "blue"
+            configuration.vertical_bands.low.color = "green"
+            configuration.vertical_bands.middle.color = "red"
+            configuration.vertical_bands.high.color = "blue"
 
-            configuration.vertical_bands.low_band_style.offset = 0.75
-            configuration.vertical_bands.high_band_style.offset = 1.5
+            configuration.vertical_bands.low.offset = 0.75
+            configuration.vertical_bands.high.offset = 1.5
 
             test_html(data, configuration, "line.vertical_fills.html")
             return nothing
         end
 
         nested_test("horizontal_lines") do
-            configuration.horizontal_bands.low_band_style.offset = 0.75
-            configuration.horizontal_bands.middle_band_style.offset = 1.25
-            configuration.horizontal_bands.high_band_style.offset = 1.5
+            configuration.horizontal_bands.low.offset = 0.75
+            configuration.horizontal_bands.middle.offset = 1.25
+            configuration.horizontal_bands.high.offset = 1.5
             test_html(data, configuration, "line.horizontal_lines.html")
             return nothing
         end
 
         nested_test("horizontal_fills") do
-            configuration.horizontal_bands.low_band_style.is_filled = true
-            configuration.horizontal_bands.middle_band_style.is_filled = true
-            configuration.horizontal_bands.high_band_style.is_filled = true
+            configuration.horizontal_bands.low.is_filled = true
+            configuration.horizontal_bands.middle.is_filled = true
+            configuration.horizontal_bands.high.is_filled = true
 
-            configuration.horizontal_bands.low_band_style.width = nothing
-            configuration.horizontal_bands.middle_band_style.width = nothing
-            configuration.horizontal_bands.high_band_style.width = nothing
+            configuration.horizontal_bands.low.width = nothing
+            configuration.horizontal_bands.middle.width = nothing
+            configuration.horizontal_bands.high.width = nothing
 
-            configuration.horizontal_bands.low_band_style.color = "#0000ff"
-            configuration.horizontal_bands.middle_band_style.color = "#00ff00"
-            configuration.horizontal_bands.high_band_style.color = "#ff0000"
+            configuration.horizontal_bands.low.color = "#0000ff"
+            configuration.horizontal_bands.middle.color = "#00ff00"
+            configuration.horizontal_bands.high.color = "#ff0000"
 
-            configuration.horizontal_bands.low_band_style.offset = 0.75
-            configuration.horizontal_bands.high_band_style.offset = 1.5
+            configuration.horizontal_bands.low.offset = 0.75
+            configuration.horizontal_bands.high.offset = 1.5
 
             test_html(data, configuration, "line.horizontal_fills.html")
             return nothing
@@ -816,8 +813,8 @@ nested_test("renderers") do
             end
 
             nested_test("!fill_below") do
-                configuration.line_style.width = nothing
-                @test_throws "either configuration.line_style.width or configuration.line_style.is_filled must be specified" render(
+                configuration.line.width = nothing
+                @test_throws "either configuration.line.width or configuration.line.is_filled must be specified" render(
                     data,
                     configuration,
                 )
@@ -841,7 +838,7 @@ nested_test("renderers") do
         end
 
         nested_test("size") do
-            configuration.line_style.width = 4
+            configuration.line.width = 4
             test_html(data, configuration, "lines.size.html")
             return nothing
         end
@@ -853,7 +850,7 @@ nested_test("renderers") do
         end
 
         nested_test("color") do
-            configuration.line_style.color = "red"
+            configuration.line.color = "red"
             test_html(data, configuration, "lines.color.html")
             return nothing
         end
@@ -865,7 +862,7 @@ nested_test("renderers") do
         end
 
         nested_test("dash") do
-            configuration.line_style.is_dashed = true
+            configuration.line.is_dashed = true
             test_html(data, configuration, "lines.dash.html")
             return nothing
         end
@@ -877,7 +874,7 @@ nested_test("renderers") do
         end
 
         nested_test("fill") do
-            configuration.line_style.is_filled = true
+            configuration.line.is_filled = true
 
             nested_test("()") do
                 test_html(data, configuration, "lines.fill.html")
@@ -885,7 +882,7 @@ nested_test("renderers") do
             end
 
             nested_test("!line") do
-                configuration.line_style.width = nothing
+                configuration.line.width = nothing
                 test_html(data, configuration, "lines.fill.!line.html")
                 return nothing
             end
@@ -917,6 +914,79 @@ nested_test("renderers") do
                 test_html(data, configuration, "lines.stack.fractions.html")
                 return nothing
             end
+        end
+
+        nested_test("vertical_lines") do
+            configuration.vertical_bands.low.offset = 0.75
+            configuration.vertical_bands.middle.offset = 1.25
+            configuration.vertical_bands.high.offset = 1.5
+
+            nested_test("()") do
+                test_html(data, configuration, "lines.vertical_lines.html")
+                return nothing
+            end
+
+            nested_test("colors") do
+                configuration.vertical_bands.low.color = "green"
+                configuration.vertical_bands.middle.color = "red"
+                configuration.vertical_bands.high.color = "blue"
+                return test_html(data, configuration, "lines.vertical_lines.colors.html")
+            end
+
+            nested_test("!colors") do
+                configuration.vertical_bands.low.color = "green"
+                configuration.vertical_bands.middle.color = "oobleck"
+                configuration.vertical_bands.high.color = "blue"
+                @test_throws "invalid configuration.vertical_bands.middle.color: oobleck" render(data, configuration)
+            end
+        end
+
+        nested_test("vertical_fills") do
+            configuration.vertical_bands.low.is_filled = true
+            configuration.vertical_bands.middle.is_filled = true
+            configuration.vertical_bands.high.is_filled = true
+
+            configuration.vertical_bands.low.width = nothing
+            configuration.vertical_bands.middle.width = nothing
+            configuration.vertical_bands.high.width = nothing
+
+            configuration.vertical_bands.low.color = "green"
+            configuration.vertical_bands.middle.color = "red"
+            configuration.vertical_bands.high.color = "blue"
+
+            configuration.vertical_bands.low.offset = 0.75
+            configuration.vertical_bands.high.offset = 1.5
+
+            test_html(data, configuration, "lines.vertical_fills.html")
+            return nothing
+        end
+
+        nested_test("horizontal_lines") do
+            configuration.horizontal_bands.low.offset = 0.75
+            configuration.horizontal_bands.middle.offset = 1.25
+            configuration.horizontal_bands.high.offset = 1.5
+            test_html(data, configuration, "lines.horizontal_lines.html")
+            return nothing
+        end
+
+        nested_test("horizontal_fills") do
+            configuration.horizontal_bands.low.is_filled = true
+            configuration.horizontal_bands.middle.is_filled = true
+            configuration.horizontal_bands.high.is_filled = true
+
+            configuration.horizontal_bands.low.width = nothing
+            configuration.horizontal_bands.middle.width = nothing
+            configuration.horizontal_bands.high.width = nothing
+
+            configuration.horizontal_bands.low.color = "#0000ff"
+            configuration.horizontal_bands.middle.color = "#00ff00"
+            configuration.horizontal_bands.high.color = "#ff0000"
+
+            configuration.horizontal_bands.low.offset = 0.75
+            configuration.horizontal_bands.high.offset = 1.5
+
+            test_html(data, configuration, "lines.horizontal_fills.html")
+            return nothing
         end
 
         nested_test("legend") do
@@ -1365,16 +1435,13 @@ nested_test("renderers") do
 
         nested_test("invalid") do
             nested_test("!size") do
-                configuration.points_style.size = 0
-                @test_throws "non-positive configuration.points_style.size: 0" render(data, configuration)
+                configuration.points.size = 0
+                @test_throws "non-positive configuration.points.size: 0" render(data, configuration)
             end
 
             nested_test("!line-width") do
-                configuration.diagonal_bands.middle_band_style.width = 0
-                @test_throws "non-positive configuration.diagonal_bands.middle_band_style.width: 0" render(
-                    data,
-                    configuration,
-                )
+                configuration.diagonal_bands.middle.width = 0
+                @test_throws "non-positive configuration.diagonal_bands.middle.width: 0" render(data, configuration)
             end
 
             nested_test("~ys") do
@@ -1386,8 +1453,8 @@ nested_test("renderers") do
             end
 
             nested_test("!colors") do
-                configuration.points_style.color_scale.show_scale = true
-                @test_throws "no data.points_colors specified for configuration.points_style.color_scale.show_scale" render(
+                configuration.points.color_scale.show_scale = true
+                @test_throws "no data.points_colors specified for configuration.points.color_scale.show_scale" render(
                     data,
                     configuration,
                 )
@@ -1402,8 +1469,8 @@ nested_test("renderers") do
             end
 
             nested_test("!borders_colors") do
-                configuration.border_style.color_scale.show_scale = true
-                @test_throws "no data.borders_colors specified for configuration.border_style.color_scale.show_scale" render(
+                configuration.border.color_scale.show_scale = true
+                @test_throws "no data.borders_colors specified for configuration.border.color_scale.show_scale" render(
                     data,
                     configuration,
                 )
@@ -1493,8 +1560,8 @@ nested_test("renderers") do
                     nested_test("!line_offset") do
                         configuration.x_axis.log_regularization = 0
                         configuration.y_axis.log_regularization = 0
-                        configuration.diagonal_bands.low_band_style.offset = -1
-                        @test_throws "log of non-positive configuration.diagonal_bands.low_band_style.offset: -1" render(
+                        configuration.diagonal_bands.low.offset = -1
+                        @test_throws "log of non-positive configuration.diagonal_bands.low.offset: -1" render(
                             data,
                             configuration,
                         )
@@ -1502,7 +1569,7 @@ nested_test("renderers") do
 
                     nested_test("!log") do
                         configuration.y_axis.log_regularization = nothing
-                        configuration.diagonal_bands.middle_band_style.offset = 1
+                        configuration.diagonal_bands.middle.offset = 1
                         @test_throws "configuration.diagonal_bands specified for a combination of linear and log scale axes" render(
                             data,
                             configuration,
@@ -1515,61 +1582,61 @@ nested_test("renderers") do
                     configuration.x_axis.log_regularization = 0
                     configuration.y_axis.log_regularization = 0
 
-                    configuration.diagonal_bands.low_band_style.offset = 0.5
-                    configuration.diagonal_bands.middle_band_style.offset = 1
-                    configuration.diagonal_bands.high_band_style.offset = 2
+                    configuration.diagonal_bands.low.offset = 0.5
+                    configuration.diagonal_bands.middle.offset = 1
+                    configuration.diagonal_bands.high.offset = 2
 
                     test_html(data, configuration, "points.log.diagonal.html")
                     return nothing
                 end
 
                 nested_test("low_fills") do
-                    configuration.diagonal_bands.low_band_style.is_filled = true
-                    configuration.diagonal_bands.middle_band_style.is_filled = true
-                    configuration.diagonal_bands.high_band_style.is_filled = true
+                    configuration.diagonal_bands.low.is_filled = true
+                    configuration.diagonal_bands.middle.is_filled = true
+                    configuration.diagonal_bands.high.is_filled = true
 
-                    configuration.diagonal_bands.low_band_style.width = nothing
-                    configuration.diagonal_bands.middle_band_style.width = nothing
-                    configuration.diagonal_bands.high_band_style.width = nothing
+                    configuration.diagonal_bands.low.width = nothing
+                    configuration.diagonal_bands.middle.width = nothing
+                    configuration.diagonal_bands.high.width = nothing
 
-                    configuration.diagonal_bands.low_band_style.color = "#0000ff"
-                    configuration.diagonal_bands.middle_band_style.color = "#00ff00"
-                    configuration.diagonal_bands.high_band_style.color = "#ff0000"
+                    configuration.diagonal_bands.low.color = "#0000ff"
+                    configuration.diagonal_bands.middle.color = "#00ff00"
+                    configuration.diagonal_bands.high.color = "#ff0000"
 
-                    configuration.diagonal_bands.low_band_style.offset = 0.25
-                    configuration.diagonal_bands.high_band_style.offset = 0.75
+                    configuration.diagonal_bands.low.offset = 0.25
+                    configuration.diagonal_bands.high.offset = 0.75
 
                     test_html(data, configuration, "points.log.diagonal.low_fills.html")
                     return nothing
                 end
 
                 nested_test("high_fills") do
-                    configuration.diagonal_bands.low_band_style.is_filled = true
-                    configuration.diagonal_bands.middle_band_style.is_filled = true
-                    configuration.diagonal_bands.high_band_style.is_filled = true
+                    configuration.diagonal_bands.low.is_filled = true
+                    configuration.diagonal_bands.middle.is_filled = true
+                    configuration.diagonal_bands.high.is_filled = true
 
-                    configuration.diagonal_bands.low_band_style.width = nothing
-                    configuration.diagonal_bands.middle_band_style.width = nothing
-                    configuration.diagonal_bands.high_band_style.width = nothing
+                    configuration.diagonal_bands.low.width = nothing
+                    configuration.diagonal_bands.middle.width = nothing
+                    configuration.diagonal_bands.high.width = nothing
 
-                    configuration.diagonal_bands.low_band_style.color = "#0000ff"
-                    configuration.diagonal_bands.middle_band_style.color = "#00ff00"
-                    configuration.diagonal_bands.high_band_style.color = "#ff0000"
+                    configuration.diagonal_bands.low.color = "#0000ff"
+                    configuration.diagonal_bands.middle.color = "#00ff00"
+                    configuration.diagonal_bands.high.color = "#ff0000"
 
-                    configuration.diagonal_bands.low_band_style.offset = 1.25
-                    configuration.diagonal_bands.high_band_style.offset = 1.75
+                    configuration.diagonal_bands.low.offset = 1.25
+                    configuration.diagonal_bands.high.offset = 1.75
 
                     test_html(data, configuration, "points.log.diagonal.high_fills.html")
                     return nothing
                 end
 
                 nested_test("middle_fills") do
-                    configuration.diagonal_bands.low_band_style.is_filled = true
-                    configuration.diagonal_bands.middle_band_style.is_filled = true
-                    configuration.diagonal_bands.high_band_style.is_filled = true
+                    configuration.diagonal_bands.low.is_filled = true
+                    configuration.diagonal_bands.middle.is_filled = true
+                    configuration.diagonal_bands.high.is_filled = true
 
-                    configuration.diagonal_bands.low_band_style.offset = 0.75
-                    configuration.diagonal_bands.high_band_style.offset = 1.25
+                    configuration.diagonal_bands.low.offset = 0.75
+                    configuration.diagonal_bands.high.offset = 1.25
 
                     test_html(data, configuration, "points.log.diagonal.middle_fills.html")
                     return nothing
@@ -1578,37 +1645,37 @@ nested_test("renderers") do
         end
 
         nested_test("invalid") do
-            nested_test("!low_band_style") do
-                configuration.diagonal_bands.low_band_style.offset = 0.1
-                configuration.diagonal_bands.middle_band_style.offset = 0
-                configuration.diagonal_bands.high_band_style.offset = 0.3
+            nested_test("!low") do
+                configuration.diagonal_bands.low.offset = 0.1
+                configuration.diagonal_bands.middle.offset = 0
+                configuration.diagonal_bands.high.offset = 0.3
 
                 @test_throws dedent("""
-                    configuration.diagonal_bands.low_band_style.offset: 0.1
-                    is not less than configuration.diagonal_bands.middle_band_style.offset: 0
+                    configuration.diagonal_bands.low.offset: 0.1
+                    is not less than configuration.diagonal_bands.middle.offset: 0
                 """) render(data, configuration)
                 return nothing
             end
 
-            nested_test("!high_band_style") do
-                configuration.diagonal_bands.low_band_style.offset = -0.3
-                configuration.diagonal_bands.middle_band_style.offset = 0
-                configuration.diagonal_bands.high_band_style.offset = -0.1
+            nested_test("!high") do
+                configuration.diagonal_bands.low.offset = -0.3
+                configuration.diagonal_bands.middle.offset = 0
+                configuration.diagonal_bands.high.offset = -0.1
 
                 @test_throws dedent("""
-                    configuration.diagonal_bands.high_band_style.offset: -0.1
-                    is not greater than configuration.diagonal_bands.middle_band_style.offset: 0
+                    configuration.diagonal_bands.high.offset: -0.1
+                    is not greater than configuration.diagonal_bands.middle.offset: 0
                 """) render(data, configuration)
                 return nothing
             end
 
-            nested_test("!middle_band_style") do
-                configuration.diagonal_bands.low_band_style.offset = 0.3
-                configuration.diagonal_bands.high_band_style.offset = -0.3
+            nested_test("!middle") do
+                configuration.diagonal_bands.low.offset = 0.3
+                configuration.diagonal_bands.high.offset = -0.3
 
                 @test_throws dedent("""
-                    configuration.diagonal_bands.low_band_style.offset: 0.3
-                    is not less than configuration.diagonal_bands.high_band_style.offset: -0.3
+                    configuration.diagonal_bands.low.offset: 0.3
+                    is not less than configuration.diagonal_bands.high.offset: -0.3
                 """) render(data, configuration)
                 return nothing
             end
@@ -1616,63 +1683,63 @@ nested_test("renderers") do
 
         nested_test("diagonal") do
             nested_test("()") do
-                configuration.diagonal_bands.low_band_style.offset = -0.3
-                configuration.diagonal_bands.high_band_style.offset = 0.3
-                configuration.diagonal_bands.middle_band_style.offset = 0
+                configuration.diagonal_bands.low.offset = -0.3
+                configuration.diagonal_bands.high.offset = 0.3
+                configuration.diagonal_bands.middle.offset = 0
 
-                configuration.diagonal_bands.middle_band_style.width = 8
+                configuration.diagonal_bands.middle.width = 8
 
                 test_html(data, configuration, "points.diagonal.html")
                 return nothing
             end
 
             nested_test("low_fills") do
-                configuration.diagonal_bands.low_band_style.is_filled = true
-                configuration.diagonal_bands.middle_band_style.is_filled = true
-                configuration.diagonal_bands.high_band_style.is_filled = true
+                configuration.diagonal_bands.low.is_filled = true
+                configuration.diagonal_bands.middle.is_filled = true
+                configuration.diagonal_bands.high.is_filled = true
 
-                configuration.diagonal_bands.low_band_style.width = nothing
-                configuration.diagonal_bands.middle_band_style.width = nothing
-                configuration.diagonal_bands.high_band_style.width = nothing
+                configuration.diagonal_bands.low.width = nothing
+                configuration.diagonal_bands.middle.width = nothing
+                configuration.diagonal_bands.high.width = nothing
 
-                configuration.diagonal_bands.low_band_style.color = "#0000ff"
-                configuration.diagonal_bands.middle_band_style.color = "#00ff00"
-                configuration.diagonal_bands.high_band_style.color = "#ff0000"
+                configuration.diagonal_bands.low.color = "#0000ff"
+                configuration.diagonal_bands.middle.color = "#00ff00"
+                configuration.diagonal_bands.high.color = "#ff0000"
 
-                configuration.diagonal_bands.low_band_style.offset = -0.6
-                configuration.diagonal_bands.high_band_style.offset = -0.3
+                configuration.diagonal_bands.low.offset = -0.6
+                configuration.diagonal_bands.high.offset = -0.3
 
                 test_html(data, configuration, "points.diagonal.low_fills.html")
                 return nothing
             end
 
             nested_test("high_fills") do
-                configuration.diagonal_bands.low_band_style.is_filled = true
-                configuration.diagonal_bands.middle_band_style.is_filled = true
-                configuration.diagonal_bands.high_band_style.is_filled = true
+                configuration.diagonal_bands.low.is_filled = true
+                configuration.diagonal_bands.middle.is_filled = true
+                configuration.diagonal_bands.high.is_filled = true
 
-                configuration.diagonal_bands.low_band_style.width = nothing
-                configuration.diagonal_bands.middle_band_style.width = nothing
-                configuration.diagonal_bands.high_band_style.width = nothing
+                configuration.diagonal_bands.low.width = nothing
+                configuration.diagonal_bands.middle.width = nothing
+                configuration.diagonal_bands.high.width = nothing
 
-                configuration.diagonal_bands.low_band_style.color = "#0000ff"
-                configuration.diagonal_bands.middle_band_style.color = "#00ff00"
-                configuration.diagonal_bands.high_band_style.color = "#ff0000"
+                configuration.diagonal_bands.low.color = "#0000ff"
+                configuration.diagonal_bands.middle.color = "#00ff00"
+                configuration.diagonal_bands.high.color = "#ff0000"
 
-                configuration.diagonal_bands.low_band_style.offset = 0.3
-                configuration.diagonal_bands.high_band_style.offset = 0.6
+                configuration.diagonal_bands.low.offset = 0.3
+                configuration.diagonal_bands.high.offset = 0.6
 
                 test_html(data, configuration, "points.diagonal.high_fills.html")
                 return nothing
             end
 
             nested_test("middle_fills") do
-                configuration.diagonal_bands.low_band_style.is_filled = true
-                configuration.diagonal_bands.middle_band_style.is_filled = true
-                configuration.diagonal_bands.high_band_style.is_filled = true
+                configuration.diagonal_bands.low.is_filled = true
+                configuration.diagonal_bands.middle.is_filled = true
+                configuration.diagonal_bands.high.is_filled = true
 
-                configuration.diagonal_bands.low_band_style.offset = -0.3
-                configuration.diagonal_bands.high_band_style.offset = 0.6
+                configuration.diagonal_bands.low.offset = -0.3
+                configuration.diagonal_bands.high.offset = 0.6
 
                 test_html(data, configuration, "points.diagonal.middle_fills.html")
                 return nothing
@@ -1680,65 +1747,65 @@ nested_test("renderers") do
         end
 
         nested_test("vertical_lines") do
-            configuration.vertical_bands.low_band_style.offset = 0.75
-            configuration.vertical_bands.middle_band_style.offset = 1.25
-            configuration.vertical_bands.high_band_style.offset = 1.5
+            configuration.vertical_bands.low.offset = 0.75
+            configuration.vertical_bands.middle.offset = 1.25
+            configuration.vertical_bands.high.offset = 1.5
 
             test_html(data, configuration, "points.vertical_lines.html")
             return nothing
         end
 
         nested_test("vertical_fills") do
-            configuration.vertical_bands.low_band_style.is_filled = true
-            configuration.vertical_bands.middle_band_style.is_filled = true
-            configuration.vertical_bands.high_band_style.is_filled = true
+            configuration.vertical_bands.low.is_filled = true
+            configuration.vertical_bands.middle.is_filled = true
+            configuration.vertical_bands.high.is_filled = true
 
-            configuration.vertical_bands.low_band_style.width = nothing
-            configuration.vertical_bands.middle_band_style.width = nothing
-            configuration.vertical_bands.high_band_style.width = nothing
+            configuration.vertical_bands.low.width = nothing
+            configuration.vertical_bands.middle.width = nothing
+            configuration.vertical_bands.high.width = nothing
 
-            configuration.vertical_bands.low_band_style.color = "#0000ff"
-            configuration.vertical_bands.middle_band_style.color = "#00ff00"
-            configuration.vertical_bands.high_band_style.color = "#ff0000"
+            configuration.vertical_bands.low.color = "#0000ff"
+            configuration.vertical_bands.middle.color = "#00ff00"
+            configuration.vertical_bands.high.color = "#ff0000"
 
-            configuration.vertical_bands.low_band_style.offset = 0.75
-            configuration.vertical_bands.high_band_style.offset = 1.5
+            configuration.vertical_bands.low.offset = 0.75
+            configuration.vertical_bands.high.offset = 1.5
 
             test_html(data, configuration, "points.vertical_fills.html")
             return nothing
         end
 
         nested_test("horizontal_lines") do
-            configuration.horizontal_bands.low_band_style.offset = 0.75
-            configuration.horizontal_bands.middle_band_style.offset = 1.25
-            configuration.horizontal_bands.high_band_style.offset = 1.5
+            configuration.horizontal_bands.low.offset = 0.75
+            configuration.horizontal_bands.middle.offset = 1.25
+            configuration.horizontal_bands.high.offset = 1.5
 
             test_html(data, configuration, "points.horizontal_lines.html")
             return nothing
         end
 
         nested_test("horizontal_fills") do
-            configuration.horizontal_bands.low_band_style.is_filled = true
-            configuration.horizontal_bands.middle_band_style.is_filled = true
-            configuration.horizontal_bands.high_band_style.is_filled = true
+            configuration.horizontal_bands.low.is_filled = true
+            configuration.horizontal_bands.middle.is_filled = true
+            configuration.horizontal_bands.high.is_filled = true
 
-            configuration.horizontal_bands.low_band_style.width = nothing
-            configuration.horizontal_bands.middle_band_style.width = nothing
-            configuration.horizontal_bands.high_band_style.width = nothing
+            configuration.horizontal_bands.low.width = nothing
+            configuration.horizontal_bands.middle.width = nothing
+            configuration.horizontal_bands.high.width = nothing
 
-            configuration.horizontal_bands.low_band_style.color = "#0000ff"
-            configuration.horizontal_bands.middle_band_style.color = "#00ff00"
-            configuration.horizontal_bands.high_band_style.color = "#ff0000"
+            configuration.horizontal_bands.low.color = "#0000ff"
+            configuration.horizontal_bands.middle.color = "#00ff00"
+            configuration.horizontal_bands.high.color = "#ff0000"
 
-            configuration.horizontal_bands.low_band_style.offset = 0.75
-            configuration.horizontal_bands.high_band_style.offset = 1.5
+            configuration.horizontal_bands.low.offset = 0.75
+            configuration.horizontal_bands.high.offset = 1.5
 
             test_html(data, configuration, "points.horizontal_fills.html")
             return nothing
         end
 
         nested_test("color") do
-            configuration.points_style.color = "red"
+            configuration.points.color = "red"
 
             nested_test("()") do
                 test_html(data, configuration, "points.color.html")
@@ -1746,8 +1813,8 @@ nested_test("renderers") do
             end
 
             nested_test("!color") do
-                configuration.points_style.color = "oobleck"
-                @test_throws "invalid configuration.points_style.color: oobleck" render(data, configuration)
+                configuration.points.color = "oobleck"
+                @test_throws "invalid configuration.points.color: oobleck" render(data, configuration)
                 return nothing
             end
         end
@@ -1766,8 +1833,8 @@ nested_test("renderers") do
             end
 
             nested_test("!legend") do
-                configuration.points_style.color_scale.show_scale = true
-                @test_throws "explicit data.points_colors specified for configuration.points_style.color_scale.show_scale" render(
+                configuration.points.color_scale.show_scale = true
+                @test_throws "explicit data.points_colors specified for configuration.points.color_scale.show_scale" render(
                     data,
                     configuration,
                 )
@@ -1776,8 +1843,7 @@ nested_test("renderers") do
 
         nested_test("categorical") do
             data.points_colors = ["Foo", "Bar", "Baz"]
-            configuration.points_style.color_palette =
-                [("Foo", "red"), ("Bar", "green"), ("Baz", "blue"), ("Vaz", "magenta")]
+            configuration.points.color_palette = [("Foo", "red"), ("Bar", "green"), ("Baz", "blue"), ("Vaz", "magenta")]
 
             nested_test("()") do
                 test_html(data, configuration, "points.categorical.html")
@@ -1785,22 +1851,19 @@ nested_test("renderers") do
             end
 
             nested_test("!colorreversed") do
-                configuration.points_style.color_palette[2] = ("Bar", "oobleck")
-                @test_throws "invalid configuration.points_style.color_palette[2] color: oobleck" render(
-                    data,
-                    configuration,
-                )
+                configuration.points.color_palette[2] = ("Bar", "oobleck")
+                @test_throws "invalid configuration.points.color_palette[2] color: oobleck" render(data, configuration)
             end
 
             nested_test("!reversed") do
-                configuration.points_style.color_scale.reverse_scale = true
-                @test_throws "reversed categorical configuration.points_style.color_palette" render(data, configuration)
+                configuration.points.color_scale.reverse_scale = true
+                @test_throws "reversed categorical configuration.points.color_palette" render(data, configuration)
             end
 
             nested_test("legend") do
-                configuration.points_style.color_scale.show_scale = true
+                configuration.points.color_scale.show_scale = true
                 test_legend(data, configuration, "points.categorical") do
-                    data.scale_title = "Points"
+                    data.points_colors_title = "Points"
                     return nothing
                 end
                 return nothing
@@ -1818,62 +1881,59 @@ nested_test("renderers") do
 
                 nested_test("invalid") do
                     nested_test("!colorscale") do
-                        configuration.points_style.color_palette = Vector{Tuple{Real, String}}()
-                        @test_throws "empty configuration.points_style.color_palette" render(data, configuration)
+                        configuration.points.color_palette = Vector{Tuple{Real, String}}()
+                        @test_throws "empty configuration.points.color_palette" render(data, configuration)
                         return nothing
                     end
 
                     nested_test("~colorscale") do
-                        configuration.points_style.color_palette = [(-1.0, "blue"), (-1.0, "red")]
-                        @test_throws "single configuration.points_style.color_palette value: -1.0" render(
-                            data,
-                            configuration,
-                        )
+                        configuration.points.color_palette = [(-1.0, "blue"), (-1.0, "red")]
+                        @test_throws "single configuration.points.color_palette value: -1.0" render(data, configuration)
                         return nothing
                     end
 
                     nested_test("!range") do
-                        configuration.points_style.color_scale.minimum = 1.5
-                        configuration.points_style.color_scale.maximum = 0.5
+                        configuration.points.color_scale.minimum = 1.5
+                        configuration.points.color_scale.maximum = 0.5
                         @test_throws dedent("""
-                            configuration.points_style.color_scale.maximum: 0.5
-                            is not larger than configuration.points_style.color_scale.minimum: 1.5
+                            configuration.points.color_scale.maximum: 0.5
+                            is not larger than configuration.points.color_scale.minimum: 1.5
                         """) render(data, configuration)
                         return nothing
                     end
                 end
 
                 nested_test("range") do
-                    configuration.points_style.color_scale.minimum = 0.5
-                    configuration.points_style.color_scale.maximum = 1.5
-                    configuration.points_style.color_scale.show_scale = true
+                    configuration.points.color_scale.minimum = 0.5
+                    configuration.points.color_scale.maximum = 1.5
+                    configuration.points.color_scale.show_scale = true
                     test_html(data, configuration, "points.continuous.range.html")
                     return nothing
                 end
 
                 nested_test("viridis") do
-                    configuration.points_style.color_palette = "Viridis"
+                    configuration.points.color_palette = "Viridis"
                     test_html(data, configuration, "points.continuous.viridis.html")
                     return nothing
                 end
 
                 nested_test("reversed") do
-                    configuration.points_style.color_scale.reverse_scale = true
+                    configuration.points.color_scale.reverse_scale = true
                     test_html(data, configuration, "points.continuous.reversed.html")
                     return nothing
                 end
 
                 nested_test("legend") do
-                    configuration.points_style.color_scale.show_scale = true
+                    configuration.points.color_scale.show_scale = true
                     test_legend(data, configuration, "points.continuous") do
-                        data.scale_title = "Points"
+                        data.points_colors_title = "Points"
                         return nothing
                     end
                     return nothing
                 end
 
                 nested_test("gradient") do
-                    configuration.points_style.color_palette = [(-1.0, "blue"), (3.0, "red")]
+                    configuration.points.color_palette = [(-1.0, "blue"), (3.0, "red")]
 
                     nested_test("()") do
                         test_html(data, configuration, "points.continuous.gradient.html")
@@ -1881,15 +1941,15 @@ nested_test("renderers") do
                     end
 
                     nested_test("reversed") do
-                        configuration.points_style.color_scale.reverse_scale = true
+                        configuration.points.color_scale.reverse_scale = true
                         test_html(data, configuration, "points.continuous.gradient.reversed.html")
                         return nothing
                     end
 
                     nested_test("legend") do
-                        configuration.points_style.color_scale.show_scale = true
+                        configuration.points.color_scale.show_scale = true
                         test_legend(data, configuration, "points.gradient") do
-                            data.scale_title = "Points"
+                            data.points_colors_title = "Points"
                             return nothing
                         end
                         return nothing
@@ -1899,20 +1959,20 @@ nested_test("renderers") do
 
             nested_test("log") do
                 data.points_colors = [0.0, 5.0, 10.0]
-                configuration.points_style.color_scale.log_regularization = 1.0
+                configuration.points.color_scale.log_regularization = 1.0
 
                 nested_test("invalid") do
                     nested_test("!log_color_scale_regularization") do
-                        configuration.points_style.color_scale.log_regularization = -1.0
-                        @test_throws "negative configuration.points_style.color_scale.log_regularization: -1.0" render(
+                        configuration.points.color_scale.log_regularization = -1.0
+                        @test_throws "negative configuration.points.color_scale.log_regularization: -1.0" render(
                             data,
                             configuration,
                         )
                     end
 
                     nested_test("!cmin") do
-                        configuration.points_style.color_palette = [(-1.0, "blue"), (1.0, "red")]
-                        @test_throws "log of non-positive configuration.points_style.color_palette[1]: 0.0" render(
+                        configuration.points.color_palette = [(-1.0, "blue"), (1.0, "red")]
+                        @test_throws "log of non-positive configuration.points.color_palette[1]: 0.0" render(
                             data,
                             configuration,
                         )
@@ -1924,8 +1984,8 @@ nested_test("renderers") do
                     end
 
                     nested_test("!minimum") do
-                        configuration.points_style.color_scale.minimum = -1.5
-                        @test_throws "log of non-positive configuration.points_style.color_scale.minimum: -0.5" render(
+                        configuration.points.color_scale.minimum = -1.5
+                        @test_throws "log of non-positive configuration.points.color_scale.minimum: -0.5" render(
                             data,
                             configuration,
                         )
@@ -1933,8 +1993,8 @@ nested_test("renderers") do
                     end
 
                     nested_test("!minimum") do
-                        configuration.points_style.color_scale.maximum = -1.5
-                        @test_throws "log of non-positive configuration.points_style.color_scale.maximum: -0.5" render(
+                        configuration.points.color_scale.maximum = -1.5
+                        @test_throws "log of non-positive configuration.points.color_scale.maximum: -0.5" render(
                             data,
                             configuration,
                         )
@@ -1948,23 +2008,23 @@ nested_test("renderers") do
                 end
 
                 nested_test("viridis") do
-                    configuration.points_style.color_palette = "Viridis"
+                    configuration.points.color_palette = "Viridis"
                     test_html(data, configuration, "points.log.continuous.viridis.html")
                     return nothing
                 end
 
                 nested_test("reversed") do
-                    configuration.points_style.color_scale.reverse_scale = true
+                    configuration.points.color_scale.reverse_scale = true
                     test_html(data, configuration, "points.log.continuous.reversed.html")
                     return nothing
                 end
 
                 nested_test("legend") do
-                    configuration.points_style.color_scale.show_scale = true
+                    configuration.points.color_scale.show_scale = true
 
                     nested_test("small") do
                         test_legend(data, configuration, "points.log.continuous.small") do
-                            data.scale_title = "Points"
+                            data.points_colors_title = "Points"
                             return nothing
                         end
                         return nothing
@@ -1974,7 +2034,7 @@ nested_test("renderers") do
                         data.points_colors .*= 10
                         data.points_colors[1] += 6
                         test_legend(data, configuration, "points.log.continuous.large") do
-                            data.scale_title = "Points"
+                            data.points_colors_title = "Points"
                             return nothing
                         end
                         return nothing
@@ -1983,7 +2043,7 @@ nested_test("renderers") do
                     nested_test("huge") do
                         data.points_colors .*= 100
                         test_legend(data, configuration, "points.log.continuous.huge") do
-                            data.scale_title = "Points"
+                            data.points_colors_title = "Points"
                             return nothing
                         end
                         return nothing
@@ -1991,7 +2051,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("gradient") do
-                    configuration.points_style.color_palette = [(0.0, "blue"), (10.0, "red")]
+                    configuration.points.color_palette = [(0.0, "blue"), (10.0, "red")]
 
                     nested_test("()") do
                         test_html(data, configuration, "points.log.continuous.gradient.html")
@@ -1999,15 +2059,15 @@ nested_test("renderers") do
                     end
 
                     nested_test("reversed") do
-                        configuration.points_style.color_scale.reverse_scale = true
+                        configuration.points.color_scale.reverse_scale = true
                         test_html(data, configuration, "points.log.continuous.gradient.reversed.html")
                         return nothing
                     end
 
                     nested_test("legend") do
-                        configuration.points_style.color_scale.show_scale = true
+                        configuration.points.color_scale.show_scale = true
                         test_legend(data, configuration, "points.log.gradient") do
-                            data.scale_title = "Points"
+                            data.points_colors_title = "Points"
                             return nothing
                         end
                         return nothing
@@ -2017,7 +2077,7 @@ nested_test("renderers") do
         end
 
         nested_test("size") do
-            configuration.points_style.size = 10
+            configuration.points.size = 10
             test_html(data, configuration, "points.size.html")
             return nothing
         end
@@ -2031,23 +2091,23 @@ nested_test("renderers") do
             end
 
             nested_test("!range") do
-                configuration.points_style.size_range.smallest = 10.0
-                configuration.points_style.size_range.largest = 2.0
+                configuration.points.size_range.smallest = 10.0
+                configuration.points.size_range.largest = 2.0
                 @test_throws dedent("""
-                    configuration.points_style.size_range.largest: 2.0
-                    is not larger than configuration.points_style.size_range.smallest: 10.0
+                    configuration.points.size_range.largest: 2.0
+                    is not larger than configuration.points.size_range.smallest: 10.0
                 """) render(data, configuration)
             end
 
             nested_test("linear") do
-                configuration.points_style.size_range.smallest = 2.0
-                configuration.points_style.size_range.largest = 10.0
+                configuration.points.size_range.smallest = 2.0
+                configuration.points.size_range.largest = 10.0
                 test_html(data, configuration, "points.sizes.linear.html")
                 return nothing
             end
 
             nested_test("log") do
-                configuration.points_style.size_scale.log_regularization = 0
+                configuration.points.size_scale.log_regularization = 0
                 test_html(data, configuration, "points.sizes.log.html")
                 return nothing
             end
@@ -2074,8 +2134,8 @@ nested_test("renderers") do
         end
 
         nested_test("border") do
-            configuration.points_style.size = 6
-            configuration.points_style.color = "black"
+            configuration.points.size = 6
+            configuration.points.color = "black"
 
             nested_test("sizes") do
                 data.borders_sizes = [10.0, 25.0, 100.0]
@@ -2086,27 +2146,27 @@ nested_test("renderers") do
                 end
 
                 nested_test("linear") do
-                    configuration.border_style.size_range.smallest = 2.0
-                    configuration.border_style.size_range.largest = 10.0
+                    configuration.border.size_range.smallest = 2.0
+                    configuration.border.size_range.largest = 10.0
                     test_html(data, configuration, "points.border.sizes.linear.html")
                     return nothing
                 end
 
                 nested_test("log") do
-                    configuration.border_style.size_scale.log_regularization = 0
+                    configuration.border.size_scale.log_regularization = 0
                     test_html(data, configuration, "points.border.sizes.log.html")
                     return nothing
                 end
 
                 nested_test("color") do
-                    configuration.border_style.color = "red"
+                    configuration.border.color = "red"
                     test_html(data, configuration, "points.border.sizes.color.html")
                     return nothing
                 end
 
                 nested_test("!legend") do
-                    configuration.border_style.color_scale.show_scale = true
-                    @test_throws "no data.borders_colors specified for configuration.border_style.color_scale.show_scale" render(
+                    configuration.border.color_scale.show_scale = true
+                    @test_throws "no data.borders_colors specified for configuration.border.color_scale.show_scale" render(
                         data,
                         configuration,
                     )
@@ -2122,14 +2182,14 @@ nested_test("renderers") do
                 end
 
                 nested_test("size") do
-                    configuration.border_style.size = 6
+                    configuration.border.size = 6
                     test_html(data, configuration, "points.border.colors.size.html")
                     return nothing
                 end
 
                 nested_test("!legend") do
-                    configuration.border_style.color_scale.show_scale = true
-                    @test_throws "explicit data.borders_colors specified for configuration.border_style.color_scale.show_scale" render(
+                    configuration.border.color_scale.show_scale = true
+                    @test_throws "explicit data.borders_colors specified for configuration.border.color_scale.show_scale" render(
                         data,
                         configuration,
                     )
@@ -2145,35 +2205,35 @@ nested_test("renderers") do
                 end
 
                 nested_test("size") do
-                    configuration.border_style.size = 6
+                    configuration.border.size = 6
                     test_html(data, configuration, "points.border.continuous.size.html")
                     return nothing
                 end
 
                 nested_test("legend") do
-                    configuration.border_style.color_scale.show_scale = true
+                    configuration.border.color_scale.show_scale = true
 
                     test_legend(data, configuration, "points.border.continuous") do
-                        data.border_scale_title = "Borders"
+                        data.border_colors_title = "Borders"
                         return nothing
                     end
 
                     nested_test("legend") do
                         data.points_colors = [20.0, 10.0, 0.0]
-                        configuration.points_style.color_palette = "Viridis"
-                        configuration.points_style.color_scale.show_scale = true
+                        configuration.points.color_palette = "Viridis"
+                        configuration.points.color_scale.show_scale = true
 
                         nested_test("()") do
                             test_legend(data, configuration, "points.border.continuous.legend") do
-                                data.scale_title = "Points"
+                                data.points_colors_title = "Points"
                                 return nothing
                             end
                         end
 
                         nested_test("title") do
-                            data.border_scale_title = "Borders"
+                            data.border_colors_title = "Borders"
                             test_legend(data, configuration, "points.border.continuous.legend.title") do
-                                data.scale_title = "Points"
+                                data.points_colors_title = "Points"
                                 return nothing
                             end
                         end
@@ -2183,7 +2243,7 @@ nested_test("renderers") do
 
             nested_test("categorical") do
                 data.borders_colors = ["Foo", "Bar", "Baz"]
-                configuration.border_style.color_palette =
+                configuration.border.color_palette =
                     [("Foo", "red"), ("Bar", "green"), ("Baz", "blue"), ("Vaz", "magenta")]
 
                 nested_test("()") do
@@ -2192,31 +2252,31 @@ nested_test("renderers") do
                 end
 
                 nested_test("legend") do
-                    configuration.border_style.color_scale.show_scale = true
+                    configuration.border.color_scale.show_scale = true
 
                     nested_test("()") do
                         test_legend(data, configuration, "points.border.categorical.colors") do
-                            data.border_scale_title = "Borders"
+                            data.border_colors_title = "Borders"
                             return nothing
                         end
                     end
 
                     nested_test("legend") do
                         data.points_colors = ["X", "Y", "Z"]
-                        configuration.points_style.color_palette = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
-                        configuration.points_style.color_scale.show_scale = true
+                        configuration.points.color_palette = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
+                        configuration.points.color_scale.show_scale = true
 
                         nested_test("()") do
                             test_legend(data, configuration, "points.border.categorical.legend") do
-                                data.scale_title = "Points"
+                                data.points_colors_title = "Points"
                                 return nothing
                             end
                         end
 
                         nested_test("title") do
-                            data.border_scale_title = "Borders"
+                            data.border_colors_title = "Borders"
                             test_legend(data, configuration, "points.border.categorical.legend.title") do
-                                data.scale_title = "Points"
+                                data.points_colors_title = "Points"
                                 return nothing
                             end
                         end
@@ -2251,7 +2311,7 @@ nested_test("renderers") do
             end
 
             nested_test("size") do
-                configuration.edges_style.size = 8
+                configuration.edges.size = 8
                 test_html(data, configuration, "points.edges.size.html")
                 return nothing
             end
@@ -2263,7 +2323,7 @@ nested_test("renderers") do
             end
 
             nested_test("color") do
-                configuration.edges_style.color = "magenta"
+                configuration.edges.color = "magenta"
                 test_html(data, configuration, "points.edges.color.html")
                 return nothing
             end
@@ -2296,9 +2356,9 @@ nested_test("renderers") do
         end
 
         nested_test("legend") do
-            configuration.points_style.color_scale.show_scale = true
+            configuration.points.color_scale.show_scale = true
             test_legend(data, configuration, "grid") do
-                data.scale_title = "Grid"
+                data.points_colors_title = "Grid"
                 return nor
             end
         end
@@ -2310,16 +2370,16 @@ nested_test("renderers") do
 
         nested_test("categorical") do
             data.points_colors = ["A" "B" "C"; "C" "B" "A"]
-            configuration.points_style.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
+            configuration.points.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
 
             nested_test("!scale") do
                 return test_html(data, configuration, "grid.categorical.html")
             end
 
             nested_test("legend") do
-                configuration.points_style.color_scale.show_scale = true
+                configuration.points.color_scale.show_scale = true
                 test_legend(data, configuration, "grid.categorical") do
-                    data.scale_title = "Grid"
+                    data.points_colors_title = "Grid"
                     return nothing
                 end
             end
@@ -2348,7 +2408,7 @@ nested_test("renderers") do
 
             nested_test("color") do
                 data.points_colors = nothing
-                configuration.points_style.color = "red"
+                configuration.points.color = "red"
                 return test_html(data, configuration, "grid.sizes.color.html")
             end
 
@@ -2358,14 +2418,14 @@ nested_test("renderers") do
             end
 
             nested_test("linear") do
-                configuration.points_style.size_range.smallest = 2.0
-                configuration.points_style.size_range.largest = 10.0
+                configuration.points.size_range.smallest = 2.0
+                configuration.points.size_range.largest = 10.0
                 test_html(data, configuration, "grid.sizes.linear.html")
                 return nothing
             end
 
             nested_test("log") do
-                configuration.points_style.size_scale.log_regularization = 1
+                configuration.points.size_scale.log_regularization = 1
                 test_html(data, configuration, "grid.sizes.log.html")
                 return nothing
             end
@@ -2424,20 +2484,20 @@ nested_test("renderers") do
                 end
 
                 nested_test("linear") do
-                    configuration.border_style.size_range.smallest = 2.0
-                    configuration.border_style.size_range.largest = 10.0
+                    configuration.border.size_range.smallest = 2.0
+                    configuration.border.size_range.largest = 10.0
                     test_html(data, configuration, "grid.border.sizes.linear.html")
                     return nothing
                 end
 
                 nested_test("log") do
-                    configuration.border_style.size_scale.log_regularization = 1
+                    configuration.border.size_scale.log_regularization = 1
                     test_html(data, configuration, "grid.border.sizes.log.html")
                     return nothing
                 end
 
                 nested_test("color") do
-                    configuration.border_style.color = "black"
+                    configuration.border.color = "black"
                     test_html(data, configuration, "grid.border.color.html")
                     return nothing
                 end
@@ -2461,8 +2521,8 @@ nested_test("renderers") do
                 end
 
                 nested_test("!scale") do
-                    configuration.border_style.color_scale.show_scale = true
-                    @test_throws "explicit data.borders_colors specified for configuration.border_style.color_scale.show_scale" render(
+                    configuration.border.color_scale.show_scale = true
+                    @test_throws "explicit data.borders_colors specified for configuration.border.color_scale.show_scale" render(
                         data,
                         configuration,
                     )
@@ -2471,38 +2531,38 @@ nested_test("renderers") do
 
             nested_test("categorical") do
                 data.borders_colors = ["A" "B" "C"; "C" "B" "A"]
-                configuration.border_style.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
+                configuration.border.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
 
                 nested_test("()") do
                     return test_html(data, configuration, "grid.border.categorical.html")
                 end
 
                 nested_test("legend") do
-                    configuration.border_style.color_scale.show_scale = true
+                    configuration.border.color_scale.show_scale = true
 
                     nested_test("()") do
                         test_legend(data, configuration, "grid.border.categorical") do
-                            data.border_scale_title = "Grid"
+                            data.border_colors_title = "Grid"
                             return nothing
                         end
                     end
 
                     nested_test("legend") do
                         data.points_colors = ["X" "Y" "Z"; "Z" "Y" "X"]
-                        configuration.points_style.color_palette = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
-                        configuration.points_style.color_scale.show_scale = true
+                        configuration.points.color_palette = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
+                        configuration.points.color_scale.show_scale = true
 
                         nested_test("()") do
                             test_legend(data, configuration, "grid.border.categorical.legend") do
-                                data.scale_title = "Points"
+                                data.points_colors_title = "Points"
                                 return nothing
                             end
                         end
 
                         nested_test("title") do
-                            data.border_scale_title = "Borders"
+                            data.border_colors_title = "Borders"
                             test_legend(data, configuration, "grid.border.categorical.legend.title") do
-                                data.scale_title = "Grid"
+                                data.points_colors_title = "Grid"
                                 return nothing
                             end
                         end
@@ -2517,33 +2577,33 @@ nested_test("renderers") do
                 end
 
                 nested_test("log") do
-                    configuration.border_style.color_scale.log_regularization = 0.0
+                    configuration.border.color_scale.log_regularization = 0.0
                     @test_throws "log of non-positive data.borders_colors[2,3]: -6.0" render(data, configuration)
                 end
 
                 nested_test("legend") do
-                    configuration.border_style.color_scale.show_scale = true
+                    configuration.border.color_scale.show_scale = true
 
                     nested_test("()") do
                         test_legend(data, configuration, "grid.border.continuous") do
-                            data.border_scale_title = "Grid"
+                            data.border_colors_title = "Grid"
                             return nothing
                         end
                     end
 
                     nested_test("legend") do
-                        configuration.points_style.color_scale.show_scale = true
+                        configuration.points.color_scale.show_scale = true
 
                         nested_test("()") do
                             test_legend(data, configuration, "grid.border.continuous.legend") do
-                                data.scale_title = "Points"
+                                data.points_colors_title = "Points"
                                 return nothing
                             end
                         end
                         nested_test("title") do
-                            data.border_scale_title = "Borders"
+                            data.border_colors_title = "Borders"
                             test_legend(data, configuration, "grid.border.continuous.legend.title") do
-                                data.scale_title = "Grid"
+                                data.points_colors_title = "Grid"
                                 return nothing
                             end
                         end
