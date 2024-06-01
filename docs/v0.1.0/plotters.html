@@ -5,11 +5,11 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Validations · MCGraphs.jl v0.1.0
+<title>Plotters · MCGraphs.jl v0.1.0
 </title>
-<meta name="title" content="Validations · MCGraphs.jl v0.1.0"/>
-<meta property="og:title" content="Validations · MCGraphs.jl v0.1.0"/>
-<meta property="twitter:title" content="Validations · MCGraphs.jl v0.1.0"/>
+<meta name="title" content="Plotters · MCGraphs.jl v0.1.0"/>
+<meta property="og:title" content="Plotters · MCGraphs.jl v0.1.0"/>
+<meta property="twitter:title" content="Plotters · MCGraphs.jl v0.1.0"/>
 <meta name="description" content="Documentation for MCGraphs.jl v0.1.0."/>
 <meta property="og:description" content="Documentation for MCGraphs.jl v0.1.0."/>
 <meta property="twitter:description" content="Documentation for MCGraphs.jl v0.1.0."/>
@@ -52,17 +52,9 @@
 <a class="tocitem" href="index.html">MCGraphs
 </a>
 </li>
-<li class="is-active">
+<li>
 <a class="tocitem" href="validations.html">Validations
 </a>
-<ul class="internal">
-<li>
-<a class="tocitem" href="#Index">
-<span>Index
-</span>
-</a>
-</li>
-</ul>
 </li>
 <li>
 <a class="tocitem" href="renderers.html">Renderers
@@ -72,9 +64,23 @@
 <a class="tocitem" href="extractors.html">Extractors
 </a>
 </li>
-<li>
+<li class="is-active">
 <a class="tocitem" href="plotters.html">Plotters
 </a>
+<ul class="internal">
+<li>
+<a class="tocitem" href="#Gene-Gene">
+<span>Gene-Gene
+</span>
+</a>
+</li>
+<li>
+<a class="tocitem" href="#Index">
+<span>Index
+</span>
+</a>
+</li>
+</ul>
 </li>
 </ul>
 <div class="docs-version-selector field has-addons">
@@ -97,13 +103,13 @@
 <nav class="breadcrumb">
 <ul class="is-hidden-mobile">
 <li class="is-active">
-<a href="validations.html">Validations
+<a href="plotters.html">Plotters
 </a>
 </li>
 </ul>
 <ul class="is-hidden-tablet">
 <li class="is-active">
-<a href="validations.html">Validations
+<a href="plotters.html">Plotters
 </a>
 </li>
 </ul>
@@ -122,20 +128,20 @@
 </div>
 </header>
 <article class="content" id="documenter-page">
-<h1 id="Validations">
-<a class="docs-heading-anchor" href="#Validations">Validations
+<h1 id="Plotters">
+<a class="docs-heading-anchor" href="#Plotters">Plotters
 </a>
-<a id="Validations-1">
+<a id="Plotters-1">
 </a>
-<a class="docs-heading-anchor-permalink" href="#Validations" title="Permalink">
+<a class="docs-heading-anchor-permalink" href="#Plotters" title="Permalink">
 </a>
 </h1>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Validations" href="#MCGraphs.Validations">
-<code>MCGraphs.Validations
+<a class="docstring-binding" id="MCGraphs.Plotters" href="#MCGraphs.Plotters">
+<code>MCGraphs.Plotters
 </code>
 </a> — 
 <span class="docstring-category">Module
@@ -143,41 +149,27 @@
 </header>
 <section>
 <div>
-<p>Validate user input.
-</p>
-<p>Rendering graphs requires two objects: data and configuration. Both objects need to be internally consistent. This is especially relevant for the graph configuration. When creating UI for filling in these objects, we can in general easily validate each field on its own (e.g., ensure that a &quot;color&quot; field contains a valid color name). To ensure the overall object is consistent, we provide overall-type-specific validation functions that can be invoked by the UI to inform the user if the combination of (individually valid) field values is not valid for some reason.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Validations.ObjectWithValidation" href="#MCGraphs.Validations.ObjectWithValidation">
-<code>MCGraphs.Validations.ObjectWithValidation
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<p>A common type for objects that support validation, that is, that one can invoke 
-<a href="validations.html#MCGraphs.Validations.validate_object">
-<code>validate_object
-</code>
-</a> on.
+<p>Generate complete graphs from a metacells 
+<code>Daf
+</code> for standard graphs.
 </p>
 </div>
 </section>
 </article>
+<h2 id="Gene-Gene">
+<a class="docs-heading-anchor" href="#Gene-Gene">Gene-Gene
+</a>
+<a id="Gene-Gene-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Gene-Gene" title="Permalink">
+</a>
+</h2>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Validations.validate_object" href="#MCGraphs.Validations.validate_object">
-<code>MCGraphs.Validations.validate_object
+<a class="docstring-binding" id="MCGraphs.Plotters.plot_gene_gene" href="#MCGraphs.Plotters.plot_gene_gene">
+<code>MCGraphs.Plotters.plot_gene_gene
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -186,52 +178,30 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">validate_object(object::ObjectWithValidation)::Maybe{AbstractString}
+<code class="language-julia hljs">plot_gene_gene(
+    daf::DafReader;
+    x_gene::AbstractString,
+    y_gene::AbstractString,
+    axis::Union{AbstractString, Query},
+    color::Maybe{Union{AbstractString, Query}} = nothing,
+    gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
+    colors::Maybe{Union{AbstractString, Query}} = nothing,
+)::Graph
 </code>
 </pre>
-<p>Validate all field values of an object are compatible with each other, assuming each one is valid on its own. Returns 
-<code>nothing
-</code> for a valid object and an error message if something is wrong. By default, this returns 
-<code>nothing
-</code>.
-</p>
-<p>This can be used by GUI widgets to validate the object as a whole (as opposed to validating each field based on its type).
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Validations.assert_valid_object" href="#MCGraphs.Validations.assert_valid_object">
-<code>MCGraphs.Validations.assert_valid_object
+<p>Generate a complete gene-gene plot using 
+<a href="extractors.html#MCGraphs.Extractors.extract_gene_gene_data">
+<code>extract_gene_gene_data
 </code>
-</a> — 
-<span class="docstring-category">Function
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">assert_valid_object(object_with_validation::ObjectWithValidation)::Maybe{AbstractString}
+</a>, 
+<a href="extractors.html#MCGraphs.Extractors.extract_categorical_color_palette">
+<code>extract_categorical_color_palette
 </code>
-</pre>
-<p>This will 
-<code>@assert
-</code> that the 
-<code>object_with_validation
-</code> is valid (that is, 
-<a href="validations.html#MCGraphs.Validations.validate_object">
-<code>validate_object
+</a>, and 
+<a href="extractors.html#MCGraphs.Extractors.default_gene_gene_configuration">
+<code>default_gene_gene_configuration
 </code>
-</a> will return 
-<code>nothing
-</code> for it). This is used in the back-end (graph rendering) code. It is recommended that the front-end (UI) code will invoke 
-<a href="validations.html#MCGraphs.Validations.validate_object">
-<code>validate_object
-</code>
-</a> and ensure the user fixes problems before invoking the back-end code.
+</a>.
 </p>
 </div>
 </section>
@@ -246,35 +216,21 @@
 </h2>
 <ul>
 <li>
-<a href="validations.html#MCGraphs.Validations">
-<code>MCGraphs.Validations
+<a href="plotters.html#MCGraphs.Plotters">
+<code>MCGraphs.Plotters
 </code>
 </a>
 </li>
 <li>
-<a href="validations.html#MCGraphs.Validations.ObjectWithValidation">
-<code>MCGraphs.Validations.ObjectWithValidation
-</code>
-</a>
-</li>
-<li>
-<a href="validations.html#MCGraphs.Validations.assert_valid_object">
-<code>MCGraphs.Validations.assert_valid_object
-</code>
-</a>
-</li>
-<li>
-<a href="validations.html#MCGraphs.Validations.validate_object">
-<code>MCGraphs.Validations.validate_object
+<a href="plotters.html#MCGraphs.Plotters.plot_gene_gene">
+<code>MCGraphs.Plotters.plot_gene_gene
 </code>
 </a>
 </li>
 </ul>
 </article>
 <nav class="docs-footer">
-<a class="docs-footer-prevpage" href="index.html">« MCGraphs
-</a>
-<a class="docs-footer-nextpage" href="renderers.html">Renderers »
+<a class="docs-footer-prevpage" href="extractors.html">« Extractors
 </a>
 <div class="flexbox-break">
 </div>

@@ -97,12 +97,26 @@
 </a>
 </li>
 <li>
+<a class="tocitem" href="#Common">
+<span>Common
+</span>
+</a>
+</li>
+<li>
 <a class="tocitem" href="#Index">
 <span>Index
 </span>
 </a>
 </li>
 </ul>
+</li>
+<li>
+<a class="tocitem" href="extractors.html">Extractors
+</a>
+</li>
+<li>
+<a class="tocitem" href="plotters.html">Plotters
+</a>
 </li>
 </ul>
 <div class="docs-version-selector field has-addons">
@@ -198,6 +212,264 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.Graph" href="#MCGraphs.Renderers.Graph">
+<code>MCGraphs.Renderers.Graph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>The type of a figure we can display. This is a combination of some 
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
+<code>AbstractGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>AbstractGraphConfiguration
+</code>
+</a>, which we can pass to 
+<a href="renderers.html#MCGraphs.Renderers.render">
+<code>render
+</code>
+</a> to obtain a 
+<a href="renderers.html#MCGraphs.Renderers.PlotlyFigure">
+<code>PlotlyFigure
+</code>
+</a> which Julia knows how to display.
+</p>
+<p>The valid combinations of concrete data and configuration which we can render are:
+</p>
+<table>
+<tr>
+<th style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
+<code>AbstractGraphData
+</code>
+</a>
+</th>
+<th style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>AbstractGraphConfiguration
+</code>
+</a>
+</th>
+<th style="text-align: left">Description
+</th>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>PointsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of points, possibly with edges between them.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>GridGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
+<code>GridGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a grid of points (e.g. for correlations).
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LineGraphData">
+<code>LineGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
+<code>LineGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single line (e.g. a function y=f(x)).
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphData">
+<code>LinesGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
+<code>LinesGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of multiple functions, possibly stacked.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
+<code>CdfGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
+<code>CdfGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single cumulative distribution function.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphData">
+<code>CdfsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphConfiguration">
+<code>CdfsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of multiple cumulative distribution functions.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
+<code>DistributionGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
+<code>DistributionGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single distribution.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphConfiguration">
+<code>DistributionsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of multiple distributions.
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
+<code>BarGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
+<code>BarGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of a single set of bars (histogram).
+</td>
+</tr>
+<tr>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphData">
+<code>BarsGraphData
+</code>
+</a>
+</td>
+<td style="text-align: left">
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>BarsGraphConfiguration
+</code>
+</a>
+</td>
+<td style="text-align: left">Graph of multiple sets of bars (histograms).
+</td>
+</tr>
+</table>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.AbstractGraphData" href="#MCGraphs.Renderers.AbstractGraphData">
+<code>MCGraphs.Renderers.AbstractGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>Common abstract base for all complete graph data types. See 
+<a href="renderers.html#MCGraphs.Renderers.Graph">
+<code>Graph
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.AbstractGraphConfiguration" href="#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>MCGraphs.Renderers.AbstractGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>Common abstract base for all complete graph configuration types. See 
+<a href="renderers.html#MCGraphs.Renderers.Graph">
+<code>Graph
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.render" href="#MCGraphs.Renderers.render">
 <code>MCGraphs.Renderers.render
 </code>
@@ -211,7 +483,7 @@
 <code class="language-julia hljs">render(
     data::AbstractGraphData,
     configuration::AbstractGraphConfiguration = ...,
-)::Figure
+)::PlotlyFigure
 </code>
 </pre>
 <p>Render a graph given its data and configuration. The implementation depends on the specific graph. For each 
@@ -405,8 +677,8 @@
 </tr>
 </table>
 <p>This returns a 
-<a href="renderers.html#MCGraphs.Renderers.Figure">
-<code>Figure
+<a href="renderers.html#MCGraphs.Renderers.PlotlyFigure">
+<code>PlotlyFigure
 </code>
 </a> which can be displayed directly, or converted to JSON for transfer to other programming languages (Python or R)
 </p>
@@ -417,8 +689,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.Figure" href="#MCGraphs.Renderers.Figure">
-<code>MCGraphs.Renderers.Figure
+<a class="docstring-binding" id="MCGraphs.Renderers.PlotlyFigure" href="#MCGraphs.Renderers.PlotlyFigure">
+<code>MCGraphs.Renderers.PlotlyFigure
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -426,177 +698,13 @@
 </header>
 <section>
 <div>
-<p>The type of a rendered graph. See 
+<p>The type of a rendered graph which Julia knows how to display. See 
 <a href="renderers.html#MCGraphs.Renderers.render">
 <code>render
 </code>
 </a>.
 </p>
-<p>A figure contains everything needed to display an interactive graph (or generate a static one on disk). It can also be converted to a JSON string for handing it over to a different programming language (e.g., to be used to display the interactive graph in a Python Jupyter notebook, given an appropriate wrapper code).
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.AbstractGraphData" href="#MCGraphs.Renderers.AbstractGraphData">
-<code>MCGraphs.Renderers.AbstractGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<p>Common abstract base for all complete graph data types. See 
-<a href="renderers.html#MCGraphs.Renderers.render">
-<code>render
-</code>
-</a>.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.AbstractGraphConfiguration" href="#MCGraphs.Renderers.AbstractGraphConfiguration">
-<code>MCGraphs.Renderers.AbstractGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<p>Common abstract base for all complete graph configuration types. See 
-<a href="renderers.html#MCGraphs.Renderers.render">
-<code>render
-</code>
-</a>.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.GraphConfiguration" href="#MCGraphs.Renderers.GraphConfiguration">
-<code>MCGraphs.Renderers.GraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct GraphConfiguration
-    width::Maybe{Int} = nothing
-    height::Maybe{Int} = nothing
-    template::AbstractString = &quot;simple_white&quot;
-    show_grid::Bool = true
-    show_ticks::Bool = true
-end
-</code>
-</pre>
-<p>Generic configuration that applies to any graph. Each complete 
-<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
-<code>AbstractGraphConfiguration
-</code>
-</a> contains a 
-<code>graph
-</code> field of this type.
-</p>
-<p>The optional 
-<code>width
-</code> and 
-<code>height
-</code> are in pixels, that is, 1/96 of an inch.
-</p>
-<p>By default, 
-<code>show_grid
-</code> and 
-<code>show_ticks
-</code> are set.
-</p>
-<p>The default 
-<code>template
-</code> is &quot;simple
-<em>white&quot; which is the cleanest. The `show
-</em>grid
-<code>and
-</code>show_ticks` can be used to disable the grid and/or ticks for an even cleaner (but less informative) look.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.AxisConfiguration" href="#MCGraphs.Renderers.AxisConfiguration">
-<code>MCGraphs.Renderers.AxisConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct AxisConfiguration
-    minimum::Maybe{Real} = nothing
-    maximum::Maybe{Real} = nothing
-    log_regularization::Maybe{AbstractFloat} = nothing,
-end
-</code>
-</pre>
-<p>Generic configuration for a graph axis. Everything is optional; by default, the 
-<code>minimum
-</code> and 
-<code>maximum
-</code> are computed automatically from the data.
-</p>
-<p>If 
-<code>log_regularization
-</code> is set, it is added to the coordinate to avoid zero values, and the axis is shown in log (base
-</p>
-<ol>
-<li>scale. To help with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is &quot;close enough&quot; to
-</li>
-</ol>
-<p>2x for intuitive reading of the ratios).
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.ValuesOrientation" href="#MCGraphs.Renderers.ValuesOrientation">
-<code>MCGraphs.Renderers.ValuesOrientation
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<p>The orientation of the values axis in a distribution or bars graph:
-</p>
-<p>
-<code>HorizontalValues
-</code> - The values are the X axis
-</p>
-<p>
-<code>VerticalValues
-</code> - The values are the Y axis (the default).
+<p>A plotly figure contains everything needed to display an interactive graph (or generate a static one on disk). It can also be converted to a JSON string for handing it over to a different programming language (e.g., to be used to display the interactive graph in a Python Jupyter notebook, given an appropriate wrapper code).
 </p>
 </div>
 </section>
@@ -856,149 +964,6 @@ end
 </div>
 </section>
 </article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.ScaleConfiguration" href="#MCGraphs.Renderers.ScaleConfiguration">
-<code>MCGraphs.Renderers.ScaleConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct ScaleConfiguration
-    minimum::Maybe{Real} = nothing
-    maximum::Maybe{Real} = nothing
-    log_regularization::Maybe{AbstractFloat} = nothing
-    reverse_scale::Bool = false
-    show_scale::Bool = false
-end
-</code>
-</pre>
-<p>Configure a color (or sizes) scale. If 
-<code>show_scale
-</code> is set, the color scale is displayed next to the graph. The rest of the fields are only relevant for continuous scales. By default, the 
-<code>minimum
-</code> and 
-<code>maximum
-</code> values are determined automatically by the data. Setting 
-<code>log_regularization
-</code> converts the scale to a log scale, using the (non-negative) regularization to avoid log of zero values. If 
-<code>reverse_scale
-</code> is set, the direction of the color scale is reversed.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.SizeRangeConfiguration" href="#MCGraphs.Renderers.SizeRangeConfiguration">
-<code>MCGraphs.Renderers.SizeRangeConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct SizeRangeConfiguration
-    smallest::Maybe{Real} = nothing
-    largest::Maybe{Real} = nothing
-end
-</code>
-</pre>
-<p>Configure the range of sizes in pixels (1/96th of an inch) to map the sizes data into. If no bounds are given, and also the scale is linear, then we assume the sizes data is just the size in pixels. Otherwise, by default we use 2 pixels for the 
-<code>smallest
-</code> size and make the 
-<code>largest
-</code> size be 8 pixels larger than the 
-<code>smallest
-</code> size.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BandsConfiguration" href="#MCGraphs.Renderers.BandsConfiguration">
-<code>MCGraphs.Renderers.BandsConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct BandsConfiguration
-    low::BandConfiguration = BandConfiguration(is_dashed = true)
-    middle::BandConfiguration = BandConfiguration()
-    high::BandConfiguration = BandConfiguration(is_dashed = true)
-end
-</code>
-</pre>
-<p>Configure the partition of the graph up to three band regions. The 
-<code>low
-</code> and 
-<code>high
-</code> bands are for the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
-<code>middle
-</code> band is for the &quot;inner&quot; region between them (so its line is inside it, solid by default).
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.BandConfiguration" href="#MCGraphs.Renderers.BandConfiguration">
-<code>MCGraphs.Renderers.BandConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct BandConfiguration
-    offset::Maybe{Real} = nothing
-    color::Maybe{AbstractString} = nothing
-    width::Maybe{Real} = 1.0
-    is_dashed::Bool = false
-    is_filled::Bool = false
-end
-</code>
-</pre>
-<p>Configure a region of the graph defined by some band of values. This is the same as a 
-<code>LineConfiguration
-</code> (for controlling the style of the line drawn for the band) with the addition of the 
-<code>offset
-</code> of the line&#39;s position. We allow up to three bands in a complete 
-<a href="renderers.html#MCGraphs.Renderers.BandsConfiguration">
-<code>BandsConfiguration
-</code>
-</a>. The low and high bands are defined as below and above their line&#39;s 
-<code>offset
-</code>, and do not exist if the 
-<code>offset
-</code> is not specified. The middle band is defined to be between these two lines (and therefore only exists if both are specified). Its 
-<code>offset
-</code> defined a center line, if one is to be displayed, and is therefore optional.
-</p>
-</div>
-</section>
-</article>
 <h2 id="Grid">
 <a class="docs-heading-anchor" href="#Grid">Grid
 </a>
@@ -1251,16 +1216,16 @@ end
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
-    stacking::Maybe{Stacking} = nothing
+    data_stacking::Maybe{GraphDataStacking} = nothing
 end
 </code>
 </pre>
 <p>Configure a graph for showing multiple line plots. This allows using 
 <code>show_legend
 </code> to display a legend of the different lines, and 
-<code>stacking
+<code>data_stacking
 </code> to stack instead of overlay the lines. If 
-<code>stacking
+<code>data_stacking
 </code> is specified, then 
 <code>is_filled
 </code> is implied, regardless of what its actual setting is.
@@ -1305,36 +1270,6 @@ end
 </code> must be set). By default, the 
 <code>color
 </code> is chosen automatically.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.Stacking" href="#MCGraphs.Renderers.Stacking">
-<code>MCGraphs.Renderers.Stacking
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<p>If stacking multiple data sets, how:
-</p>
-<p>
-<code>StackValues
-</code> - simply add the values on top of each other.
-</p>
-<p>
-<code>StackFractions
-</code> - normalize the added values so their some is 1. The values must not be negative.
-</p>
-<p>
-<code>StackPercents
-</code> - normalize the added values so their some is 100 (percent). The values must not be negative.
 </p>
 </div>
 </section>
@@ -1714,7 +1649,7 @@ end
     values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
     show_legend::Bool = false
-    stacking::Maybe{Stacking} = nothing
+    data_stacking::Maybe{GraphDataStacking} = nothing
 end
 </code>
 </pre>
@@ -1727,9 +1662,9 @@ end
 </code> field (which makes no sense when multiple series are shown), and with the addition of a 
 <code>show_legend
 </code> and 
-<code>stacking
+<code>data_stacking
 </code> fields. If 
-<code>stacking
+<code>data_stacking
 </code> isn&#39;t specified then the different series are just grouped.
 </p>
 </div>
@@ -1979,6 +1914,307 @@ end
 </div>
 </section>
 </article>
+<h2 id="Common">
+<a class="docs-heading-anchor" href="#Common">Common
+</a>
+<a id="Common-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Common" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GraphConfiguration" href="#MCGraphs.Renderers.GraphConfiguration">
+<code>MCGraphs.Renderers.GraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct GraphConfiguration
+    width::Maybe{Int} = nothing
+    height::Maybe{Int} = nothing
+    template::AbstractString = &quot;simple_white&quot;
+    show_grid::Bool = true
+    show_ticks::Bool = true
+end
+</code>
+</pre>
+<p>Generic configuration that applies to any graph. Each complete 
+<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
+<code>AbstractGraphConfiguration
+</code>
+</a> contains a 
+<code>graph
+</code> field of this type.
+</p>
+<p>The optional 
+<code>width
+</code> and 
+<code>height
+</code> are in pixels, that is, 1/96 of an inch.
+</p>
+<p>By default, 
+<code>show_grid
+</code> and 
+<code>show_ticks
+</code> are set.
+</p>
+<p>The default 
+<code>template
+</code> is &quot;simple
+<em>white&quot; which is the cleanest. The `show
+</em>grid
+<code>and
+</code>show_ticks` can be used to disable the grid and/or ticks for an even cleaner (but less informative) look.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.AxisConfiguration" href="#MCGraphs.Renderers.AxisConfiguration">
+<code>MCGraphs.Renderers.AxisConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct AxisConfiguration
+    minimum::Maybe{Real} = nothing
+    maximum::Maybe{Real} = nothing
+    log_regularization::Maybe{AbstractFloat} = nothing,
+end
+</code>
+</pre>
+<p>Generic configuration for a graph axis. Everything is optional; by default, the 
+<code>minimum
+</code> and 
+<code>maximum
+</code> are computed automatically from the data.
+</p>
+<p>If 
+<code>log_regularization
+</code> is set, it is added to the coordinate to avoid zero values, and the axis is shown in log (base
+</p>
+<ol>
+<li>scale. To help with finer-grained ratios, each 10x step is broken to three ~2.15 steps (which is &quot;close enough&quot; to
+</li>
+</ol>
+<p>2x for intuitive reading of the ratios).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.ValuesOrientation" href="#MCGraphs.Renderers.ValuesOrientation">
+<code>MCGraphs.Renderers.ValuesOrientation
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>The orientation of the values axis in a distribution or bars graph:
+</p>
+<p>
+<code>HorizontalValues
+</code> - The values are the X axis
+</p>
+<p>
+<code>VerticalValues
+</code> - The values are the Y axis (the default).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GraphDataStacking" href="#MCGraphs.Renderers.GraphDataStacking">
+<code>MCGraphs.Renderers.GraphDataStacking
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>If stacking the data of multiple graphs, how:
+</p>
+<p>
+<code>StackDataValues
+</code> - simply add the values on top of each other.
+</p>
+<p>
+<code>StackDataFractions
+</code> - normalize the added values so their some is 1. The values must not be negative.
+</p>
+<p>
+<code>StackDataPercents
+</code> - normalize the added values so their some is 100 (percent). The values must not be negative.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.ScaleConfiguration" href="#MCGraphs.Renderers.ScaleConfiguration">
+<code>MCGraphs.Renderers.ScaleConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct ScaleConfiguration
+    minimum::Maybe{Real} = nothing
+    maximum::Maybe{Real} = nothing
+    log_regularization::Maybe{AbstractFloat} = nothing
+    reverse_scale::Bool = false
+    show_scale::Bool = false
+end
+</code>
+</pre>
+<p>Configure a color (or sizes) scale. If 
+<code>show_scale
+</code> is set, the color scale is displayed next to the graph. The rest of the fields are only relevant for continuous scales. By default, the 
+<code>minimum
+</code> and 
+<code>maximum
+</code> values are determined automatically by the data. Setting 
+<code>log_regularization
+</code> converts the scale to a log scale, using the (non-negative) regularization to avoid log of zero values. If 
+<code>reverse_scale
+</code> is set, the direction of the color scale is reversed.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.SizeRangeConfiguration" href="#MCGraphs.Renderers.SizeRangeConfiguration">
+<code>MCGraphs.Renderers.SizeRangeConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct SizeRangeConfiguration
+    smallest::Maybe{Real} = nothing
+    largest::Maybe{Real} = nothing
+end
+</code>
+</pre>
+<p>Configure the range of sizes in pixels (1/96th of an inch) to map the sizes data into. If no bounds are given, and also the scale is linear, then we assume the sizes data is just the size in pixels. Otherwise, by default we use 2 pixels for the 
+<code>smallest
+</code> size and make the 
+<code>largest
+</code> size be 8 pixels larger than the 
+<code>smallest
+</code> size.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BandsConfiguration" href="#MCGraphs.Renderers.BandsConfiguration">
+<code>MCGraphs.Renderers.BandsConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BandsConfiguration
+    low::BandConfiguration = BandConfiguration(is_dashed = true)
+    middle::BandConfiguration = BandConfiguration()
+    high::BandConfiguration = BandConfiguration(is_dashed = true)
+end
+</code>
+</pre>
+<p>Configure the partition of the graph up to three band regions. The 
+<code>low
+</code> and 
+<code>high
+</code> bands are for the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
+<code>middle
+</code> band is for the &quot;inner&quot; region between them (so its line is inside it, solid by default).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BandConfiguration" href="#MCGraphs.Renderers.BandConfiguration">
+<code>MCGraphs.Renderers.BandConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BandConfiguration
+    offset::Maybe{Real} = nothing
+    color::Maybe{AbstractString} = nothing
+    width::Maybe{Real} = 1.0
+    is_dashed::Bool = false
+    is_filled::Bool = false
+end
+</code>
+</pre>
+<p>Configure a region of the graph defined by some band of values. This is the same as a 
+<code>LineConfiguration
+</code> (for controlling the style of the line drawn for the band) with the addition of the 
+<code>offset
+</code> of the line&#39;s position. We allow up to three bands in a complete 
+<a href="renderers.html#MCGraphs.Renderers.BandsConfiguration">
+<code>BandsConfiguration
+</code>
+</a>. The low and high bands are defined as below and above their line&#39;s 
+<code>offset
+</code>, and do not exist if the 
+<code>offset
+</code> is not specified. The middle band is defined to be between these two lines (and therefore only exists if both are specified). Its 
+<code>offset
+</code> defined a center line, if one is to be displayed, and is therefore optional.
+</p>
+</div>
+</section>
+</article>
 <h2 id="Index">
 <a class="docs-heading-anchor" href="#Index">Index
 </a>
@@ -2109,14 +2345,20 @@ end
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.Figure">
-<code>MCGraphs.Renderers.Figure
+<a href="renderers.html#MCGraphs.Renderers.Graph">
+<code>MCGraphs.Renderers.Graph
 </code>
 </a>
 </li>
 <li>
 <a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
 <code>MCGraphs.Renderers.GraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.GraphDataStacking">
+<code>MCGraphs.Renderers.GraphDataStacking
 </code>
 </a>
 </li>
@@ -2163,6 +2405,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.PlotlyFigure">
+<code>MCGraphs.Renderers.PlotlyFigure
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.PointsConfiguration">
 <code>MCGraphs.Renderers.PointsConfiguration
 </code>
@@ -2193,12 +2441,6 @@ end
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.Stacking">
-<code>MCGraphs.Renderers.Stacking
-</code>
-</a>
-</li>
-<li>
 <a href="renderers.html#MCGraphs.Renderers.ValuesOrientation">
 <code>MCGraphs.Renderers.ValuesOrientation
 </code>
@@ -2214,6 +2456,8 @@ end
 </article>
 <nav class="docs-footer">
 <a class="docs-footer-prevpage" href="validations.html">« Validations
+</a>
+<a class="docs-footer-nextpage" href="extractors.html">Extractors »
 </a>
 <div class="flexbox-break">
 </div>

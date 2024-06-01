@@ -36,8 +36,9 @@ export DistributionGraphConfiguration
 export DistributionGraphData
 export DistributionsGraphConfiguration
 export DistributionsGraphData
-export Figure
+export Graph
 export GraphConfiguration
+export GraphDataStacking
 export GridGraphConfiguration
 export GridGraphData
 export HorizontalValues
@@ -46,45 +47,96 @@ export LineGraphConfiguration
 export LineGraphData
 export LinesGraphConfiguration
 export LinesGraphData
+export PlotlyFigure
 export PointsConfiguration
 export PointsGraphConfiguration
 export PointsGraphData
 export ScaleConfiguration
 export SizeRangeConfiguration
-export StackFractions
-export StackPercents
-export StackValues
-export Stacking
+export StackDataFractions
+export StackDataPercents
+export StackDataValues
 export ValuesOrientation
 export VerticalValues
 export render
 
 using ..Validations
 
+using Base.Multimedia
 using Colors
 using Daf.GenericTypes
 using PlotlyJS
 
 import PlotlyJS.SyncPlot
+import REPL
 
 """
-The type of a rendered graph. See [`render`](@ref).
+The type of a rendered graph which Julia knows how to display. See [`render`](@ref).
 
-A figure contains everything needed to display an interactive graph (or generate a static one on disk). It can also be
+A plotly figure contains everything needed to display an interactive graph (or generate a static one on disk). It can also be
 converted to a JSON string for handing it over to a different programming language (e.g., to be used to display the
 interactive graph in a Python Jupyter notebook, given an appropriate wrapper code).
 """
-Figure = Union{Plot, SyncPlot}
+PlotlyFigure = Union{Plot, SyncPlot}
 
 """
-Common abstract base for all complete graph configuration types. See [`render`](@ref).
+Common abstract base for all complete graph configuration types. See [`Graph`](@ref).
 """
 abstract type AbstractGraphConfiguration <: ObjectWithValidation end
 
 """
-Common abstract base for all complete graph data types. See [`render`](@ref).
+Common abstract base for all complete graph data types. See [`Graph`](@ref).
 """
 abstract type AbstractGraphData <: ObjectWithValidation end
+
+"""
+The type of a figure we can display. This is a combination of some [`AbstractGraphData`](@ref) and
+[`AbstractGraphConfiguration`](@ref), which we can pass to [`render`](@ref) to obtain a [`PlotlyFigure`](@ref) which
+Julia knows how to display.
+
+The valid combinations of concrete data and configuration which we can render are:
+
+| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                          |
+|:-------------------------------- |:----------------------------------------- |:---------------------------------------------------- |
+| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.   |
+| [`GridGraphData`](@ref)          | [`GridGraphConfiguration`](@ref)          | Graph of a grid of points (e.g. for correlations).   |
+| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).     |
+| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.       |
+| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function.  |
+| [`CdfsGraphData`](@ref)          | [`CdfsGraphConfiguration`](@ref)          | Graph of multiple cumulative distribution functions. |
+| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                      |
+| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                     |
+| [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).           |
+| [`BarsGraphData`](@ref)          | [`BarsGraphConfiguration`](@ref)          | Graph of multiple sets of bars (histograms).         |
+"""
+mutable struct Graph
+    data::AbstractGraphData
+    configuration::AbstractGraphConfiguration
+end
+
+function Base.Multimedia.display(graph::Graph)::Any  # untested
+    return Base.Multimedia.display(render(graph.data, graph.configuration))  # NOLINT
+end
+
+function Base.Multimedia.display(mime::AbstractString, graph::Graph)::Any  # untested
+    return Base.Multimedia.display(mime, render(graph.data, graph.configuration))  # NOLINT
+end
+
+function Base.Multimedia.display(on_display::AbstractDisplay, graph::Graph)::Any  # untested
+    return Base.Multimedia.display(on_display, render(graph.data, graph.configuration))  # NOLINT
+end
+
+function Base.Multimedia.display(on_display::TextDisplay, graph::Graph)::Any  # untested
+    return Base.Multimedia.display(on_display, render(graph.data, graph.configuration))  # NOLINT
+end
+
+function Base.Multimedia.display(on_display::REPL.REPLDisplay, graph::Graph)::Any  # untested
+    return Base.Multimedia.display(on_display, render(graph.data, graph.configuration))  # NOLINT
+end
+
+function Base.Multimedia.display(on_display::AbstractDisplay, mime::AbstractString, graph::Graph)::Any  # untested
+    return Base.Multimedia.display(on_display, mime, render(graph.data, graph.configuration))  # NOLINT
+end
 
 """
 The orientation of the values axis in a distribution or bars graph:
@@ -434,7 +486,7 @@ const CURVE = 4
     render(
         data::AbstractGraphData,
         configuration::AbstractGraphConfiguration = ...,
-    )::Figure
+    )::PlotlyFigure
 
 Render a graph given its data and configuration. The implementation depends on the specific graph. For each
 [`AbstractGraphData`](@ref) there is a matching [`AbstractGraphConfiguration`](@ref) (a default one is provided for the
@@ -453,14 +505,14 @@ Render a graph given its data and configuration. The implementation depends on t
 | [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).           |
 | [`BarsGraphData`](@ref)          | [`BarsGraphConfiguration`](@ref)          | Graph of multiple sets of bars (histograms).         |
 
-This returns a [`Figure`](@ref) which can be displayed directly, or converted to JSON for transfer to other programming languages
-(Python or R)
+This returns a [`PlotlyFigure`](@ref) which can be displayed directly, or converted to JSON for transfer to other
+programming languages (Python or R)
 """
 function render(
     data::DistributionGraphData,
     configuration::DistributionGraphConfiguration = DistributionGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
@@ -490,7 +542,7 @@ function render(
     data::DistributionsGraphData,
     configuration::DistributionsGraphConfiguration = DistributionsGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
     if configuration.distributions_gap !== nothing && configuration.distribution.show_curve
@@ -817,7 +869,7 @@ function render(
     data::LineGraphData,
     configuration::LineGraphConfiguration = LineGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
@@ -881,15 +933,15 @@ function line_trace(data::LineGraphData, line::LineConfiguration)::GenericTrace
 end
 
 """
-If stacking multiple data sets, how:
+If stacking the data of multiple graphs, how:
 
-`StackValues` - simply add the values on top of each other.
+`StackDataValues` - simply add the values on top of each other.
 
-`StackFractions` - normalize the added values so their some is 1. The values must not be negative.
+`StackDataFractions` - normalize the added values so their some is 1. The values must not be negative.
 
-`StackPercents` - normalize the added values so their some is 100 (percent). The values must not be negative.
+`StackDataPercents` - normalize the added values so their some is 100 (percent). The values must not be negative.
 """
-@enum Stacking StackValues StackFractions StackPercents
+@enum GraphDataStacking StackDataValues StackDataFractions StackDataPercents
 
 """
     @kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
@@ -900,12 +952,12 @@ If stacking multiple data sets, how:
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
         show_legend::Bool = false
-        stacking::Maybe{Stacking} = nothing
+        data_stacking::Maybe{GraphDataStacking} = nothing
     end
 
 Configure a graph for showing multiple line plots. This allows using `show_legend` to display a legend of the different
-lines, and `stacking` to stack instead of overlay the lines. If `stacking` is specified, then `is_filled` is implied,
-regardless of what its actual setting is.
+lines, and `data_stacking` to stack instead of overlay the lines. If `data_stacking` is specified, then `is_filled` is
+implied, regardless of what its actual setting is.
 """
 @kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
@@ -915,7 +967,7 @@ regardless of what its actual setting is.
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
-    stacking::Maybe{Stacking} = nothing
+    data_stacking::Maybe{GraphDataStacking} = nothing
 end
 
 function Validations.validate_object(
@@ -1059,10 +1111,10 @@ function render(
     data::LinesGraphData,
     configuration::LinesGraphConfiguration = LinesGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
-    if configuration.stacking == StackPercents || configuration.stacking == StackFractions
+    if configuration.data_stacking == StackDataPercents || configuration.data_stacking == StackDataFractions
         for (line_index, points_ys) in enumerate(data.lines_ys)
             for (point_index, point_y) in enumerate(points_ys)
                 @assert point_y >= 0 "negative stacked fraction/percent data.lines_ys[$(line_index),$(point_index)]: $(point_y)"
@@ -1070,7 +1122,7 @@ function render(
         end
     end
 
-    if configuration.stacking === nothing
+    if configuration.data_stacking === nothing
         lines_xs = data.lines_xs
         lines_ys = data.lines_ys
     else
@@ -1236,10 +1288,10 @@ function lines_trace(
             "tonexty"
         end,
         name = data.lines_names !== nothing ? data.lines_names[index] : "Trace $(index)",
-        stackgroup = configuration.stacking === nothing ? nothing : "stacked",
-        groupnorm = if configuration.stacking == StackFractions
+        stackgroup = configuration.data_stacking === nothing ? nothing : "stacked",
+        groupnorm = if configuration.data_stacking == StackDataFractions
             "fraction"
-        elseif configuration.stacking == StackPercents
+        elseif configuration.data_stacking == StackDataPercents
             "percent"
         else
             nothing
@@ -1360,7 +1412,7 @@ function render(
     data::CdfGraphData,
     configuration::CdfGraphConfiguration = CdfGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
@@ -1523,7 +1575,7 @@ function render(
     data::CdfsGraphData,
     configuration::CdfsGraphConfiguration = CdfsGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
@@ -1695,7 +1747,7 @@ function render(
     data::BarGraphData,
     configuration::BarGraphConfiguration = BarGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
@@ -1722,12 +1774,12 @@ end
         values_orientation::ValuesOrientation = VerticalValues
         bars_gap::Maybe{Real} = nothing
         show_legend::Bool = false
-        stacking::Maybe{Stacking} = nothing
+        data_stacking::Maybe{GraphDataStacking} = nothing
     end
 
 Configure a graph for showing multiple bars (histograms) graph. This is similar to [`BarGraphConfiguration`](@ref),
 without the `color` field (which makes no sense when multiple series are shown), and with the addition of a
-`show_legend` and `stacking` fields. If `stacking` isn't specified then the different series are just grouped.
+`show_legend` and `data_stacking` fields. If `data_stacking` isn't specified then the different series are just grouped.
 """
 @kwdef mutable struct BarsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
@@ -1735,7 +1787,7 @@ without the `color` field (which makes no sense when multiple series are shown),
     values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
     show_legend::Bool = false
-    stacking::Maybe{Stacking} = nothing
+    data_stacking::Maybe{GraphDataStacking} = nothing
 end
 
 function Validations.validate_object(
@@ -1844,12 +1896,12 @@ function render(
     data::BarsGraphData,
     configuration::BarsGraphConfiguration = BarsGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
-    stacking = configuration.stacking
-    if stacking === nothing
+    data_stacking = configuration.data_stacking
+    if data_stacking === nothing
         series_values = data.series_values
     else
         for (series_index, bars_values) in enumerate(data.series_values)
@@ -1857,7 +1909,7 @@ function render(
                 @assert value >= 0 "negative stacked data.series_values[$(series_index),$(bar_index)]: $(value)"
             end
         end
-        series_values = stacked_values(stacking, data.series_values)
+        series_values = stacked_values(data_stacking, data.series_values)
     end
 
     traces = Vector{GenericTrace}()
@@ -1885,7 +1937,7 @@ function render(
         configuration;
         has_tick_names = data.bars_names !== nothing,
         show_legend = configuration.show_legend,
-        stacked = configuration.stacking !== nothing,
+        stacked = configuration.data_stacking !== nothing,
     )
     figure = plot(traces, layout)
     write_figure_to_file(figure, configuration.graph, output_file)
@@ -1893,8 +1945,11 @@ function render(
     return figure
 end
 
-function stacked_values(stacking::Stacking, series_values::T)::T where {(T <: AbstractVector{<:AbstractVector{<:Real}})}
-    if stacking == StackValues
+function stacked_values(
+    data_stacking::GraphDataStacking,
+    series_values::T,
+)::T where {(T <: AbstractVector{<:AbstractVector{<:Real}})}
+    if data_stacking == StackDataValues
         return series_values
     end
 
@@ -1903,7 +1958,7 @@ function stacked_values(stacking::Stacking, series_values::T)::T where {(T <: Ab
         total_values .+= bars_values
     end
 
-    if stacking == StackPercents
+    if data_stacking == StackDataPercents
         total_values ./= 100
     end
     total_values[total_values .== 0] .= 1
@@ -2402,7 +2457,7 @@ function render(
     data::PointsGraphData,
     configuration::PointsGraphConfiguration = PointsGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
     assert_valid_render(data, configuration)
@@ -3221,12 +3276,12 @@ function highest_color(
     return log10(maximum([value for (value, _) in color_palette]) + log_color_scale_regularization)
 end
 
-function write_figure_to_file(::Figure, ::GraphConfiguration, ::Nothing)::Nothing  # untested
+function write_figure_to_file(::PlotlyFigure, ::GraphConfiguration, ::Nothing)::Nothing  # untested
     return nothing
 end
 
 function write_figure_to_file(
-    figure::Figure,
+    figure::PlotlyFigure,
     graph_configuration::GraphConfiguration,
     output_file::AbstractString,
 )::Nothing
@@ -3370,7 +3425,7 @@ function render(
     data::GridGraphData,
     configuration::GridGraphConfiguration = GridGraphConfiguration(),
     output_file::Maybe{AbstractString} = nothing,
-)::Figure
+)::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
     assert_valid_render(data, configuration)

@@ -896,21 +896,21 @@ nested_test("renderers") do
 
         nested_test("stack") do
             nested_test("values") do
-                configuration.stacking = StackValues
+                configuration.data_stacking = StackDataValues
                 test_html(data, configuration, "lines.stack.values.html")
                 return nothing
             end
 
             nested_test("percents") do
                 data.lines_ys[1][1] = 0.2
-                configuration.stacking = StackPercents
+                configuration.data_stacking = StackDataPercents
                 test_html(data, configuration, "lines.stack.percents.html")
                 return nothing
             end
 
             nested_test("fractions") do
                 data.lines_ys[1][1] = 0.2
-                configuration.stacking = StackFractions
+                configuration.data_stacking = StackDataFractions
                 test_html(data, configuration, "lines.stack.fractions.html")
                 return nothing
             end
@@ -1319,19 +1319,19 @@ nested_test("renderers") do
 
         nested_test("stack") do
             nested_test("values") do
-                configuration.stacking = StackValues
+                configuration.data_stacking = StackDataValues
                 test_html(data, configuration, "bars.stack.values.html")
                 return nothing
             end
 
             nested_test("percents") do
-                configuration.stacking = StackPercents
+                configuration.data_stacking = StackDataPercents
                 test_html(data, configuration, "bars.stack.percents.html")
                 return nothing
             end
 
             nested_test("fractions") do
-                configuration.stacking = StackFractions
+                configuration.data_stacking = StackDataFractions
                 test_html(data, configuration, "bars.stack.fractions.html")
                 return nothing
             end
