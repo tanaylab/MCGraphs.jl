@@ -406,12 +406,12 @@ name twice, why the sphere was merged).
         if is_self_difference
             x_label, y_label = "$(x_sphere) low:", "$(x_sphere) high:"
         else
-            x_label, y_label = x_sphere, y_sphere
+            x_label, y_label = "$(x_sphere):", "$(y_sphere):"
         end
 
         points_hovers[point_index] = join(  # NOJET
             [
-                "gene: $(names_of_genes[gene_index])",
+                "Gene: $(names_of_genes[gene_index])",
                 "distance: $(distance_of_genes[gene_index])",
                 x_label,
                 "- metacell: $(x_metacell_of_genes[gene_index])",
