@@ -480,13 +480,19 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">render(
+<code class="language-julia hljs">render(graph::Graph; output_file::Maybe{AbstractString} = nothing)::PlotlyFigure
+render(
     data::AbstractGraphData,
     configuration::AbstractGraphConfiguration = ...,
+    output_file::Maybe{AbstractString} = nothing,
 )::PlotlyFigure
 </code>
 </pre>
-<p>Render a graph given its data and configuration. The implementation depends on the specific graph. For each 
+<p>Render a graph given its data and configuration. If the 
+<code>output_file
+</code> is specified, then the graph is also written to the file.
+</p>
+<p>The implementation depends on the specific graph. For each 
 <a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
 <code>AbstractGraphData
 </code>
@@ -735,10 +741,15 @@
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
+    vertical_bands::BandsData = BandsData()
+    horizontal_bands::BandsData = BandsData()
+    diagonal_bands::BandsData = BandsData()
     points_colors_title::Maybe{AbstractString} = nothing
     points_sizes_title::Maybe{AbstractString} = nothing
-    border_colors_title::Maybe{AbstractString} = nothing
-    border_sizes_title::Maybe{AbstractString} = nothing
+    borders_colors_title::Maybe{AbstractString} = nothing
+    borders_sizes_title::Maybe{AbstractString} = nothing
+    edges_group_title::Maybe{AbstractString} = nothing
+    edges_line_title::Maybe{AbstractString} = nothing
     points_xs::AbstractVector{&lt;:Real}
     points_ys::AbstractVector{&lt;:Real}
     points_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
@@ -789,13 +800,13 @@ end
 </code>, 
 <code>points_sizes_title
 </code>, 
-<code>border_colors_title
+<code>borders_colors_title
 </code> and 
-<code>border_sizes_title
+<code>borders_sizes_title
 </code> are only used if 
-<code>show_scale
+<code>show_color_scale
 </code> is set for the relevant color scales. You can&#39;t specify 
-<code>show_scale
+<code>show_color_scale
 </code> if there is no 
 <code>points_colors
 </code> data or if the 
@@ -844,8 +855,9 @@ end
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     points::PointsConfiguration = PointsConfiguration()
-    border::PointsConfiguration = PointsConfiguration()
+    borders::PointsConfiguration = PointsConfiguration()
     edges::PointsConfiguration = PointsConfiguration()
+    edges_over_points::Bool = true
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     diagonal_bands::BandsConfiguration = BandsConfiguration()
@@ -868,8 +880,12 @@ end
 <code>diagonal_bands
 </code> are multiplicative instead of additive, and must be positive.
 </p>
+<p>If 
+<code>edges_over_points
+</code> is set, the edges will be plotted above the points; otherwise, the points will be plotted above the edges.
+</p>
 <p>The 
-<code>border
+<code>borders
 </code> is used if the 
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
 <code>PointsGraphData
@@ -891,13 +907,11 @@ end
 <code>GraphConfiguration
 </code>
 </a> of a points graph. Instead you probably want to set the 
-<code>show_scale
+<code>show_color_scale
 </code> of the 
-<code>color_scale
+<code>points
 </code> (and/or of the 
-<code>border
-</code> and/or 
-<code>edges
+<code>borders
 </code>). In addition, the color scale options of the 
 <code>edges
 </code> must not be set, as the 
@@ -929,14 +943,16 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct PointsConfiguration
     color::Maybe{AbstractString} = nothing
-    color_scale::ScaleConfiguration = ScaleConfiguration()
+    color_scale::AxisScale = AxisScale()
+    show_color_scale::Bool = false,
+    reverse_color_scale::Bool = false,
     color_palette::Maybe{Union{
         AbstractString,
         AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}},
         AbstractVector{&lt;:Tuple{&lt;:AbstractString, &lt;:AbstractString}}
     }} = nothing
     size::Maybe{Real} = nothing
-    size_scale::ScaleConfiguration = ScaleConfiguration()
+    size_scale::AxisScale = AxisScale()
     size_range::SizeRangeConfiguration = SizeRangeConfiguration()
 end
 </code>
@@ -951,15 +967,25 @@ end
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
 <code>PointsGraphData
 </code>
-</a>. For color values, the 
+</a>.
+</p>
+<p>For color values, the 
 <code>color_palette
 </code> is applied; this can be the name of a standard one, a vector of (value, color) tuples for a continuous (numeric value) scale or categorical (string value) scales. For sizes, the 
 <code>size_range
 </code> is applied. The 
 <code>color_scale
 </code> and 
+<code>reverse_color_scale
+</code> can also be used to tweak the colors. If 
+<code>show_color_scale
+</code> is set, then the colors will be shown (in the legend or as a color bar, as appropriate).
+</p>
+<p>If 
 <code>size_scale
-</code> configurations further control the color scales.
+</code> and/or 
+<code>size_range
+</code> are specified, they are used to control the conversion of the data sizes to pixel sizes.
 </p>
 </div>
 </section>
@@ -991,7 +1017,7 @@ end
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     points_colors_title::Maybe{AbstractString} = nothing
-    border_colors_title::Maybe{AbstractString} = nothing
+    borders_colors_title::Maybe{AbstractString} = nothing
     columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     points_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
@@ -1030,7 +1056,7 @@ end
 <code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     points::PointsConfiguration = PointsConfiguration()
-    border::PointsConfiguration = PointsConfiguration()
+    borders::PointsConfiguration = PointsConfiguration()
 end
 </code>
 </pre>
@@ -1067,6 +1093,8 @@ end
     graph_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
+    vertical_bands::BandsData = BandsData()
+    horizontal_bands::BandsData = BandsData()
     points_xs::AbstractVector{&lt;:Real}
     points_ys::AbstractVector{&lt;:Real}
 end
@@ -1110,6 +1138,8 @@ end
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
+    vertical_bands::BandsData = BandsData()
+    horizontal_bands::BandsData = BandsData()
     lines_xs::AbstractVector{AbstractVector{&lt;:Real}}
     lines_ys::AbstractVector{AbstractVector{&lt;:Real}}
     lines_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
@@ -1586,9 +1616,10 @@ end
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
     series_values::AbstractString{&lt;:AbstractVector{&lt;:Real}}
-    names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    series_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    series_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    series_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    bars_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
 </code>
@@ -1614,14 +1645,14 @@ end
 <p>All the 
 <code>series_values
 </code> vectors must be of the same size. If specified, the 
-<code>names
-</code> vector must contain the same number of elements. If specified, the 
+<code>series_names
+</code> and 
+<code>series_colors
+</code> vectors must contain the same number of elements. If specified, the 
 <code>bars_names
 </code> and/or 
-<code>colors
-</code> and/or 
-<code>hovers
-</code> vectors must contain the same number of elements as the number of 
+<code>bars_hovers
+</code> vectors must contain the same number of elements in the each of the 
 <code>series_values
 </code> vectors.
 </p>
@@ -1645,7 +1676,6 @@ end
 <code class="language-julia hljs">@kwdef mutable struct BarsGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
-    color::Maybe{AbstractString} = nothing
     values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
     show_legend::Bool = false
@@ -2076,44 +2106,6 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.ScaleConfiguration" href="#MCGraphs.Renderers.ScaleConfiguration">
-<code>MCGraphs.Renderers.ScaleConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct ScaleConfiguration
-    minimum::Maybe{Real} = nothing
-    maximum::Maybe{Real} = nothing
-    log_regularization::Maybe{AbstractFloat} = nothing
-    reverse_scale::Bool = false
-    show_scale::Bool = false
-end
-</code>
-</pre>
-<p>Configure a color (or sizes) scale. If 
-<code>show_scale
-</code> is set, the color scale is displayed next to the graph. The rest of the fields are only relevant for continuous scales. By default, the 
-<code>minimum
-</code> and 
-<code>maximum
-</code> values are determined automatically by the data. Setting 
-<code>log_regularization
-</code> converts the scale to a log scale, using the (non-negative) regularization to avoid log of zero values. If 
-<code>reverse_scale
-</code> is set, the direction of the color scale is reversed.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.SizeRangeConfiguration" href="#MCGraphs.Renderers.SizeRangeConfiguration">
 <code>MCGraphs.Renderers.SizeRangeConfiguration
 </code>
@@ -2159,6 +2151,7 @@ end
     low::BandConfiguration = BandConfiguration(is_dashed = true)
     middle::BandConfiguration = BandConfiguration()
     high::BandConfiguration = BandConfiguration(is_dashed = true)
+    show_legend::Bool = false
 end
 </code>
 </pre>
@@ -2169,6 +2162,10 @@ end
 </code> bands are for the &quot;outer&quot; regions (so their lines are at their border, dashed by default) and the 
 <code>middle
 </code> band is for the &quot;inner&quot; region between them (so its line is inside it, solid by default).
+</p>
+<p>If 
+<code>show_legend
+</code>, then a legend showing the bands will be shown.
 </p>
 </div>
 </section>
@@ -2215,6 +2212,33 @@ end
 </div>
 </section>
 </article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BandsData" href="#MCGraphs.Renderers.BandsData">
+<code>MCGraphs.Renderers.BandsData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct BandsData
+    legend_title::Maybe{AbstractString} = nothing
+    low_title::Maybe{AbstractString} = nothing
+    middle_title::Maybe{AbstractString} = nothing
+    high_title::Maybe{AbstractString} = nothing
+end
+</code>
+</pre>
+<p>Legend titles for a set of bands.
+</p>
+</div>
+</section>
+</article>
 <h2 id="Index">
 <a class="docs-heading-anchor" href="#Index">Index
 </a>
@@ -2257,6 +2281,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.BandsConfiguration">
 <code>MCGraphs.Renderers.BandsConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.BandsData">
+<code>MCGraphs.Renderers.BandsData
 </code>
 </a>
 </li>
@@ -2425,12 +2455,6 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
 <code>MCGraphs.Renderers.PointsGraphData
-</code>
-</a>
-</li>
-<li>
-<a href="renderers.html#MCGraphs.Renderers.ScaleConfiguration">
-<code>MCGraphs.Renderers.ScaleConfiguration
 </code>
 </a>
 </li>

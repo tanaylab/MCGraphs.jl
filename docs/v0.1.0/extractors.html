@@ -189,11 +189,14 @@
     x_gene::AbstractString,
     y_gene::AbstractString,
     axis::Union{AbstractString, Query},
+    min_significant_gene_UMIs::Integer = 40,
     color::Maybe{Union{AbstractString, Query}} = nothing,
+    entries_hovers::Maybe{QueryColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
+    genes_hovers::Maybe{QueryColumns} = nothing,
 )::PointsGraphData
 </code>
 </pre>
-<p>Extract the data for a gene-gene points graph from the 
+<p>Extract the data for a gene-gene graph from the 
 <code>daf
 </code> data. The X coordinate of each point is the fraction of the 
 <code>x_gene
@@ -203,6 +206,10 @@
 <code>axis
 </code>. By default we show the genes fractions of all metacells.
 </p>
+<p>We ignore genes that don&#39;t have at least 
+<code>min_significant_gene_UMIs
+</code> between both entries.
+</p>
 <p>If a 
 <code>colors_query
 </code> is specified, it can be a suffix of a query that fetches a value for each entry of the 
@@ -210,6 +217,39 @@
 </code>, or a full query that groups by the axis. By default we color by the type of the 
 <code>axis
 </code>.
+</p>
+<p>Anything listed in 
+<code>hovers
+</code> will be collected per metacell and used in the hover data.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Extractors.extract_sphere_sphere_data" href="#MCGraphs.Extractors.extract_sphere_sphere_data">
+<code>MCGraphs.Extractors.extract_sphere_sphere_data
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function extract_sphere_sphere_data(
+    daf::DafReader;
+    x_sphere::AbstractString,
+    y_sphere::AbstractString,
+    min_significant_gene_UMIs::Integer = 40,
+    gene_fraction_regularization::AbstractFloat = 1e-5,
+    confidence::AbstractFloat = 0.9,
+)::PointsGraphData
+</code>
+</pre>
+<p>Extract the data for a sphere-sphere graph. This shows why two spheres were not merged (or, if given the same sphere name twice, why the sphere was merged).
 </p>
 </div>
 </section>
@@ -265,12 +305,44 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">default_gene_gene_configuration(;
+<code class="language-julia hljs">default_gene_gene_configuration(
+    configuration = PointsGraphConfiguration();
     gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
 )::PointsGraphConfiguration
 </code>
 </pre>
-<p>Return a default configuration for a gene-gene plot. This typically applies the log scale to the axes.
+<p>Return a default configuration for a gene-gene graph. This just applies the log scale to the axes. Will modify 
+<code>configuration
+</code> in-place and return it.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Extractors.default_sphere_sphere_configuration" href="#MCGraphs.Extractors.default_sphere_sphere_configuration">
+<code>MCGraphs.Extractors.default_sphere_sphere_configuration
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">default_sphere_sphere_configuration(
+    configuration::PointsGraphConfiguration = PointsGraphConfiguration();
+    x_sphere::AbstractString,
+    y_sphere::AbstractString,
+    gene_fraction_regularization::AbstractFloat = 1e-5,
+)::PointsGraphConfiguration
+</code>
+</pre>
+<p>Return a default configuration for a sphere-sphere graph. Will modify 
+<code>configuration
+</code> in-place and return it.
 </p>
 </div>
 </section>
@@ -297,6 +369,12 @@
 </a>
 </li>
 <li>
+<a href="extractors.html#MCGraphs.Extractors.default_sphere_sphere_configuration">
+<code>MCGraphs.Extractors.default_sphere_sphere_configuration
+</code>
+</a>
+</li>
+<li>
 <a href="extractors.html#MCGraphs.Extractors.extract_categorical_color_palette">
 <code>MCGraphs.Extractors.extract_categorical_color_palette
 </code>
@@ -305,6 +383,12 @@
 <li>
 <a href="extractors.html#MCGraphs.Extractors.extract_gene_gene_data">
 <code>MCGraphs.Extractors.extract_gene_gene_data
+</code>
+</a>
+</li>
+<li>
+<a href="extractors.html#MCGraphs.Extractors.extract_sphere_sphere_data">
+<code>MCGraphs.Extractors.extract_sphere_sphere_data
 </code>
 </a>
 </li>

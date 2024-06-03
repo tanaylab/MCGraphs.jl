@@ -69,8 +69,8 @@
 </a>
 <ul class="internal">
 <li>
-<a class="tocitem" href="#Gene-Gene">
-<span>Gene-Gene
+<a class="tocitem" href="#Graphs">
+<span>Graphs
 </span>
 </a>
 </li>
@@ -156,12 +156,12 @@
 </div>
 </section>
 </article>
-<h2 id="Gene-Gene">
-<a class="docs-heading-anchor" href="#Gene-Gene">Gene-Gene
+<h2 id="Graphs">
+<a class="docs-heading-anchor" href="#Graphs">Graphs
 </a>
-<a id="Gene-Gene-1">
+<a id="Graphs-1">
 </a>
-<a class="docs-heading-anchor-permalink" href="#Gene-Gene" title="Permalink">
+<a class="docs-heading-anchor-permalink" href="#Graphs" title="Permalink">
 </a>
 </h2>
 <article class="docstring">
@@ -189,7 +189,7 @@
 )::Graph
 </code>
 </pre>
-<p>Generate a complete gene-gene plot using 
+<p>Generate a complete gene-gene graph using 
 <a href="extractors.html#MCGraphs.Extractors.extract_gene_gene_data">
 <code>extract_gene_gene_data
 </code>
@@ -202,6 +202,54 @@
 <code>default_gene_gene_configuration
 </code>
 </a>.
+</p>
+<p>By default, we look at gene expression per metacell; you can override this using the 
+<code>axis
+</code> parameter. Each point in the graph is a gene which has a robust comparable expression (at least 
+<code>min_significant_gene_UMIs
+</code> between both axis entries).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Plotters.plot_sphere_sphere" href="#MCGraphs.Plotters.plot_sphere_sphere">
+<code>MCGraphs.Plotters.plot_sphere_sphere
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">plot_sphere_sphere(
+    daf::DafReader;
+    x_sphere::AbstractString,
+    y_sphere::AbstractString,
+    min_significant_gene_UMIs::Integer = 40,
+    max_sphere_diameter::AbstractFloat = 2.0,
+    gene_fraction_regularization::AbstractFloat = 1e-5,
+    confidence::AbstractFloat = 0.9,
+)::Graph
+</code>
+</pre>
+<p>Generate a complete sphere-sphere graph using 
+<a href="extractors.html#MCGraphs.Extractors.extract_sphere_sphere_data">
+<code>extract_sphere_sphere_data
+</code>
+</a> and 
+<a href="extractors.html#MCGraphs.Extractors.default_sphere_sphere_configuration">
+<code>default_sphere_sphere_configuration
+</code>
+</a>.
+</p>
+<p>Each point in the graph is a gene which has a robust comparable expression (at least 
+<code>min_significant_gene_UMIs
+</code> between both spgeres). A line is attached to each point showing the confidence modification used when deciding on grouping of metacells into spheres.
 </p>
 </div>
 </section>
@@ -224,6 +272,12 @@
 <li>
 <a href="plotters.html#MCGraphs.Plotters.plot_gene_gene">
 <code>MCGraphs.Plotters.plot_gene_gene
+</code>
+</a>
+</li>
+<li>
+<a href="plotters.html#MCGraphs.Plotters.plot_sphere_sphere">
+<code>MCGraphs.Plotters.plot_sphere_sphere
 </code>
 </a>
 </li>

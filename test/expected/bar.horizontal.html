@@ -20,8 +20,8 @@ window.PlotlyConfig = {MathJaxConfig: 'local'};
         if (document.getElementById('id-1')) {
     Plotly.newPlot(
         'id-1',
-        [{"x":[-0.2,1.2,1.8],"y":["Bar 1","Bar 2","Bar 3"],"type":"bar","legendgroup":"series","orientation":"h"}],
-        {"showlegend":false,"xaxis":{"showgrid":true,"showticklabels":true,"range":[null,null]},"template":"simple_white","margin":{"l":50,"b":50,"r":50,"t":60},"yaxis":{"showgrid":false,"showticklabels":false}},
+        [{"showlegend":false,"orientation":"h","y":["Bar 1","Bar 2","Bar 3"],"type":"bar","x":[-0.2,1.2,1.8]}],
+        {"showlegend":false,"xaxis":{"showgrid":true,"showticklabels":true,"range":[null,null]},"template":"simple_white","legend":{"tracegroupgap":0,"itemdoubleclick":false},"margin":{"l":50,"b":50,"r":50,"t":60},"yaxis":{"showgrid":false,"showticklabels":false}},
         {"editable":false,"responsive":true,"staticPlot":false,"scrollZoom":true},
     )
 }

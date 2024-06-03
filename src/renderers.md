@@ -70,10 +70,10 @@ MCGraphs.Renderers.GraphConfiguration
 MCGraphs.Renderers.AxisConfiguration
 MCGraphs.Renderers.ValuesOrientation
 MCGraphs.Renderers.GraphDataStacking
-MCGraphs.Renderers.ScaleConfiguration
 MCGraphs.Renderers.SizeRangeConfiguration
 MCGraphs.Renderers.BandsConfiguration
 MCGraphs.Renderers.BandConfiguration
+MCGraphs.Renderers.BandsData
 ```
 
 ## Index
