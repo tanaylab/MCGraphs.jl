@@ -757,7 +757,7 @@ render(
     hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     borders_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
     borders_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
-    edges::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
+    edges_points::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing
     edges_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
 end
@@ -814,7 +814,7 @@ end
 </code> contain explicit color names.
 </p>
 <p>It is possible to draw straight 
-<code>edges
+<code>edges_points
 </code> between specific point pairs. In this case the 
 <code>edges
 </code> of the 

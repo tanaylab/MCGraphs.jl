@@ -2552,7 +2552,7 @@ end
         hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
         borders_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
         borders_sizes::Maybe{AbstractVector{<:Real}} = nothing
-        edges::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
+        edges_points::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing
         edges_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         edges_sizes::Maybe{AbstractVector{<:Real}} = nothing
     end
@@ -2574,9 +2574,9 @@ The `points_colors_title`, `points_sizes_title`, `borders_colors_title` and `bor
 `show_color_scale` is set for the relevant color scales. You can't specify `show_color_scale` if there is no
 `points_colors` data or if the `points_colors` contain explicit color names.
 
-It is possible to draw straight `edges` between specific point pairs. In this case the `edges` of the
-[`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge.
-The `edges_colors` are restricted to explicit colors, not a color scale.
+It is possible to draw straight `edges_points` between specific point pairs. In this case the `edges` of the
+[`PointsGraphConfiguration`](@ref) will be used, and the `edges_colors` and `edges_sizes` will override it per edge. The
+`edges_colors` are restricted to explicit colors, not a color scale.
 
 A point (or a point border, or an edge) with a zero size and/or an empty string color (either from the data or from a
 categorical `color_palette`) will not be shown.
