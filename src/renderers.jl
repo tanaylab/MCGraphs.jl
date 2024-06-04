@@ -57,7 +57,8 @@ export StackDataPercents
 export StackDataValues
 export ValuesOrientation
 export VerticalValues
-export render
+export graph_to_figure
+export save_graph
 
 using ..Validations
 
@@ -70,7 +71,7 @@ import PlotlyJS.SyncPlot
 import REPL
 
 """
-The type of a rendered graph which Julia knows how to display. See [`render`](@ref).
+The type of a rendered graph which Julia knows how to display. See [`graph_to_figure`](@ref).
 
 A plotly figure contains everything needed to display an interactive graph (or generate a static one on disk). It can also be
 converted to a JSON string for handing it over to a different programming language (e.g., to be used to display the
@@ -90,8 +91,11 @@ abstract type AbstractGraphData <: ObjectWithValidation end
 
 """
 The type of a figure we can display. This is a combination of some [`AbstractGraphData`](@ref) and
-[`AbstractGraphConfiguration`](@ref), which we can pass to [`render`](@ref) to obtain a [`PlotlyFigure`](@ref) which
-Julia knows how to display.
+[`AbstractGraphConfiguration`](@ref), which we can pass to [`graph_to_figure`](@ref) to obtain a [`PlotlyFigure`](@ref)
+which Julia knows how to display for us.
+
+You can `display` the `Graph` inside interactive environments (Julia REPL and/or Jupyter notebooks), and/or use
+`save_graph` to write it to a file.
 
 The valid combinations of concrete data and configuration which we can render are:
 
@@ -114,15 +118,27 @@ mutable struct Graph
 end
 
 """
-    render(graph::Graph; output_file::Maybe{AbstractString} = nothing)::PlotlyFigure
-    render(
-        data::AbstractGraphData,
-        configuration::AbstractGraphConfiguration = ...,
-        output_file::Maybe{AbstractString} = nothing,
-    )::PlotlyFigure
+    save_graph(graph::Graph, output_file::AbstractString)::Nothing
 
-Render a graph given its data and configuration. If the `output_file` is specified, then the graph is also written to
-the file.
+Save the graph to a file. Unlike the Plotly `savefig` function, this function will actually obey the `width` and
+`height` parameters specified in the graph's configuration. The format is deduced from the suffix of the file name.
+"""
+function save_graph(graph::Graph, output_file::AbstractString)::Nothing
+    savefig(  # NOJET
+        graph_to_figure(graph),
+        output_file;
+        width = graph.configuration.graph.width,
+        height = graph.configuration.graph.height,
+    )
+    return nothing
+end
+
+"""
+    graph_to_figure(graph::Graph)::PlotlyFigure
+    graph_to_figure(data::AbstractGraphData, configuration::AbstractGraphConfiguration = ...)::PlotlyFigure
+
+Render a graph given its data and configuration. Technically this just converts the graph to a [`PlotlyFigure`](@ref)
+which Julia knows how display for us, rather than actually display the graph.
 
 The implementation depends on the specific graph. For each
 [`AbstractGraphData`](@ref) there is a matching [`AbstractGraphConfiguration`](@ref) (a default one is provided for the
@@ -143,33 +159,39 @@ The implementation depends on the specific graph. For each
 
 This returns a [`PlotlyFigure`](@ref) which can be displayed directly, or converted to JSON for transfer to other
 programming languages (Python or R)
+
+!!! note
+
+    When saving a figure to a file, Plotly in its infinite wisdom ignores the graph `width` and `height` specified
+    inside the figure, (except for saving HTML file). You should therefore use [`save_graph`](@ref) rather than call
+    `savefig` on the result of `graph_to_figure`.
 """
-function render(graph::Graph; output_file::Maybe{AbstractString} = nothing)::PlotlyFigure
-    return render(graph.data, graph.configuration; output_file = output_file)
+function graph_to_figure(graph::Graph)::PlotlyFigure
+    return graph_to_figure(graph.data, graph.configuration)
 end
 
 function Base.Multimedia.display(graph::Graph)::Any  # untested
-    return Base.Multimedia.display(render(graph))  # NOLINT
+    return Base.Multimedia.display(graph_to_figure(graph))  # NOLINT
 end
 
 function Base.Multimedia.display(mime::AbstractString, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(mime, render(graph))  # NOLINT
+    return Base.Multimedia.display(mime, graph_to_figure(graph))  # NOLINT
 end
 
 function Base.Multimedia.display(on_display::AbstractDisplay, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, render(graph))  # NOLINT
+    return Base.Multimedia.display(on_display, graph_to_figure(graph))  # NOLINT
 end
 
 function Base.Multimedia.display(on_display::TextDisplay, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, render(graph))  # NOLINT
+    return Base.Multimedia.display(on_display, graph_to_figure(graph))  # NOLINT
 end
 
 function Base.Multimedia.display(on_display::REPL.REPLDisplay, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, render(graph))  # NOLINT
+    return Base.Multimedia.display(on_display, graph_to_figure(graph))  # NOLINT
 end
 
 function Base.Multimedia.display(on_display::AbstractDisplay, mime::AbstractString, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, mime, render(graph.data, graph.configuration))  # NOLINT
+    return Base.Multimedia.display(on_display, mime, graph_to_figure(graph.data, graph.configuration))  # NOLINT
 end
 
 """
@@ -520,10 +542,9 @@ const BOX = 1
 const VIOLIN = 2
 const CURVE = 4
 
-function render(
+function graph_to_figure(
     data::DistributionGraphData,
-    configuration::DistributionGraphConfiguration = DistributionGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::DistributionGraphConfiguration = DistributionGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -544,16 +565,12 @@ function render(
         show_legend = false,
         distributions_gap = nothing,
     )
-    figure = plot(trace, layout)
-    write_figure_to_file(figure, configuration.graph, output_file)
-
-    return figure
+    return plot(trace, layout)
 end
 
-function render(
+function graph_to_figure(
     data::DistributionsGraphData,
-    configuration::DistributionsGraphConfiguration = DistributionsGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::DistributionsGraphConfiguration = DistributionsGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -589,10 +606,7 @@ function render(
         show_legend = configuration.show_legend,
         distributions_gap = configuration.distributions_gap,
     )
-    figure = plot(traces, layout)
-    write_figure_to_file(figure, configuration.graph, output_file)
-
-    return figure
+    return plot(traces, layout)
 end
 
 function distribution_trace(;
@@ -676,26 +690,28 @@ function distribution_layout(
         @assert false
     end
 
-    return Layout(;  # NOJET
-        title = data.graph_title,
-        template = configuration.graph.template,
-        xaxis_showgrid = xaxis_showgrid,
-        xaxis_showticklabels = xaxis_showticklabels,
-        xaxis_title = xaxis_title,
-        xaxis_range = xaxis_range,
-        xaxis_type = xaxis_type,
-        yaxis_showgrid = yaxis_showgrid,
-        yaxis_showticklabels = yaxis_showticklabels,
-        yaxis_title = yaxis_title,
-        yaxis_range = yaxis_range,
-        yaxis_type = yaxis_type,
-        showlegend = show_legend,
-        legend_tracegroupgap = 0,
-        legend_itemdoubleclick = false,
-        violingroupgap = distributions_gap === nothing ? nothing : 0,
-        boxgroupgap = distributions_gap === nothing ? nothing : 0,
-        boxgap = distributions_gap,
-        violingap = distributions_gap,
+    return graph_layout(
+        configuration.graph,
+        Layout(;  # NOJET
+            title = data.graph_title,
+            xaxis_showgrid = xaxis_showgrid,
+            xaxis_showticklabels = xaxis_showticklabels,
+            xaxis_title = xaxis_title,
+            xaxis_range = xaxis_range,
+            xaxis_type = xaxis_type,
+            yaxis_showgrid = yaxis_showgrid,
+            yaxis_showticklabels = yaxis_showticklabels,
+            yaxis_title = yaxis_title,
+            yaxis_range = yaxis_range,
+            yaxis_type = yaxis_type,
+            showlegend = show_legend,
+            legend_tracegroupgap = 0,
+            legend_itemdoubleclick = false,
+            violingroupgap = distributions_gap === nothing ? nothing : 0,
+            boxgroupgap = distributions_gap === nothing ? nothing : 0,
+            boxgap = distributions_gap,
+            violingap = distributions_gap,
+        ),
     )
 end
 
@@ -907,10 +923,9 @@ function Validations.validate_object(data::LineGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(
+function graph_to_figure(
     data::LineGraphData,
-    configuration::LineGraphConfiguration = LineGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::LineGraphConfiguration = LineGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -1019,10 +1034,7 @@ function render(
         configuration = configuration,
         show_legend = configuration.horizontal_bands.show_legend || configuration.vertical_bands.show_legend,
     )
-    figure = plot(traces, layout)
-    write_figure_to_file(figure, configuration.graph, output_file)
-
-    return figure
+    return plot(traces, layout)
 end
 
 function line_trace(data::LineGraphData, line::LineConfiguration)::GenericTrace
@@ -1218,10 +1230,9 @@ function Validations.validate_object(data::LinesGraphData)::Maybe{AbstractString
     return nothing
 end
 
-function render(
+function graph_to_figure(
     data::LinesGraphData,
-    configuration::LinesGraphConfiguration = LinesGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::LinesGraphConfiguration = LinesGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -1368,10 +1379,7 @@ function render(
                       configuration.vertical_bands.show_legend ||
                       configuration.horizontal_bands.show_legend,
     )
-    figure = plot(traces, layout)
-    write_figure_to_file(figure, configuration.graph, output_file)
-
-    return figure
+    return plot(traces, layout)
 end
 
 function unify_xs(
@@ -1515,28 +1523,30 @@ function lines_layout(;
     x_axis = configuration.x_axis
     y_axis = configuration.y_axis
 
-    return Layout(;  # NOJET
-        title = data.graph_title,
-        template = configuration.graph.template,
-        xaxis_showgrid = configuration.graph.show_grid,
-        xaxis_showticklabels = configuration.graph.show_ticks,
-        xaxis_title = data.x_axis_title,
-        xaxis_range = (
-            x_axis.minimum !== nothing ? x_axis.minimum : minimum_x,
-            x_axis.maximum !== nothing ? x_axis.maximum : maximum_x,
+    return graph_layout(
+        configuration.graph,
+        Layout(;  # NOJET
+            title = data.graph_title,
+            xaxis_showgrid = configuration.graph.show_grid,
+            xaxis_showticklabels = configuration.graph.show_ticks,
+            xaxis_title = data.x_axis_title,
+            xaxis_range = (
+                x_axis.minimum !== nothing ? x_axis.minimum : minimum_x,
+                x_axis.maximum !== nothing ? x_axis.maximum : maximum_x,
+            ),
+            xaxis_type = x_axis.log_regularization !== nothing ? "log" : nothing,
+            yaxis_showgrid = configuration.graph.show_grid,
+            yaxis_showticklabels = configuration.graph.show_ticks,
+            yaxis_title = data.y_axis_title,
+            yaxis_range = (
+                y_axis.minimum !== nothing ? y_axis.minimum : minimum_y,
+                y_axis.maximum !== nothing ? y_axis.maximum : maximum_y,
+            ),
+            yaxis_type = y_axis.log_regularization !== nothing ? "log" : nothing,
+            showlegend = show_legend,
+            legend_tracegroupgap = 0,
+            legend_itemdoubleclick = false,
         ),
-        xaxis_type = x_axis.log_regularization !== nothing ? "log" : nothing,
-        yaxis_showgrid = configuration.graph.show_grid,
-        yaxis_showticklabels = configuration.graph.show_ticks,
-        yaxis_title = data.y_axis_title,
-        yaxis_range = (
-            y_axis.minimum !== nothing ? y_axis.minimum : minimum_y,
-            y_axis.maximum !== nothing ? y_axis.maximum : maximum_y,
-        ),
-        yaxis_type = y_axis.log_regularization !== nothing ? "log" : nothing,
-        showlegend = show_legend,
-        legend_tracegroupgap = 0,
-        legend_itemdoubleclick = false,
     )
 end
 
@@ -1613,17 +1623,16 @@ function Validations.validate_object(data::CdfGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(
+function graph_to_figure(
     data::CdfGraphData,
-    configuration::CdfGraphConfiguration = CdfGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::CdfGraphConfiguration = CdfGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
     line_data = cdf_data_as_line_data(data, configuration)
     line_configuration = cdf_configuration_as_line_configuration(configuration)
-    return render(line_data, line_configuration; output_file = output_file)
+    return graph_to_figure(line_data, line_configuration)
 end
 
 function cdf_configuration_as_line_configuration(configuration::CdfGraphConfiguration)::LineGraphConfiguration
@@ -1803,17 +1812,16 @@ function Validations.validate_object(data::CdfsGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(
+function graph_to_figure(
     data::CdfsGraphData,
-    configuration::CdfsGraphConfiguration = CdfsGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::CdfsGraphConfiguration = CdfsGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
 
     lines_data = cdfs_data_as_lines_data(data, configuration)
     lines_configuration = cdfs_configuration_as_lines_configuration(configuration)
-    return render(lines_data, lines_configuration; output_file = output_file)
+    return graph_to_figure(lines_data, lines_configuration)
 end
 
 function cdfs_data_as_lines_data(data::CdfsGraphData, configuration::CdfsGraphConfiguration)::LinesGraphData
@@ -1975,10 +1983,9 @@ function Validations.validate_object(data::BarGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(
+function graph_to_figure(
     data::BarGraphData,
-    configuration::BarGraphConfiguration = BarGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::BarGraphConfiguration = BarGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -1992,10 +1999,7 @@ function render(
     )
 
     layout = bar_layout(data, configuration; has_tick_names = data.bars_names !== nothing, show_legend = false)
-    figure = plot(trace, layout)
-    write_figure_to_file(figure, configuration.graph, output_file)
-
-    return figure
+    return plot(trace, layout)
 end
 
 """
@@ -2130,10 +2134,9 @@ function Validations.validate_object(data::BarsGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(
+function graph_to_figure(
     data::BarsGraphData,
-    configuration::BarsGraphConfiguration = BarsGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::BarsGraphConfiguration = BarsGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -2186,10 +2189,7 @@ function render(
         show_legend = configuration.show_legend,
         stacked = configuration.data_stacking !== nothing,
     )
-    figure = plot(traces, layout)
-    write_figure_to_file(figure, configuration.graph, output_file)
-
-    return figure
+    return plot(traces, layout)
 end
 
 function stacked_values(
@@ -2283,24 +2283,26 @@ function bar_layout(
         @assert false
     end
 
-    return Layout(;  # NOJET
-        title = data.graph_title,
-        template = configuration.graph.template,
-        xaxis_showgrid = xaxis_showgrid,
-        xaxis_showticklabels = xaxis_showticklabels,
-        xaxis_title = xaxis_title,
-        xaxis_range = xaxis_range,
-        xaxis_type = xaxis_type,
-        yaxis_showgrid = yaxis_showgrid,
-        yaxis_showticklabels = yaxis_showticklabels,
-        yaxis_title = yaxis_title,
-        yaxis_range = yaxis_range,
-        yaxis_type = yaxis_type,
-        showlegend = show_legend,
-        legend_tracegroupgap = 0,
-        legend_itemdoubleclick = false,
-        barmode = stacked ? "stack" : nothing,
-        bargap = configuration.bars_gap,
+    return graph_layout(
+        configuration.graph,
+        Layout(;  # NOJET
+            title = data.graph_title,
+            xaxis_showgrid = xaxis_showgrid,
+            xaxis_showticklabels = xaxis_showticklabels,
+            xaxis_title = xaxis_title,
+            xaxis_range = xaxis_range,
+            xaxis_type = xaxis_type,
+            yaxis_showgrid = yaxis_showgrid,
+            yaxis_showticklabels = yaxis_showticklabels,
+            yaxis_title = yaxis_title,
+            yaxis_range = yaxis_range,
+            yaxis_type = yaxis_type,
+            showlegend = show_legend,
+            legend_tracegroupgap = 0,
+            legend_itemdoubleclick = false,
+            barmode = stacked ? "stack" : nothing,
+            bargap = configuration.bars_gap,
+        ),
     )
 end
 
@@ -2676,10 +2678,9 @@ function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractStrin
     return nothing
 end
 
-function render(
+function graph_to_figure(
     data::PointsGraphData,
-    configuration::PointsGraphConfiguration = PointsGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::PointsGraphConfiguration = PointsGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -3015,10 +3016,7 @@ function render(
         x_axis_configuration = configuration.x_axis,
         y_axis_configuration = configuration.y_axis,
     )
-    figure = plot(traces, layout)
-    write_figure_to_file(figure, configuration.graph, output_file)
-
-    return figure
+    return plot(traces, layout)
 end
 
 function push_fill_vertical_bands_traces(;
@@ -3745,19 +3743,6 @@ function highest_color(
     return log10(maximum([value for (value, _) in color_palette]) + log_color_scale_regularization)
 end
 
-function write_figure_to_file(::PlotlyFigure, ::GraphConfiguration, ::Nothing)::Nothing  # untested
-    return nothing
-end
-
-function write_figure_to_file(
-    figure::PlotlyFigure,
-    graph_configuration::GraphConfiguration,
-    output_file::AbstractString,
-)::Nothing
-    savefig(figure, output_file; height = graph_configuration.height, width = graph_configuration.width)  # NOJET
-    return nothing
-end
-
 """
     @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
@@ -3890,10 +3875,9 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function render(
+function graph_to_figure(
     data::GridGraphData,
-    configuration::GridGraphConfiguration = GridGraphConfiguration();
-    output_file::Maybe{AbstractString} = nothing,
+    configuration::GridGraphConfiguration = GridGraphConfiguration(),
 )::PlotlyFigure
     assert_valid_object(data)
     assert_valid_object(configuration)
@@ -4080,10 +4064,7 @@ function render(
         rows_names = rows_names,
         columns_names = columns_names,
     )
-    figure = plot(traces, layout)
-    write_figure_to_file(figure, configuration.graph, output_file)
-
-    return figure
+    return plot(traces, layout)
 end
 
 function assert_valid_render(data::PointsGraphData, configuration::PointsGraphConfiguration)::Nothing
@@ -4324,96 +4305,100 @@ function points_layout(
         maximum_y = log10(maximum_y)
     end
 
-    return Layout(;  # NOJET
-        title = data.graph_title,
-        template = configuration.graph.template,
-        xaxis_showgrid = configuration.graph.show_grid,
-        xaxis_showticklabels = configuration.graph.show_ticks,
-        xaxis_title = data.x_axis_title,
-        xaxis_range = (
-            x_axis_configuration.minimum !== nothing ? x_axis_configuration.minimum : minimum_x,
-            x_axis_configuration.maximum !== nothing ? x_axis_configuration.maximum : maximum_x,
+    return graph_layout(
+        configuration.graph,
+        Layout(;  # NOJET
+            title = data.graph_title,
+            xaxis_showgrid = configuration.graph.show_grid,
+            xaxis_showticklabels = configuration.graph.show_ticks,
+            xaxis_title = data.x_axis_title,
+            xaxis_range = (
+                x_axis_configuration.minimum !== nothing ? x_axis_configuration.minimum : minimum_x,
+                x_axis_configuration.maximum !== nothing ? x_axis_configuration.maximum : maximum_x,
+            ),
+            xaxis_type = x_axis_configuration.log_regularization !== nothing ? "log" : nothing,
+            xaxis_tickvals = x_tickvals,
+            xaxis_ticktext = x_ticknames,
+            yaxis_showgrid = configuration.graph.show_grid,
+            yaxis_showticklabels = configuration.graph.show_ticks,
+            yaxis_title = data.y_axis_title,
+            yaxis_range = (
+                y_axis_configuration.minimum !== nothing ? y_axis_configuration.minimum : minimum_y,
+                y_axis_configuration.maximum !== nothing ? y_axis_configuration.maximum : maximum_y,
+            ),
+            yaxis_type = y_axis_configuration.log_regularization !== nothing ? "log" : nothing,
+            yaxis_tickvals = y_tickvals,
+            yaxis_ticktext = y_ticknames,
+            showlegend = (
+                configuration.points.show_color_scale &&
+                configuration.points.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            ) || (
+                configuration.borders.show_color_scale &&
+                configuration.borders.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            ),
+            legend_tracegroupgap = 0,
+            legend_itemdoubleclick = false,
+            legend_x = if configuration.points.show_color_scale &&
+                          configuration.borders.show_color_scale &&
+                          configuration.borders.color_palette isa
+                          AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+                1.2
+            else
+                nothing
+            end,
+            coloraxis2_colorbar_x = if (
+                configuration.borders.show_color_scale && configuration.points.show_color_scale
+            )
+                1.2
+            else
+                nothing  # NOJET
+            end,
+            coloraxis_showscale = configuration.points.show_color_scale && !(
+                configuration.points.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            ),
+            coloraxis_reversescale = configuration.points.reverse_color_scale,
+            coloraxis_colorscale = normalized_color_palette(
+                configuration.points.color_palette,
+                configuration.points.color_scale,
+            ),
+            coloraxis_cmin = lowest_color(
+                configuration.points.color_palette,
+                configuration.points.color_scale.minimum,
+                configuration.points.color_scale.log_regularization,
+            ),
+            coloraxis_cmax = highest_color(
+                configuration.points.color_palette,
+                configuration.points.color_scale.maximum,
+                configuration.points.color_scale.log_regularization,
+            ),
+            coloraxis_colorbar_title_text = data.points_colors_title,
+            coloraxis_colorbar_tickvals = color_tickvals,
+            coloraxis_colorbar_ticktext = color_ticktext,
+            coloraxis2_showscale = (data.borders_colors !== nothing || data.borders_sizes !== nothing) &&
+                                   configuration.borders.show_color_scale &&
+                                   !(
+                                       configuration.borders.color_palette isa
+                                       AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+                                   ),
+            coloraxis2_reversescale = configuration.borders.reverse_color_scale,
+            coloraxis2_colorscale = normalized_color_palette(
+                configuration.borders.color_palette,
+                configuration.borders.color_scale,
+            ),
+            coloraxis2_cmin = lowest_color(
+                configuration.borders.color_palette,
+                configuration.borders.color_scale.minimum,
+                configuration.borders.color_scale.log_regularization,
+            ),
+            coloraxis2_cmax = highest_color(
+                configuration.borders.color_palette,
+                configuration.borders.color_scale.maximum,
+                configuration.borders.color_scale.log_regularization,
+            ),
+            coloraxis2_colorbar_title_text = data.borders_colors_title,
+            coloraxis2_colorbar_tickvals = border_color_tickvals,
+            coloraxis2_colorbar_ticktext = border_color_ticktext,
         ),
-        xaxis_type = x_axis_configuration.log_regularization !== nothing ? "log" : nothing,
-        xaxis_tickvals = x_tickvals,
-        xaxis_ticktext = x_ticknames,
-        yaxis_showgrid = configuration.graph.show_grid,
-        yaxis_showticklabels = configuration.graph.show_ticks,
-        yaxis_title = data.y_axis_title,
-        yaxis_range = (
-            y_axis_configuration.minimum !== nothing ? y_axis_configuration.minimum : minimum_y,
-            y_axis_configuration.maximum !== nothing ? y_axis_configuration.maximum : maximum_y,
-        ),
-        yaxis_type = y_axis_configuration.log_regularization !== nothing ? "log" : nothing,
-        yaxis_tickvals = y_tickvals,
-        yaxis_ticktext = y_ticknames,
-        showlegend = (
-            configuration.points.show_color_scale &&
-            configuration.points.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        ) || (
-            configuration.borders.show_color_scale &&
-            configuration.borders.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        ),
-        legend_tracegroupgap = 0,
-        legend_itemdoubleclick = false,
-        legend_x = if configuration.points.show_color_scale &&
-                      configuration.borders.show_color_scale &&
-                      configuration.borders.color_palette isa
-                      AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-            1.2
-        else
-            nothing
-        end,
-        coloraxis2_colorbar_x = if (configuration.borders.show_color_scale && configuration.points.show_color_scale)
-            1.2
-        else
-            nothing  # NOJET
-        end,
-        coloraxis_showscale = configuration.points.show_color_scale && !(
-            configuration.points.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        ),
-        coloraxis_reversescale = configuration.points.reverse_color_scale,
-        coloraxis_colorscale = normalized_color_palette(
-            configuration.points.color_palette,
-            configuration.points.color_scale,
-        ),
-        coloraxis_cmin = lowest_color(
-            configuration.points.color_palette,
-            configuration.points.color_scale.minimum,
-            configuration.points.color_scale.log_regularization,
-        ),
-        coloraxis_cmax = highest_color(
-            configuration.points.color_palette,
-            configuration.points.color_scale.maximum,
-            configuration.points.color_scale.log_regularization,
-        ),
-        coloraxis_colorbar_title_text = data.points_colors_title,
-        coloraxis_colorbar_tickvals = color_tickvals,
-        coloraxis_colorbar_ticktext = color_ticktext,
-        coloraxis2_showscale = (data.borders_colors !== nothing || data.borders_sizes !== nothing) &&
-                               configuration.borders.show_color_scale &&
-                               !(
-                                   configuration.borders.color_palette isa
-                                   AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-                               ),
-        coloraxis2_reversescale = configuration.borders.reverse_color_scale,
-        coloraxis2_colorscale = normalized_color_palette(
-            configuration.borders.color_palette,
-            configuration.borders.color_scale,
-        ),
-        coloraxis2_cmin = lowest_color(
-            configuration.borders.color_palette,
-            configuration.borders.color_scale.minimum,
-            configuration.borders.color_scale.log_regularization,
-        ),
-        coloraxis2_cmax = highest_color(
-            configuration.borders.color_palette,
-            configuration.borders.color_scale.maximum,
-            configuration.borders.color_scale.log_regularization,
-        ),
-        coloraxis2_colorbar_title_text = data.borders_colors_title,
-        coloraxis2_colorbar_tickvals = border_color_tickvals,
-        coloraxis2_colorbar_ticktext = border_color_ticktext,
     )
 end
 
@@ -4501,6 +4486,19 @@ function range_of(
         maximum_value = 10^maximum_value
     end
     return (minimum_value, maximum_value)
+end
+
+function graph_layout(configuration::GraphConfiguration, layout::Layout)::Layout
+    if configuration.template !== nothing
+        layout["template"] = configuration.template
+    end
+    if configuration.width !== nothing
+        layout["width"] = configuration.width
+    end
+    if configuration.height !== nothing
+        layout["height"] = configuration.height
+    end
+    return layout
 end
 
 end  # module

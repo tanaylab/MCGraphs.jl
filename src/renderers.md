@@ -3,9 +3,10 @@
 ```@docs
 MCGraphs.Renderers
 MCGraphs.Renderers.Graph
+MCGraphs.Renderers.save_graph
 MCGraphs.Renderers.AbstractGraphData
 MCGraphs.Renderers.AbstractGraphConfiguration
-MCGraphs.Renderers.render
+MCGraphs.Renderers.graph_to_figure
 MCGraphs.Renderers.PlotlyFigure
 ```
 

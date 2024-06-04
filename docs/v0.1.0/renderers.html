@@ -230,14 +230,22 @@
 <code>AbstractGraphConfiguration
 </code>
 </a>, which we can pass to 
-<a href="renderers.html#MCGraphs.Renderers.render">
-<code>render
+<a href="renderers.html#MCGraphs.Renderers.graph_to_figure">
+<code>graph_to_figure
 </code>
 </a> to obtain a 
 <a href="renderers.html#MCGraphs.Renderers.PlotlyFigure">
 <code>PlotlyFigure
 </code>
-</a> which Julia knows how to display.
+</a> which Julia knows how to display for us.
+</p>
+<p>You can 
+<code>display
+</code> the 
+<code>Graph
+</code> inside interactive environments (Julia REPL and/or Jupyter notebooks), and/or use 
+<code>save_graph
+</code> to write it to a file.
 </p>
 <p>The valid combinations of concrete data and configuration which we can render are:
 </p>
@@ -426,6 +434,34 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.save_graph" href="#MCGraphs.Renderers.save_graph">
+<code>MCGraphs.Renderers.save_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">save_graph(graph::Graph, output_file::AbstractString)::Nothing
+</code>
+</pre>
+<p>Save the graph to a file. Unlike the Plotly 
+<code>savefig
+</code> function, this function will actually obey the 
+<code>width
+</code> and 
+<code>height
+</code> parameters specified in the graph&#39;s configuration. The format is deduced from the suffix of the file name.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.AbstractGraphData" href="#MCGraphs.Renderers.AbstractGraphData">
 <code>MCGraphs.Renderers.AbstractGraphData
 </code>
@@ -470,8 +506,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.render" href="#MCGraphs.Renderers.render">
-<code>MCGraphs.Renderers.render
+<a class="docstring-binding" id="MCGraphs.Renderers.graph_to_figure" href="#MCGraphs.Renderers.graph_to_figure">
+<code>MCGraphs.Renderers.graph_to_figure
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -480,17 +516,15 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">render(graph::Graph; output_file::Maybe{AbstractString} = nothing)::PlotlyFigure
-render(
-    data::AbstractGraphData,
-    configuration::AbstractGraphConfiguration = ...,
-    output_file::Maybe{AbstractString} = nothing,
-)::PlotlyFigure
+<code class="language-julia hljs">graph_to_figure(graph::Graph)::PlotlyFigure
+graph_to_figure(data::AbstractGraphData, configuration::AbstractGraphConfiguration = ...)::PlotlyFigure
 </code>
 </pre>
-<p>Render a graph given its data and configuration. If the 
-<code>output_file
-</code> is specified, then the graph is also written to the file.
+<p>Render a graph given its data and configuration. Technically this just converts the graph to a 
+<a href="renderers.html#MCGraphs.Renderers.PlotlyFigure">
+<code>PlotlyFigure
+</code>
+</a> which Julia knows how display for us, rather than actually display the graph.
 </p>
 <p>The implementation depends on the specific graph. For each 
 <a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
@@ -688,6 +722,26 @@ render(
 </code>
 </a> which can be displayed directly, or converted to JSON for transfer to other programming languages (Python or R)
 </p>
+<div class="admonition is-info">
+<header class="admonition-header">Note
+</header>
+<div class="admonition-body">
+<p>When saving a figure to a file, Plotly in its infinite wisdom ignores the graph 
+<code>width
+</code> and 
+<code>height
+</code> specified inside the figure, (except for saving HTML file). You should therefore use 
+<a href="renderers.html#MCGraphs.Renderers.save_graph">
+<code>save_graph
+</code>
+</a> rather than call 
+<code>savefig
+</code> on the result of 
+<code>graph_to_figure
+</code>.
+</p>
+</div>
+</div>
 </div>
 </section>
 </article>
@@ -705,8 +759,8 @@ render(
 <section>
 <div>
 <p>The type of a rendered graph which Julia knows how to display. See 
-<a href="renderers.html#MCGraphs.Renderers.render">
-<code>render
+<a href="renderers.html#MCGraphs.Renderers.graph_to_figure">
+<code>graph_to_figure
 </code>
 </a>.
 </p>
@@ -2471,8 +2525,14 @@ end
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.render">
-<code>MCGraphs.Renderers.render
+<a href="renderers.html#MCGraphs.Renderers.graph_to_figure">
+<code>MCGraphs.Renderers.graph_to_figure
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.save_graph">
+<code>MCGraphs.Renderers.save_graph
 </code>
 </a>
 </li>
