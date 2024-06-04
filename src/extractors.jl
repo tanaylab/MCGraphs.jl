@@ -33,9 +33,9 @@ end
         daf::DafReader;
         x_gene::AbstractString,
         y_gene::AbstractString,
-        axis::Union{AbstractString, Query},
+        axis::QueryString,
         min_significant_gene_UMIs::Integer = 40,
-        color::Maybe{Union{AbstractString, Query}} = nothing,
+        color::Maybe{QueryString} = nothing,
         entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
         genes_hovers::Maybe{QueryColumns} = nothing,
     )::PointsGraphData
@@ -55,9 +55,9 @@ function extract_gene_gene_data(  # untested
     daf::DafReader;
     x_gene::AbstractString,
     y_gene::AbstractString,
-    axis::Union{AbstractString, Query} = "metacell",
+    axis::QueryString = "metacell",
     min_significant_gene_UMIs::Integer = 40,
-    color::Maybe{Union{AbstractString, Query}} = "type",
+    color::Maybe{QueryString} = "type",
     entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
     genes_hovers::Maybe{QueryColumns} = nothing,
 )::PointsGraphData
@@ -163,7 +163,7 @@ end
 """
     extract_categorical_color_palette(
         daf::DafReader,
-        query::Union{AbstractString, Query}
+        query::QueryString
     )::AbstractVector{<:AbstractString, <:AbstractString}
 
 Convert the results of a `query` to a color palette for rendering. The query must return a named vector of strings; the
@@ -172,7 +172,7 @@ names are taken to be the values and the strings are taken to be the color names
 """
 function extract_categorical_color_palette(  # untested
     daf::DafReader,
-    query::Union{AbstractString, Query},
+    query::QueryString,
 )::AbstractVector{Tuple{<:AbstractString, <:AbstractString}}
     colors = get_query(daf, query)
     @assert colors isa AbstractVector (

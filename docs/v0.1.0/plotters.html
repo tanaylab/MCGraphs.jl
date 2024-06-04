@@ -182,10 +182,13 @@
     daf::DafReader;
     x_gene::AbstractString,
     y_gene::AbstractString,
-    axis::Union{AbstractString, Query},
-    color::Maybe{Union{AbstractString, Query}} = nothing,
+    axis::QueryString = &quot;metacell&quot;,
+    color::Maybe{QueryString} = &quot;type&quot;,
+    min_significant_gene_UMIs::Integer = 40,
     gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
-    colors::Maybe{Union{AbstractString, Query}} = nothing,
+    colors::Maybe{QueryString} = &quot;/ type : color&quot;,
+    entries_hovers::Maybe{QueryColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
+    genes_hovers::Maybe{QueryColumns} = nothing,
 )::Graph
 </code>
 </pre>

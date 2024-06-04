@@ -17,10 +17,13 @@ using ..Extractors
         daf::DafReader;
         x_gene::AbstractString,
         y_gene::AbstractString,
-        axis::Union{AbstractString, Query},
-        color::Maybe{Union{AbstractString, Query}} = nothing,
+        axis::QueryString = "metacell",
+        color::Maybe{QueryString} = "type",
+        min_significant_gene_UMIs::Integer = 40,
         gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
-        colors::Maybe{Union{AbstractString, Query}} = nothing,
+        colors::Maybe{QueryString} = "/ type : color",
+        entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
+        genes_hovers::Maybe{QueryColumns} = nothing,
     )::Graph
 
 Generate a complete gene-gene graph using [`extract_gene_gene_data`](@ref), [`extract_categorical_color_palette`](@ref),
@@ -34,11 +37,11 @@ function plot_gene_gene(  # untested
     daf::DafReader;
     x_gene::AbstractString,
     y_gene::AbstractString,
-    axis::Union{AbstractString, Query} = "metacell",
-    color::Maybe{Union{AbstractString, Query}} = "type",
+    axis::QueryString = "metacell",
+    color::Maybe{QueryString} = "type",
     min_significant_gene_UMIs::Integer = 40,
     gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
-    colors::Maybe{Union{AbstractString, Query}} = "/ type : color",
+    colors::Maybe{QueryString} = "/ type : color",
     entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
     genes_hovers::Maybe{QueryColumns} = nothing,
 )::Graph

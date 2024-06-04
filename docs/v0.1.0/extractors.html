@@ -188,9 +188,9 @@
     daf::DafReader;
     x_gene::AbstractString,
     y_gene::AbstractString,
-    axis::Union{AbstractString, Query},
+    axis::QueryString,
     min_significant_gene_UMIs::Integer = 40,
-    color::Maybe{Union{AbstractString, Query}} = nothing,
+    color::Maybe{QueryString} = nothing,
     entries_hovers::Maybe{QueryColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
     genes_hovers::Maybe{QueryColumns} = nothing,
 )::PointsGraphData
@@ -278,7 +278,7 @@
 <pre>
 <code class="language-julia hljs">extract_categorical_color_palette(
     daf::DafReader,
-    query::Union{AbstractString, Query}
+    query::QueryString
 )::AbstractVector{&lt;:AbstractString, &lt;:AbstractString}
 </code>
 </pre>
