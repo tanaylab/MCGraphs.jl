@@ -20,35 +20,45 @@ export AbstractGraphData
 export AxisConfiguration
 export BandConfiguration
 export BandsConfiguration
+export BarGraph
 export BarGraphConfiguration
 export BarGraphData
+export BarsGraph
 export BarsGraphConfiguration
 export BarsGraphData
 export CdfDirection
 export CdfDownToValue
+export CdfGraph
 export CdfGraphConfiguration
 export CdfGraphData
 export CdfUpToValue
+export CdfsGraph
 export CdfsGraphConfiguration
 export CdfsGraphData
 export DistributionConfiguration
+export DistributionGraph
 export DistributionGraphConfiguration
 export DistributionGraphData
+export DistributionsGraph
 export DistributionsGraphConfiguration
 export DistributionsGraphData
 export Graph
 export GraphConfiguration
 export GraphDataStacking
+export GridGraph
 export GridGraphConfiguration
 export GridGraphData
 export HorizontalValues
 export LineConfiguration
+export LineGraph
 export LineGraphConfiguration
 export LineGraphData
+export LinesGraph
 export LinesGraphConfiguration
 export LinesGraphData
 export PlotlyFigure
 export PointsConfiguration
+export PointsGraph
 export PointsGraphConfiguration
 export PointsGraphData
 export SizeRangeConfiguration
@@ -112,9 +122,25 @@ The valid combinations of concrete data and configuration which we can render ar
 | [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).           |
 | [`BarsGraphData`](@ref)          | [`BarsGraphConfiguration`](@ref)          | Graph of multiple sets of bars (histograms).         |
 """
-mutable struct Graph
-    data::AbstractGraphData
-    configuration::AbstractGraphConfiguration
+@kwdef mutable struct Graph{D, C} <:  # NOJET
+                      ObjectWithValidation where {D <: AbstractGraphData, C <: AbstractGraphConfiguration}
+    data::D = D()
+    configuration::C = C()
+end
+
+function Validations.validate_object(graph::Graph)::Maybe{AbstractString}
+    message = validate_object(graph.data)
+    if message === nothing
+        message = validate_object(graph.configuration)
+    end
+    if message === nothing
+        message = validate_graph(graph)
+    end
+    return message
+end
+
+function validate_graph(::Graph)::Maybe{AbstractString}
+    return nothing
 end
 
 """
@@ -135,30 +161,10 @@ end
 
 """
     graph_to_figure(graph::Graph)::PlotlyFigure
-    graph_to_figure(data::AbstractGraphData, configuration::AbstractGraphConfiguration = ...)::PlotlyFigure
 
 Render a graph given its data and configuration. Technically this just converts the graph to a [`PlotlyFigure`](@ref)
-which Julia knows how display for us, rather than actually display the graph.
-
-The implementation depends on the specific graph. For each
-[`AbstractGraphData`](@ref) there is a matching [`AbstractGraphConfiguration`](@ref) (a default one is provided for the
-`configuration`). The supported type pairs are:
-
-| [`AbstractGraphData`](@ref)      | [`AbstractGraphConfiguration`](@ref)      | Description                                          |
-|:-------------------------------- |:----------------------------------------- |:---------------------------------------------------- |
-| [`PointsGraphData`](@ref)        | [`PointsGraphConfiguration`](@ref)        | Graph of points, possibly with edges between them.   |
-| [`GridGraphData`](@ref)          | [`GridGraphConfiguration`](@ref)          | Graph of a grid of points (e.g. for correlations).   |
-| [`LineGraphData`](@ref)          | [`LineGraphConfiguration`](@ref)          | Graph of a single line (e.g. a function y=f(x)).     |
-| [`LinesGraphData`](@ref)         | [`LinesGraphConfiguration`](@ref)         | Graph of multiple functions, possibly stacked.       |
-| [`CdfGraphData`](@ref)           | [`CdfGraphConfiguration`](@ref)           | Graph of a single cumulative distribution function.  |
-| [`CdfsGraphData`](@ref)          | [`CdfsGraphConfiguration`](@ref)          | Graph of multiple cumulative distribution functions. |
-| [`DistributionGraphData`](@ref)  | [`DistributionGraphConfiguration`](@ref)  | Graph of a single distribution.                      |
-| [`DistributionsGraphData`](@ref) | [`DistributionsGraphConfiguration`](@ref) | Graph of multiple distributions.                     |
-| [`BarGraphData`](@ref)           | [`BarGraphConfiguration`](@ref)           | Graph of a single set of bars (histogram).           |
-| [`BarsGraphData`](@ref)          | [`BarsGraphConfiguration`](@ref)          | Graph of multiple sets of bars (histograms).         |
-
-This returns a [`PlotlyFigure`](@ref) which can be displayed directly, or converted to JSON for transfer to other
-programming languages (Python or R)
+which Julia knows how display for us, rather than actually display the graph. The implementation depends on the specific
+graph type.
 
 !!! note
 
@@ -166,9 +172,7 @@ programming languages (Python or R)
     inside the figure, (except for saving HTML file). You should therefore use [`save_graph`](@ref) rather than call
     `savefig` on the result of `graph_to_figure`.
 """
-function graph_to_figure(graph::Graph)::PlotlyFigure
-    return graph_to_figure(graph.data, graph.configuration)
-end
+function graph_to_figure end
 
 function Base.Multimedia.display(graph::Graph)::Any  # untested
     return Base.Multimedia.display(graph_to_figure(graph))  # NOLINT
@@ -191,7 +195,7 @@ function Base.Multimedia.display(on_display::REPL.REPLDisplay, graph::Graph)::An
 end
 
 function Base.Multimedia.display(on_display::AbstractDisplay, mime::AbstractString, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, mime, graph_to_figure(graph.data, graph.configuration))  # NOLINT
+    return Base.Multimedia.display(on_display, mime, graph_to_figure(graph))  # NOLINT
 end
 
 """
@@ -455,7 +459,7 @@ end
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
-        distribution_values::AbstractVector{<:Real}
+        distribution_values::AbstractVector{<:Real} = Float32[]
         distribution_name::Maybe{AbstractString} = nothing
     end
 
@@ -466,7 +470,7 @@ the `trace_axis_title`. The optional `distribution_name` is used as the tick val
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
-    distribution_values::AbstractVector{<:Real}
+    distribution_values::AbstractVector{<:Real} = Float32[]
     distribution_name::Maybe{AbstractString} = nothing
 end
 
@@ -484,7 +488,7 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
-        distributions_values::AbstractVector{AbstractVector{<:Real}}
+        distributions_values::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
         distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
@@ -499,7 +503,7 @@ elements as the number of vectors in the `distributions_values`.
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    distributions_values::AbstractVector{AbstractVector{<:Real}}
+    distributions_values::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
     distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
@@ -538,74 +542,79 @@ function Validations.validate_object(data::DistributionsGraphData)::Maybe{Abstra
     return nothing
 end
 
+"""
+A graph for visualizing a single distribution. See [`DistributionGraphData`](@ref) and
+[`DistributionGraphConfiguration`](@ref).
+"""
+DistributionGraph = Graph{DistributionGraphData, DistributionGraphConfiguration}
+
+"""
+A graph for visualizing multiple distributions. See [`DistributionsGraphData`](@ref) and
+[`DistributionsGraphConfiguration`](@ref).
+"""
+DistributionsGraph = Graph{DistributionsGraphData, DistributionsGraphConfiguration}
+
 const BOX = 1
 const VIOLIN = 2
 const CURVE = 4
 
-function graph_to_figure(
-    data::DistributionGraphData,
-    configuration::DistributionGraphConfiguration = DistributionGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
+function graph_to_figure(graph::DistributionGraph)::PlotlyFigure
+    assert_valid_object(graph)
 
     trace = distribution_trace(;  # NOJET
-        distribution_values = data.distribution_values,
-        distribution_name = data.distribution_name === nothing ? "Trace" : data.distribution_name,
-        color = configuration.distribution.color,
+        distribution_values = graph.data.distribution_values,
+        distribution_name = graph.data.distribution_name === nothing ? "Trace" : graph.data.distribution_name,
+        color = graph.configuration.distribution.color,
         legend_title = nothing,
-        configuration = configuration,
+        configuration = graph.configuration,
         overlay_distributions = false,
     )
 
-    layout = distribution_layout(
-        data,
-        configuration;
-        has_tick_names = data.distribution_name !== nothing,
+    layout = distribution_layout(;
+        graph = graph,
+        has_tick_names = graph.data.distribution_name !== nothing,
         show_legend = false,
         distributions_gap = nothing,
     )
+
     return plot(trace, layout)
 end
 
-function graph_to_figure(
-    data::DistributionsGraphData,
-    configuration::DistributionsGraphConfiguration = DistributionsGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
-    if configuration.distributions_gap !== nothing && configuration.distribution.show_curve
+function graph_to_figure(graph::DistributionsGraph)::PlotlyFigure
+    assert_valid_object(graph)
+
+    if graph.configuration.distributions_gap !== nothing && graph.configuration.distribution.show_curve
         @warn "setting the distributions_gap for curve is buggy in plotly"
     end
 
-    n_distributions = length(data.distributions_values)
+    n_distributions = length(graph.data.distributions_values)
     traces = [
         distribution_trace(;
-            distribution_values = data.distributions_values[index],
-            distribution_name = if data.distributions_names === nothing
+            distribution_values = graph.data.distributions_values[index],
+            distribution_name = if graph.data.distributions_names === nothing
                 "Trace $(index)"
             else
-                data.distributions_names[index]
+                graph.data.distributions_names[index]
             end,
-            color = if data.distributions_colors === nothing
-                configuration.distribution.color
+            color = if graph.data.distributions_colors === nothing
+                graph.configuration.distribution.color
             else
-                data.distributions_colors[index]
+                graph.data.distributions_colors[index]
             end,
-            legend_title = data.legend_title,
-            configuration = configuration,
-            overlay_distributions = configuration.overlay_distributions,
+            legend_title = graph.data.legend_title,
+            configuration = graph.configuration,
+            overlay_distributions = graph.configuration.overlay_distributions,
             is_first = index == 1,
         ) for index in 1:n_distributions
     ]
 
-    layout = distribution_layout(
-        data,
-        configuration;
-        has_tick_names = data.distributions_names !== nothing,
-        show_legend = configuration.show_legend,
-        distributions_gap = configuration.distributions_gap,
+    layout = distribution_layout(;
+        graph = graph,
+        has_tick_names = graph.data.distributions_names !== nothing,
+        show_legend = graph.configuration.show_legend,
+        distributions_gap = graph.configuration.distributions_gap,
     )
+
     return plot(traces, layout)
 end
 
@@ -657,33 +666,32 @@ function distribution_trace(;
     )
 end
 
-function distribution_layout(
-    data::Union{DistributionGraphData, DistributionsGraphData},
-    configuration::Union{DistributionGraphConfiguration, DistributionsGraphConfiguration};
+function distribution_layout(;
+    graph::Union{DistributionGraph, DistributionsGraph},
     has_tick_names::Bool,
     show_legend::Bool,
     distributions_gap::Maybe{Real},
 )::Layout
-    if configuration.distribution.values_orientation == VerticalValues
+    if graph.configuration.distribution.values_orientation == VerticalValues
         xaxis_showticklabels = has_tick_names
         xaxis_showgrid = false
-        xaxis_title = data.trace_axis_title
+        xaxis_title = graph.data.trace_axis_title
         xaxis_range = (nothing, nothing)
         xaxis_type = nothing
-        yaxis_showticklabels = configuration.graph.show_ticks
-        yaxis_showgrid = configuration.graph.show_grid
-        yaxis_title = data.value_axis_title
-        yaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
-        yaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
-    elseif configuration.distribution.values_orientation == HorizontalValues
-        xaxis_showticklabels = configuration.graph.show_ticks
-        xaxis_showgrid = configuration.graph.show_grid
-        xaxis_title = data.value_axis_title
-        xaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
-        xaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
+        yaxis_showticklabels = graph.configuration.graph.show_ticks
+        yaxis_showgrid = graph.configuration.graph.show_grid
+        yaxis_title = graph.data.value_axis_title
+        yaxis_range = (graph.configuration.value_axis.minimum, graph.configuration.value_axis.maximum)
+        yaxis_type = graph.configuration.value_axis.log_regularization !== nothing ? "log" : nothing
+    elseif graph.configuration.distribution.values_orientation == HorizontalValues
+        xaxis_showticklabels = graph.configuration.graph.show_ticks
+        xaxis_showgrid = graph.configuration.graph.show_grid
+        xaxis_title = graph.data.value_axis_title
+        xaxis_range = (graph.configuration.value_axis.minimum, graph.configuration.value_axis.maximum)
+        xaxis_type = graph.configuration.value_axis.log_regularization !== nothing ? "log" : nothing
         yaxis_showticklabels = has_tick_names
         yaxis_showgrid = false
-        yaxis_title = data.trace_axis_title
+        yaxis_title = graph.data.trace_axis_title
         yaxis_range = (nothing, nothing)
         yaxis_type = nothing
     else
@@ -691,9 +699,9 @@ function distribution_layout(
     end
 
     return graph_layout(
-        configuration.graph,
+        graph.configuration.graph,
         Layout(;  # NOJET
-            title = data.graph_title,
+            title = graph.data.graph_title,
             xaxis_showgrid = xaxis_showgrid,
             xaxis_showticklabels = xaxis_showticklabels,
             xaxis_title = xaxis_title,
@@ -893,8 +901,8 @@ end
         y_axis_title::Maybe{AbstractString} = nothing
         vertical_bands::BandsData = BandsData()
         horizontal_bands::BandsData = BandsData()
-        points_xs::AbstractVector{<:Real}
-        points_ys::AbstractVector{<:Real}
+        points_xs::AbstractVector{<:Real} = Float32[]
+        points_ys::AbstractVector{<:Real} = Float32[]
     end
 
 The data for a line graph.
@@ -911,8 +919,8 @@ area under the line may be filled.
     y_axis_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
     horizontal_bands::BandsData = BandsData()
-    points_xs::AbstractVector{<:Real}
-    points_ys::AbstractVector{<:Real}
+    points_xs::AbstractVector{<:Real} = Float32[]
+    points_ys::AbstractVector{<:Real} = Float32[]
 end
 
 function Validations.validate_object(data::LineGraphData)::Maybe{AbstractString}
@@ -923,26 +931,36 @@ function Validations.validate_object(data::LineGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function graph_to_figure(
-    data::LineGraphData,
-    configuration::LineGraphConfiguration = LineGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
+"""
+A graph for visualizing a single line (typically Y as a function of X). See [`LineGraphData`](@ref) and
+[`LineGraphConfiguration`](@ref).
+"""
+LineGraph = Graph{LineGraphData, LineGraphConfiguration}
+
+function graph_to_figure(graph::LineGraph)::PlotlyFigure
+    assert_valid_object(graph)
 
     traces = Vector{GenericTrace}()
 
-    minimum_x, maximum_x = range_of([data.points_xs], configuration.x_axis.log_regularization; apply_log = false)
-    minimum_y, maximum_y = range_of([data.points_ys], configuration.y_axis.log_regularization; apply_log = false)
+    minimum_x, maximum_x = range_of(;
+        values = [graph.data.points_xs],
+        log_regularization = graph.configuration.x_axis.log_regularization,
+        apply_log = false,
+    )
+    minimum_y, maximum_y = range_of(;
+        values = [graph.data.points_ys],
+        log_regularization = graph.configuration.y_axis.log_regularization,
+        apply_log = false,
+    )
 
-    vertical_legend_title = Maybe{AbstractString}[data.vertical_bands.legend_title]
-    horizontal_legend_title = Maybe{AbstractString}[data.horizontal_bands.legend_title]
+    vertical_legend_title = Maybe{AbstractString}[graph.data.vertical_bands.legend_title]
+    horizontal_legend_title = Maybe{AbstractString}[graph.data.horizontal_bands.legend_title]
 
     (filled_vertical_low, filled_vertical_middle, filled_vertical_high) = push_fill_vertical_bands_traces(;
         traces = traces,
         legend_title = vertical_legend_title,
-        bands_data = data.vertical_bands,
-        bands_configuration = configuration.vertical_bands,
+        bands_data = graph.data.vertical_bands,
+        bands_configuration = graph.configuration.vertical_bands,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
@@ -951,31 +969,31 @@ function graph_to_figure(
     (filled_horizontal_low, filled_horizontal_middle, filled_horizontal_high) = push_fill_horizontal_bands_traces(;
         traces = traces,
         legend_title = horizontal_legend_title,
-        bands_data = data.horizontal_bands,
-        bands_configuration = configuration.horizontal_bands,
+        bands_data = graph.data.horizontal_bands,
+        bands_configuration = graph.configuration.horizontal_bands,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
         maximum_y = maximum_y,
     )
 
-    push!(traces, line_trace(data, configuration.line))
+    push!(traces, line_trace(graph.data, graph.configuration.line))
 
     for (band_configuration, is_filled, name) in (
         (
-            configuration.vertical_bands.high,
+            graph.configuration.vertical_bands.high,
             filled_vertical_high,
-            data.vertical_bands.high_title === nothing ? "right" : data.vertical_bands.high_title,
+            graph.data.vertical_bands.high_title === nothing ? "right" : graph.data.vertical_bands.high_title,
         ),
         (
-            configuration.vertical_bands.middle,
+            graph.configuration.vertical_bands.middle,
             filled_vertical_middle,
-            data.vertical_bands.middle_title === nothing ? "center" : data.vertical_bands.middle_title,
+            graph.data.vertical_bands.middle_title === nothing ? "center" : graph.data.vertical_bands.middle_title,
         ),
         (
-            configuration.vertical_bands.low,
+            graph.configuration.vertical_bands.low,
             filled_vertical_low,
-            data.vertical_bands.low_title === nothing ? "left" : data.vertical_bands.low_title,
+            graph.data.vertical_bands.low_title === nothing ? "left" : graph.data.vertical_bands.low_title,
         ),
     )
         if band_configuration.offset !== nothing && band_configuration.width !== nothing
@@ -985,7 +1003,7 @@ function graph_to_figure(
                     band_configuration = band_configuration,
                     minimum_y = minimum_y,
                     maximum_y = maximum_y,
-                    show_legend = !is_filled && configuration.vertical_bands.show_legend,
+                    show_legend = !is_filled && graph.configuration.vertical_bands.show_legend,
                     legend_title = vertical_legend_title,
                     name = name,
                 ),
@@ -995,19 +1013,19 @@ function graph_to_figure(
 
     for (band_configuration, is_filled, name) in (
         (
-            configuration.horizontal_bands.high,
+            graph.configuration.horizontal_bands.high,
             filled_horizontal_high,
-            data.horizontal_bands.high_title === nothing ? "high" : data.horizontal_bands.high_title,
+            graph.data.horizontal_bands.high_title === nothing ? "high" : graph.data.horizontal_bands.high_title,
         ),
         (
-            configuration.horizontal_bands.middle,
+            graph.configuration.horizontal_bands.middle,
             filled_horizontal_middle,
-            data.horizontal_bands.middle_title === nothing ? "middle" : data.horizontal_bands.middle_title,
+            graph.data.horizontal_bands.middle_title === nothing ? "middle" : graph.data.horizontal_bands.middle_title,
         ),
         (
-            configuration.horizontal_bands.low,
+            graph.configuration.horizontal_bands.low,
             filled_horizontal_low,
-            data.horizontal_bands.low_title === nothing ? "low" : data.horizontal_bands.low_title,
+            graph.data.horizontal_bands.low_title === nothing ? "low" : graph.data.horizontal_bands.low_title,
         ),
     )
         if band_configuration.offset !== nothing && band_configuration.width !== nothing
@@ -1017,7 +1035,7 @@ function graph_to_figure(
                     band_configuration = band_configuration,
                     minimum_x = minimum_x,
                     maximum_x = maximum_x,
-                    show_legend = !is_filled && configuration.horizontal_bands.show_legend,
+                    show_legend = !is_filled && graph.configuration.horizontal_bands.show_legend,
                     legend_title = horizontal_legend_title,
                     name = name,
                 ),
@@ -1026,14 +1044,15 @@ function graph_to_figure(
     end
 
     layout = lines_layout(;
-        data = data,
+        graph = graph,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
         maximum_y = maximum_y,
-        configuration = configuration,
-        show_legend = configuration.horizontal_bands.show_legend || configuration.vertical_bands.show_legend,
+        show_legend = graph.configuration.horizontal_bands.show_legend ||
+                      graph.configuration.vertical_bands.show_legend,
     )
+
     return plot(traces, layout)
 end
 
@@ -1127,8 +1146,8 @@ end
         legend_title::Maybe{AbstractString} = nothing
         vertical_bands::BandsData = BandsData()
         horizontal_bands::BandsData = BandsData()
-        lines_xs::AbstractVector{AbstractVector{<:Real}}
-        lines_ys::AbstractVector{AbstractVector{<:Real}}
+        lines_xs::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
+        lines_ys::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
         lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         lines_widths::Maybe{AbstractVector{<:Real}} = nothing
@@ -1157,8 +1176,8 @@ options of the `line` must not be used.
     legend_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
     horizontal_bands::BandsData = BandsData()
-    lines_xs::AbstractVector{AbstractVector{<:Real}}
-    lines_ys::AbstractVector{AbstractVector{<:Real}}
+    lines_xs::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
+    lines_ys::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
     lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     lines_widths::Maybe{AbstractVector{<:Real}} = nothing
@@ -1230,49 +1249,60 @@ function Validations.validate_object(data::LinesGraphData)::Maybe{AbstractString
     return nothing
 end
 
-function graph_to_figure(
-    data::LinesGraphData,
-    configuration::LinesGraphConfiguration = LinesGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
-    if configuration.data_stacking == StackDataPercents || configuration.data_stacking == StackDataFractions
-        for (line_index, points_ys) in enumerate(data.lines_ys)
+"""
+A graph visualizing multiple lines (typically Ys as functions of the same X). See [`LinesGraphData`](@ref) and
+[`LinesGraphConfiguration`](@ref).
+"""
+LinesGraph = Graph{LinesGraphData, LinesGraphConfiguration}
+
+function graph_to_figure(graph::LinesGraph)::PlotlyFigure
+    assert_valid_object(graph)
+
+    if graph.configuration.data_stacking == StackDataPercents || graph.configuration.data_stacking == StackDataFractions
+        for (line_index, points_ys) in enumerate(graph.data.lines_ys)
             for (point_index, point_y) in enumerate(points_ys)
                 @assert point_y >= 0 "negative stacked fraction/percent data.lines_ys[$(line_index),$(point_index)]: $(point_y)"
             end
         end
     end
 
-    if configuration.data_stacking === nothing
-        lines_xs = data.lines_xs
-        lines_ys = data.lines_ys
+    if graph.configuration.data_stacking === nothing
+        lines_xs = graph.data.lines_xs
+        lines_ys = graph.data.lines_ys
     else
-        lines_xs, lines_ys, maximum_y = unify_xs(data.lines_xs, data.lines_ys)
+        lines_xs, lines_ys, maximum_y = unify_xs(graph.data.lines_xs, graph.data.lines_ys)
     end
 
     traces = Vector{GenericTrace}()
 
-    minimum_x, maximum_x = range_of(lines_xs, configuration.x_axis.log_regularization; apply_log = false)
+    minimum_x, maximum_x = range_of(;
+        values = lines_xs,
+        log_regularization = graph.configuration.x_axis.log_regularization,
+        apply_log = false,
+    )
 
-    if configuration.data_stacking == StackDataFractions
+    if graph.configuration.data_stacking == StackDataFractions
         minimum_y, maximum_y = -0.05, 1.05
-    elseif configuration.data_stacking == StackDataPercents
+    elseif graph.configuration.data_stacking == StackDataPercents
         minimum_y, maximum_y = -5.0, 105.0
-    elseif configuration.data_stacking == StackDataValues
+    elseif graph.configuration.data_stacking == StackDataValues
         minimum_y = maximum_x * -0.05 / 1.05
     else
-        minimum_y, maximum_y = range_of(lines_ys, configuration.y_axis.log_regularization; apply_log = false)
+        minimum_y, maximum_y = range_of(;
+            values = lines_ys,
+            log_regularization = graph.configuration.y_axis.log_regularization,
+            apply_log = false,
+        )
     end
 
-    vertical_legend_title = Maybe{AbstractString}[data.vertical_bands.legend_title]
-    horizontal_legend_title = Maybe{AbstractString}[data.horizontal_bands.legend_title]
+    vertical_legend_title = Maybe{AbstractString}[graph.data.vertical_bands.legend_title]
+    horizontal_legend_title = Maybe{AbstractString}[graph.data.horizontal_bands.legend_title]
 
     (filled_vertical_low, filled_vertical_middle, filled_vertical_high) = push_fill_vertical_bands_traces(;
         traces = traces,
         legend_title = vertical_legend_title,
-        bands_data = data.vertical_bands,
-        bands_configuration = configuration.vertical_bands,
+        bands_data = graph.data.vertical_bands,
+        bands_configuration = graph.configuration.vertical_bands,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
@@ -1281,44 +1311,43 @@ function graph_to_figure(
     (filled_horizontal_low, filled_horizontal_middle, filled_horizontal_high) = push_fill_horizontal_bands_traces(;
         traces = traces,
         legend_title = horizontal_legend_title,
-        bands_data = data.horizontal_bands,
-        bands_configuration = configuration.horizontal_bands,
+        bands_data = graph.data.horizontal_bands,
+        bands_configuration = graph.configuration.horizontal_bands,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
         maximum_y = maximum_y,
     )
 
-    for index in 1:length(data.lines_xs)
+    for index in 1:length(graph.data.lines_xs)
         push!(
             traces,
-            lines_trace(
-                data,
-                configuration;
+            lines_trace(;
+                graph = graph,
                 points_xs = lines_xs[index],
                 points_ys = lines_ys[index],
                 index = index,
-                show_legend = configuration.show_legend,
-                legend_title = data.legend_title,
+                show_legend = graph.configuration.show_legend,
+                legend_title = graph.data.legend_title,
             ),
         )
     end
 
     for (band_configuration, is_filled, name) in (
         (
-            configuration.vertical_bands.high,
+            graph.configuration.vertical_bands.high,
             filled_vertical_high,
-            data.vertical_bands.high_title === nothing ? "right" : data.vertical_bands.high_title,
+            graph.data.vertical_bands.high_title === nothing ? "right" : graph.data.vertical_bands.high_title,
         ),
         (
-            configuration.vertical_bands.middle,
+            graph.configuration.vertical_bands.middle,
             filled_vertical_middle,
-            data.vertical_bands.middle_title === nothing ? "center" : data.vertical_bands.middle_title,
+            graph.data.vertical_bands.middle_title === nothing ? "center" : graph.data.vertical_bands.middle_title,
         ),
         (
-            configuration.vertical_bands.low,
+            graph.configuration.vertical_bands.low,
             filled_vertical_low,
-            data.vertical_bands.low_title === nothing ? "left" : data.vertical_bands.low_title,
+            graph.data.vertical_bands.low_title === nothing ? "left" : graph.data.vertical_bands.low_title,
         ),
     )
         if band_configuration.offset !== nothing && band_configuration.width !== nothing
@@ -1328,7 +1357,7 @@ function graph_to_figure(
                     band_configuration = band_configuration,
                     minimum_y = minimum_y,
                     maximum_y = maximum_y,
-                    show_legend = !is_filled && configuration.vertical_bands.show_legend,
+                    show_legend = !is_filled && graph.configuration.vertical_bands.show_legend,
                     legend_title = vertical_legend_title,
                     name = name,
                 ),
@@ -1338,19 +1367,19 @@ function graph_to_figure(
 
     for (band_configuration, is_filled, name) in (
         (
-            configuration.horizontal_bands.high,
+            graph.configuration.horizontal_bands.high,
             filled_horizontal_high,
-            data.horizontal_bands.high_title === nothing ? "high" : data.horizontal_bands.high_title,
+            graph.data.horizontal_bands.high_title === nothing ? "high" : graph.data.horizontal_bands.high_title,
         ),
         (
-            configuration.horizontal_bands.middle,
+            graph.configuration.horizontal_bands.middle,
             filled_horizontal_middle,
-            data.horizontal_bands.middle_title === nothing ? "middle" : data.horizontal_bands.middle_title,
+            graph.data.horizontal_bands.middle_title === nothing ? "middle" : graph.data.horizontal_bands.middle_title,
         ),
         (
-            configuration.horizontal_bands.low,
+            graph.configuration.horizontal_bands.low,
             filled_horizontal_low,
-            data.horizontal_bands.low_title === nothing ? "low" : data.horizontal_bands.low_title,
+            graph.data.horizontal_bands.low_title === nothing ? "low" : graph.data.horizontal_bands.low_title,
         ),
     )
         if band_configuration.offset !== nothing && band_configuration.width !== nothing
@@ -1360,7 +1389,7 @@ function graph_to_figure(
                     band_configuration = band_configuration,
                     minimum_x = minimum_x,
                     maximum_x = maximum_x,
-                    show_legend = !is_filled && configuration.horizontal_bands.show_legend,
+                    show_legend = !is_filled && graph.configuration.horizontal_bands.show_legend,
                     legend_title = horizontal_legend_title,
                     name = name,
                 ),
@@ -1369,16 +1398,16 @@ function graph_to_figure(
     end
 
     layout = lines_layout(;
-        data = data,
+        graph = graph,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
         maximum_y = maximum_y,
-        configuration = configuration,
-        show_legend = configuration.show_legend ||
-                      configuration.vertical_bands.show_legend ||
-                      configuration.horizontal_bands.show_legend,
+        show_legend = graph.configuration.show_legend ||
+                      graph.configuration.vertical_bands.show_legend ||
+                      graph.configuration.horizontal_bands.show_legend,
     )
+
     return plot(traces, layout)
 end
 
@@ -1461,9 +1490,8 @@ function unify_xs(
     end
 end
 
-function lines_trace(
-    data::LinesGraphData,
-    configuration::LinesGraphConfiguration;
+function lines_trace(;
+    graph::LinesGraph,
     points_xs::AbstractVector{<:Real},
     points_ys::AbstractVector{<:Real},
     index::Int,
@@ -1473,33 +1501,47 @@ function lines_trace(
     return scatter(;
         x = points_xs,
         y = points_ys,
-        line_color = data.lines_colors !== nothing ? data.lines_colors[index] : configuration.line.color,
-        line_width = if data.lines_widths !== nothing
-            data.lines_widths[index]
-        elseif configuration.line.width === nothing
+        line_color = if graph.data.lines_colors !== nothing
+            graph.data.lines_colors[index]
+        else
+            graph.configuration.line.color
+        end,
+        line_width = if graph.data.lines_widths !== nothing
+            graph.data.lines_widths[index]
+        elseif graph.configuration.line.width === nothing
             0
         else
-            configuration.line.width  # NOJET
+            graph.configuration.line.width  # NOJET
         end,
         line_dash = if (
-            data.lines_are_dashed !== nothing ? data.lines_are_dashed[index] : configuration.line.is_dashed
+            if graph.data.lines_are_dashed !== nothing
+                graph.data.lines_are_dashed[index]
+            else
+                graph.configuration.line.is_dashed
+            end
         )
             "dash"
         else
             nothing
         end,
-        fill = if !(data.lines_are_filled !== nothing ? data.lines_are_filled[index] : configuration.line.is_filled)
+        fill = if !(
+            if graph.data.lines_are_filled !== nothing
+                graph.data.lines_are_filled[index]
+            else
+                graph.configuration.line.is_filled
+            end
+        )
             nothing
-        elseif index == length(data.lines_xs)
+        elseif index == length(graph.data.lines_xs)
             "tozeroy"
         else
             "tonexty"
         end,
-        name = data.lines_names !== nothing ? data.lines_names[index] : "Trace $(index)",
-        stackgroup = configuration.data_stacking === nothing ? nothing : "stacked",
-        groupnorm = if configuration.data_stacking == StackDataFractions
+        name = graph.data.lines_names !== nothing ? graph.data.lines_names[index] : "Trace $(index)",
+        stackgroup = graph.configuration.data_stacking === nothing ? nothing : "stacked",
+        groupnorm = if graph.configuration.data_stacking == StackDataFractions
             "fraction"
-        elseif configuration.data_stacking == StackDataPercents
+        elseif graph.configuration.data_stacking == StackDataPercents
             "percent"
         else
             nothing
@@ -1512,32 +1554,31 @@ function lines_trace(
 end
 
 function lines_layout(;
-    data::Union{LinesGraphData, LineGraphData},
+    graph::Union{LineGraph, LinesGraph},
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
     maximum_y::Real,
-    configuration::Union{LinesGraphConfiguration, LineGraphConfiguration},
     show_legend::Bool,
 )::Layout
-    x_axis = configuration.x_axis
-    y_axis = configuration.y_axis
+    x_axis = graph.configuration.x_axis
+    y_axis = graph.configuration.y_axis
 
     return graph_layout(
-        configuration.graph,
+        graph.configuration.graph,
         Layout(;  # NOJET
-            title = data.graph_title,
-            xaxis_showgrid = configuration.graph.show_grid,
-            xaxis_showticklabels = configuration.graph.show_ticks,
-            xaxis_title = data.x_axis_title,
+            title = graph.data.graph_title,
+            xaxis_showgrid = graph.configuration.graph.show_grid,
+            xaxis_showticklabels = graph.configuration.graph.show_ticks,
+            xaxis_title = graph.data.x_axis_title,
             xaxis_range = (
                 x_axis.minimum !== nothing ? x_axis.minimum : minimum_x,
                 x_axis.maximum !== nothing ? x_axis.maximum : maximum_x,
             ),
             xaxis_type = x_axis.log_regularization !== nothing ? "log" : nothing,
-            yaxis_showgrid = configuration.graph.show_grid,
-            yaxis_showticklabels = configuration.graph.show_ticks,
-            yaxis_title = data.y_axis_title,
+            yaxis_showgrid = graph.configuration.graph.show_grid,
+            yaxis_showticklabels = graph.configuration.graph.show_ticks,
+            yaxis_title = graph.data.y_axis_title,
             yaxis_range = (
                 y_axis.minimum !== nothing ? y_axis.minimum : minimum_y,
                 y_axis.maximum !== nothing ? y_axis.maximum : maximum_y,
@@ -1596,7 +1637,7 @@ end
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         fraction_axis_title::Maybe{AbstractString} = nothing
-        line_values::AbstractVector{<:Real}
+        cdf_values::AbstractVector{<:Real} = Float32[]
     end
 
 The data for a CDF (Cumulative Distribution Function) graph.
@@ -1612,27 +1653,53 @@ The order of the `line_values` does not matter.
     fraction_axis_title::Maybe{AbstractString} = nothing
     value_bands::BandsData = BandsData()
     fraction_bands::BandsData = BandsData()
-    line_values::AbstractVector{<:Real}
+    cdf_values::AbstractVector{<:Real} = Float32[]
 end
 
 function Validations.validate_object(data::CdfGraphData)::Maybe{AbstractString}
-    if length(data.line_values) < 2
-        return "too few data.line_values: $(length(data.line_values))"
+    if length(data.cdf_values) < 2
+        return "too few data.cdf_values: $(length(data.cdf_values))"
     end
     # TRICKY: Validation will be done by the `LineGraphData` we will convert to.
     return nothing
 end
 
-function graph_to_figure(
-    data::CdfGraphData,
-    configuration::CdfGraphConfiguration = CdfGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
+"""
+A graph visualizing a single cumulative distribution function. See [`CdfGraphData`](@ref) and
+[`CdfGraphConfiguration`](@ref).
+"""
+CdfGraph = Graph{CdfGraphData, CdfGraphConfiguration}
 
-    line_data = cdf_data_as_line_data(data, configuration)
-    line_configuration = cdf_configuration_as_line_configuration(configuration)
-    return graph_to_figure(line_data, line_configuration)
+function graph_to_figure(graph::CdfGraph)::PlotlyFigure
+    assert_valid_object(graph)
+    line_data = cdf_data_as_line_data(graph)
+    line_configuration = cdf_configuration_as_line_configuration(graph.configuration)
+    return graph_to_figure(LineGraph(line_data, line_configuration))
+end
+
+function cdf_data_as_line_data(graph::CdfGraph)::LineGraphData
+    values, fractions = collect_cdf_data(graph.data.cdf_values, graph.configuration)
+    if graph.configuration.values_orientation == HorizontalValues
+        return LineGraphData(;
+            graph_title = graph.data.graph_title,
+            x_axis_title = graph.data.value_axis_title,
+            y_axis_title = graph.data.fraction_axis_title,
+            vertical_bands = graph.data.value_bands,
+            horizontal_bands = graph.data.fraction_bands,
+            points_xs = values,
+            points_ys = fractions,
+        )
+    else
+        return LineGraphData(;
+            graph_title = graph.data.graph_title,
+            x_axis_title = graph.data.fraction_axis_title,
+            y_axis_title = graph.data.value_axis_title,
+            vertical_bands = graph.data.fraction_bands,
+            horizontal_bands = graph.data.value_bands,
+            points_xs = fractions,
+            points_ys = values,
+        )
+    end
 end
 
 function cdf_configuration_as_line_configuration(configuration::CdfGraphConfiguration)::LineGraphConfiguration
@@ -1678,31 +1745,6 @@ function percent_band(band_configuration::BandConfiguration, show_percent::Bool)
         is_dashed = band_configuration.is_dashed,
         is_filled = band_configuration.is_filled,
     )
-end
-
-function cdf_data_as_line_data(data::CdfGraphData, configuration::CdfGraphConfiguration)::LineGraphData
-    values, fractions = collect_cdf_data(data.line_values, configuration)
-    if configuration.values_orientation == HorizontalValues
-        return LineGraphData(;
-            graph_title = data.graph_title,
-            x_axis_title = data.value_axis_title,
-            y_axis_title = data.fraction_axis_title,
-            vertical_bands = data.value_bands,
-            horizontal_bands = data.fraction_bands,
-            points_xs = values,
-            points_ys = fractions,
-        )
-    else
-        return LineGraphData(;
-            graph_title = data.graph_title,
-            x_axis_title = data.fraction_axis_title,
-            y_axis_title = data.value_axis_title,
-            vertical_bands = data.fraction_bands,
-            horizontal_bands = data.value_bands,
-            points_xs = fractions,
-            points_ys = values,
-        )
-    end
 end
 
 """
@@ -1771,12 +1813,12 @@ end
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         fraction_axis_title::Maybe{AbstractString} = nothing
-        lines_values::AbstractVector{<:AbstractVector{<:Real}}
-        lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-        lines_widths::Maybe{AbstractVector{<:Real}} = nothing
-        lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-        lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
+        cdfs_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
+        cdfs_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        cdfs_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+        cdfs_widths::Maybe{AbstractVector{<:Real}} = nothing
+        cdfs_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+        cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing
     end
 
 The data for multiple CDFs (Cumulative Distribution Functions) graph.
@@ -1784,81 +1826,83 @@ The data for multiple CDFs (Cumulative Distribution Functions) graph.
 By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
 `fraction_axis_title` for the axes.
 
-The order of the entries inside each of the `lines_values` does not matter.
+The order of the entries inside each of the `cdfs_values` does not matter.
 """
 @kwdef mutable struct CdfsGraphData <: AbstractGraphData
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    lines_values::AbstractVector{<:AbstractVector{<:Real}}
-    lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
-    lines_widths::Maybe{AbstractVector{<:Real}} = nothing
-    lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
+    cdfs_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
+    cdfs_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    cdfs_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
+    cdfs_widths::Maybe{AbstractVector{<:Real}} = nothing
+    cdfs_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing
 end
 
 function Validations.validate_object(data::CdfsGraphData)::Maybe{AbstractString}
-    if length(data.lines_values) == 0
-        return "empty data.lines_values vector"
+    if length(data.cdfs_values) == 0
+        return "empty data.cdfs_values vector"
     end
-    for (index, values) in enumerate(data.lines_values)
+    for (index, values) in enumerate(data.cdfs_values)
         if length(values) < 2
-            return "too few data.lines_values[$(index)]: $(length(values))"
+            return "too few data.cdfs_values[$(index)]: $(length(values))"
         end
     end
     # TRICKY: Validation will be done by the `LinesGraphData` we will convert to.
     return nothing
 end
 
-function graph_to_figure(
-    data::CdfsGraphData,
-    configuration::CdfsGraphConfiguration = CdfsGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
+"""
+A graph visualizing multiple cumulative distribution functions. See [`CdfsGraphData`](@ref) and
+[`CdfsGraphConfiguration`](@ref).
+"""
+CdfsGraph = Graph{CdfsGraphData, CdfsGraphConfiguration}
 
-    lines_data = cdfs_data_as_lines_data(data, configuration)
-    lines_configuration = cdfs_configuration_as_lines_configuration(configuration)
-    return graph_to_figure(lines_data, lines_configuration)
+function graph_to_figure(graph::CdfsGraph)::PlotlyFigure
+    assert_valid_object(graph)
+
+    lines_data = cdfs_data_as_lines_data(graph)
+    lines_configuration = cdfs_configuration_as_lines_configuration(graph.configuration)
+    return graph_to_figure(LinesGraph(lines_data, lines_configuration))
 end
 
-function cdfs_data_as_lines_data(data::CdfsGraphData, configuration::CdfsGraphConfiguration)::LinesGraphData
-    fractions = Vector{Vector{Float64}}()
-    lines_values = Vector{Vector{eltype(eltype(data.lines_values))}}()
-    for line_values in data.lines_values
-        line_values, trace_fractions = collect_cdf_data(line_values, configuration)
-        push!(fractions, trace_fractions)
-        push!(lines_values, line_values)
+function cdfs_data_as_lines_data(graph::CdfsGraph)::LinesGraphData
+    cdfs_fractions = Vector{Vector{Float64}}()
+    cdfs_values = Vector{Vector{eltype(eltype(graph.data.cdfs_values))}}()
+    for cdf_values in graph.data.cdfs_values
+        values, fractions = collect_cdf_data(cdf_values, graph.configuration)
+        push!(cdfs_fractions, fractions)
+        push!(cdfs_values, values)
     end
-    if configuration.values_orientation == HorizontalValues
+    if graph.configuration.values_orientation == HorizontalValues
         return LinesGraphData(;
-            graph_title = data.graph_title,
-            x_axis_title = data.value_axis_title,
-            y_axis_title = data.fraction_axis_title,
-            legend_title = data.legend_title,
-            lines_xs = lines_values,
-            lines_ys = fractions,
-            lines_names = data.lines_names,
-            lines_colors = data.lines_colors,
-            lines_widths = data.lines_widths,
-            lines_are_filled = data.lines_are_filled,
-            lines_are_dashed = data.lines_are_dashed,
+            graph_title = graph.data.graph_title,
+            x_axis_title = graph.data.value_axis_title,
+            y_axis_title = graph.data.fraction_axis_title,
+            legend_title = graph.data.legend_title,
+            lines_xs = cdfs_values,
+            lines_ys = cdfs_fractions,
+            lines_names = graph.data.cdfs_names,
+            lines_colors = graph.data.cdfs_colors,
+            lines_widths = graph.data.cdfs_widths,
+            lines_are_filled = graph.data.cdfs_are_filled,
+            lines_are_dashed = graph.data.cdfs_are_dashed,
         )
     else
         return LinesGraphData(;
-            graph_title = data.graph_title,
-            x_axis_title = data.fraction_axis_title,
-            y_axis_title = data.value_axis_title,
-            legend_title = data.legend_title,
-            lines_xs = fractions,
-            lines_ys = lines_values,
-            lines_names = data.lines_names,
-            lines_colors = data.lines_colors,
-            lines_widths = data.lines_widths,
-            lines_are_filled = data.lines_are_filled,
-            lines_are_dashed = data.lines_are_dashed,
+            graph_title = graph.data.graph_title,
+            x_axis_title = graph.data.fraction_axis_title,
+            y_axis_title = graph.data.value_axis_title,
+            legend_title = graph.data.legend_title,
+            lines_xs = cdfs_fractions,
+            lines_ys = cdfs_values,
+            lines_names = graph.data.cdfs_names,
+            lines_colors = graph.data.cdfs_colors,
+            lines_widths = graph.data.cdfs_widths,
+            lines_are_filled = graph.data.cdfs_are_filled,
+            lines_are_dashed = graph.data.cdfs_are_dashed,
         )
     end
 end
@@ -1930,7 +1974,7 @@ end
         graph_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         bar_axis_title::Maybe{AbstractString} = nothing
-        bars_values::AbstractVector{<:Real}
+        bars_values::AbstractVector{<:Real} = Float32[]
         bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         bars_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
@@ -1948,7 +1992,7 @@ elements as the number of `bars_values`.
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
-    bars_values::AbstractVector{<:Real}
+    bars_values::AbstractVector{<:Real} = Float32[]
     bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     bars_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
@@ -1983,22 +2027,24 @@ function Validations.validate_object(data::BarGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function graph_to_figure(
-    data::BarGraphData,
-    configuration::BarGraphConfiguration = BarGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
+"""
+A graph visualizing a single series of bars. See [`BarGraphData`](@ref) and [`BarGraphConfiguration`](@ref).
+"""
+BarGraph = Graph{BarGraphData, BarGraphConfiguration}
 
-    trace = bar_trace(
-        configuration;
-        values = data.bars_values,
-        color = data.bars_colors !== nothing ? data.bars_colors : configuration.bars_color,
-        hover = data.bars_hovers,
-        names = data.bars_names,
+function graph_to_figure(graph::BarGraph)::PlotlyFigure
+    assert_valid_object(graph)
+
+    trace = bar_trace(;
+        configuration = graph.configuration,
+        values = graph.data.bars_values,
+        color = graph.data.bars_colors !== nothing ? graph.data.bars_colors : graph.configuration.bars_color,
+        hover = graph.data.bars_hovers,
+        names = graph.data.bars_names,
     )
 
-    layout = bar_layout(data, configuration; has_tick_names = data.bars_names !== nothing, show_legend = false)
+    layout = bar_layout(; graph = graph, has_tick_names = graph.data.bars_names !== nothing, show_legend = false)
+
     return plot(trace, layout)
 end
 
@@ -2054,7 +2100,7 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         bar_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
-        series_values::AbstractString{<:AbstractVector{<:Real}}
+        series_values::AbstractString{<:AbstractVector{<:Real}} = Vector{Float32}[]
         series_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         series_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         series_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
@@ -2076,7 +2122,7 @@ same number of elements in the each of the `series_values` vectors.
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    series_values::AbstractVector{<:AbstractVector{<:Real}}
+    series_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
     series_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     series_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     series_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
@@ -2134,61 +2180,62 @@ function Validations.validate_object(data::BarsGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function graph_to_figure(
-    data::BarsGraphData,
-    configuration::BarsGraphConfiguration = BarsGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
+"""
+A graph visualizing multiple series of bars. See [`BarsGraphData`](@ref) and [`BarsGraphConfiguration`](@ref).
+"""
+BarsGraph = Graph{BarsGraphData, BarsGraphConfiguration}
 
-    data_stacking = configuration.data_stacking
+function graph_to_figure(graph::BarsGraph)::PlotlyFigure
+    assert_valid_object(graph)
+
+    data_stacking = graph.configuration.data_stacking
     if data_stacking === nothing
-        series_values = data.series_values
+        series_values = graph.data.series_values
     else
-        for (series_index, bars_values) in enumerate(data.series_values)
+        for (series_index, bars_values) in enumerate(graph.data.series_values)
             for (bar_index, value) in enumerate(bars_values)
                 @assert value >= 0 "negative stacked data.series_values[$(series_index),$(bar_index)]: $(value)"
             end
         end
-        series_values = stacked_values(data_stacking, data.series_values)
+        series_values = stacked_values(data_stacking, graph.data.series_values)
     end
 
     traces = Vector{GenericTrace}()
-    for index in 1:length(data.series_values)
+    for index in 1:length(graph.data.series_values)
         push!(
             traces,
-            bar_trace(
-                configuration;
+            bar_trace(;
+                configuration = graph.configuration,
                 values = series_values[index],
-                color = data.series_colors !== nothing ? data.series_colors[index] : nothing,
-                hover = if data.series_hovers === nothing
-                    if data.bars_hovers === nothing
+                color = graph.data.series_colors !== nothing ? graph.data.series_colors[index] : nothing,
+                hover = if graph.data.series_hovers === nothing
+                    if graph.data.bars_hovers === nothing
                         nothing
                     else
-                        data.bars_hovers
+                        graph.data.bars_hovers
                     end
                 else
-                    if data.bars_hovers === nothing
-                        fill(data.series_hovers[index], length(series_values[index]))
+                    if graph.data.bars_hovers === nothing
+                        fill(graph.data.series_hovers[index], length(series_values[index]))
                     else
-                        (data.series_hovers[index] * "<br>") .* data.bars_hovers
+                        (graph.data.series_hovers[index] * "<br>") .* graph.data.bars_hovers
                     end
                 end,
-                names = data.bars_names,
-                name = data.series_names !== nothing ? data.series_names[index] : "Series $(index)",
-                legend_title = index == 1 ? data.legend_title : nothing,
-                show_legend = configuration.show_legend,
+                names = graph.data.bars_names,
+                name = graph.data.series_names !== nothing ? graph.data.series_names[index] : "Series $(index)",
+                legend_title = index == 1 ? graph.data.legend_title : nothing,
+                show_legend = graph.configuration.show_legend,
             ),
         )
     end
 
-    layout = bar_layout(
-        data,
-        configuration;
-        has_tick_names = data.bars_names !== nothing,
-        show_legend = configuration.show_legend,
-        stacked = configuration.data_stacking !== nothing,
+    layout = bar_layout(;
+        graph = graph,
+        has_tick_names = graph.data.bars_names !== nothing,
+        show_legend = graph.configuration.show_legend,
+        stacked = graph.configuration.data_stacking !== nothing,
     )
+
     return plot(traces, layout)
 end
 
@@ -2213,8 +2260,8 @@ function stacked_values(
     return [bars_values ./= total_values for bars_values in series_values]
 end
 
-function bar_trace(
-    configuration::Union{BarGraphConfiguration, BarsGraphConfiguration};
+function bar_trace(;
+    configuration::Union{BarGraphConfiguration, BarsGraphConfiguration},
     values::AbstractVector{<:Real},
     color::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}}},
     hover::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}}},
@@ -2248,45 +2295,44 @@ function bar_trace(
     )
 end
 
-function bar_layout(
-    data::Union{BarGraphData, BarsGraphData},
-    configuration::Union{BarGraphConfiguration, BarsGraphConfiguration};
+function bar_layout(;
+    graph::Union{BarGraph, BarsGraph},
     has_tick_names::Bool,
     show_legend::Bool,
     stacked::Bool = false,
 )::Layout
-    if configuration.values_orientation == HorizontalValues
-        xaxis_showgrid = configuration.graph.show_grid
-        xaxis_showticklabels = configuration.graph.show_ticks
-        xaxis_title = data.value_axis_title
-        xaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
-        xaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
+    if graph.configuration.values_orientation == HorizontalValues
+        xaxis_showgrid = graph.configuration.graph.show_grid
+        xaxis_showticklabels = graph.configuration.graph.show_ticks
+        xaxis_title = graph.data.value_axis_title
+        xaxis_range = (graph.configuration.value_axis.minimum, graph.configuration.value_axis.maximum)
+        xaxis_type = graph.configuration.value_axis.log_regularization !== nothing ? "log" : nothing
 
         yaxis_showgrid = false
         yaxis_showticklabels = has_tick_names
-        yaxis_title = data.bar_axis_title
+        yaxis_title = graph.data.bar_axis_title
         yaxis_range = nothing
         yaxis_type = nothing
-    elseif configuration.values_orientation == VerticalValues
+    elseif graph.configuration.values_orientation == VerticalValues
         xaxis_showgrid = false
         xaxis_showticklabels = has_tick_names
-        xaxis_title = data.bar_axis_title
+        xaxis_title = graph.data.bar_axis_title
         xaxis_range = nothing
         xaxis_type = nothing
 
-        yaxis_showgrid = configuration.graph.show_grid
-        yaxis_showticklabels = configuration.graph.show_ticks
-        yaxis_title = data.value_axis_title
-        yaxis_range = (configuration.value_axis.minimum, configuration.value_axis.maximum)
-        yaxis_type = configuration.value_axis.log_regularization !== nothing ? "log" : nothing
+        yaxis_showgrid = graph.configuration.graph.show_grid
+        yaxis_showticklabels = graph.configuration.graph.show_ticks
+        yaxis_title = graph.data.value_axis_title
+        yaxis_range = (graph.configuration.value_axis.minimum, graph.configuration.value_axis.maximum)
+        yaxis_type = graph.configuration.value_axis.log_regularization !== nothing ? "log" : nothing
     else
         @assert false
     end
 
     return graph_layout(
-        configuration.graph,
+        graph.configuration.graph,
         Layout(;  # NOJET
-            title = data.graph_title,
+            title = graph.data.graph_title,
             xaxis_showgrid = xaxis_showgrid,
             xaxis_showticklabels = xaxis_showticklabels,
             xaxis_title = xaxis_title,
@@ -2301,7 +2347,7 @@ function bar_layout(
             legend_tracegroupgap = 0,
             legend_itemdoubleclick = false,
             barmode = stacked ? "stack" : nothing,
-            bargap = configuration.bars_gap,
+            bargap = graph.configuration.bars_gap,
         ),
     )
 end
@@ -2547,8 +2593,8 @@ end
         borders_sizes_title::Maybe{AbstractString} = nothing
         edges_group_title::Maybe{AbstractString} = nothing
         edges_line_title::Maybe{AbstractString} = nothing
-        points_xs::AbstractVector{<:Real}
-        points_ys::AbstractVector{<:Real}
+        points_xs::AbstractVector{<:Real} = Float32[]
+        points_ys::AbstractVector{<:Real = Float32[]
         points_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
         sizes::Maybe{AbstractVector{<:Real}} = nothing
         hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
@@ -2596,8 +2642,8 @@ categorical `color_palette`) will not be shown.
     borders_sizes_title::Maybe{AbstractString} = nothing
     edges_group_title::Maybe{AbstractString} = nothing
     edges_line_title::Maybe{AbstractString} = nothing
-    points_xs::AbstractVector{<:Real}
-    points_ys::AbstractVector{<:Real}
+    points_xs::AbstractVector{<:Real} = Float32[]
+    points_ys::AbstractVector{<:Real} = Float32[]
     points_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing
     points_sizes::Maybe{AbstractVector{<:Real}} = nothing
     points_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
@@ -2678,28 +2724,37 @@ function Validations.validate_object(data::PointsGraphData)::Maybe{AbstractStrin
     return nothing
 end
 
-function graph_to_figure(
-    data::PointsGraphData,
-    configuration::PointsGraphConfiguration = PointsGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
-    assert_valid_render(data, configuration)
+"""
+A graph visualizing scattered points (possibly with edges between them). See [`PointsGraphData`](@ref) and
+[`PointsGraphConfiguration`](@ref).
+"""
+PointsGraph = Graph{PointsGraphData, PointsGraphConfiguration}
+
+function graph_to_figure(graph::PointsGraph)::PlotlyFigure
+    assert_valid_object(graph)
 
     traces = Vector{GenericTrace}()
 
-    minimum_x, maximum_x = range_of([data.points_xs], configuration.x_axis.log_regularization; apply_log = false)
-    minimum_y, maximum_y = range_of([data.points_ys], configuration.y_axis.log_regularization; apply_log = false)
+    minimum_x, maximum_x = range_of(;
+        values = [graph.data.points_xs],
+        log_regularization = graph.configuration.x_axis.log_regularization,
+        apply_log = false,
+    )
+    minimum_y, maximum_y = range_of(;
+        values = [graph.data.points_ys],
+        log_regularization = graph.configuration.y_axis.log_regularization,
+        apply_log = false,
+    )
 
-    vertical_legend_title = Maybe{AbstractString}[data.vertical_bands.legend_title]
-    horizontal_legend_title = Maybe{AbstractString}[data.horizontal_bands.legend_title]
-    diagonal_legend_title = Maybe{AbstractString}[data.diagonal_bands.legend_title]
+    vertical_legend_title = Maybe{AbstractString}[graph.data.vertical_bands.legend_title]
+    horizontal_legend_title = Maybe{AbstractString}[graph.data.horizontal_bands.legend_title]
+    diagonal_legend_title = Maybe{AbstractString}[graph.data.diagonal_bands.legend_title]
 
     (filled_vertical_low, filled_vertical_middle, filled_vertical_high) = push_fill_vertical_bands_traces(;
         traces = traces,
         legend_title = vertical_legend_title,
-        bands_data = data.vertical_bands,
-        bands_configuration = configuration.vertical_bands,
+        bands_data = graph.data.vertical_bands,
+        bands_configuration = graph.configuration.vertical_bands,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
@@ -2708,8 +2763,8 @@ function graph_to_figure(
     (filled_horizontal_low, filled_horizontal_middle, filled_horizontal_high) = push_fill_horizontal_bands_traces(;
         traces = traces,
         legend_title = horizontal_legend_title,
-        bands_data = data.horizontal_bands,
-        bands_configuration = configuration.horizontal_bands,
+        bands_data = graph.data.horizontal_bands,
+        bands_configuration = graph.configuration.horizontal_bands,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
@@ -2718,44 +2773,44 @@ function graph_to_figure(
     (filled_diagonal_low, filled_diagonal_middle, filled_diagonal_high) = push_fill_diagonal_bands_traces(;
         traces = traces,
         legend_title = diagonal_legend_title,
-        bands_data = data.diagonal_bands,
-        bands_configuration = configuration.diagonal_bands,
+        bands_data = graph.data.diagonal_bands,
+        bands_configuration = graph.configuration.diagonal_bands,
         minimum_x = minimum_x,
         minimum_y = minimum_y,
         maximum_x = maximum_x,
         maximum_y = maximum_y,
-        log_scale = configuration.x_axis.log_regularization !== nothing,
+        log_scale = graph.configuration.x_axis.log_regularization !== nothing,
     )
 
-    edges_points = data.edges_points
-    if edges_points !== nothing && !configuration.edges_over_points
+    edges_points = graph.data.edges_points
+    if edges_points !== nothing && !graph.configuration.edges_over_points
         for index in 1:length(edges_points)
             push!(
                 traces,
-                edge_trace(
-                    data,
-                    configuration.edges;
-                    x_log_regularization = configuration.x_axis.log_regularization,
-                    y_log_regularization = configuration.y_axis.log_regularization,
+                edge_trace(;
+                    data = graph.data,
+                    edges_configuration = graph.configuration.edges,
+                    x_log_regularization = graph.configuration.x_axis.log_regularization,
+                    y_log_regularization = graph.configuration.y_axis.log_regularization,
                     index = index,
                 ),
             )
         end
     end
 
-    sizes = fix_sizes(data.points_sizes, configuration.points)
+    sizes = fix_sizes(graph.data.points_sizes, graph.configuration.points)
 
-    if data.borders_colors !== nothing || data.borders_sizes !== nothing
-        marker_size = border_marker_size(data, configuration, sizes)
+    if graph.data.borders_colors !== nothing || graph.data.borders_sizes !== nothing
+        marker_size = border_marker_size(graph.data, graph.configuration, sizes)
         if marker_size isa AbstractVector{<:Real}
             marker_size_mask = marker_size .> 0  # NOJET
         else
             marker_size_mask = nothing
         end
 
-        color_palette = configuration.borders.color_palette
+        color_palette = graph.configuration.borders.color_palette
         if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-            borders_colors = data.borders_colors
+            borders_colors = graph.data.borders_colors
             @assert borders_colors isa AbstractVector{<:AbstractString}
             is_first = true
             for (value, color) in color_palette
@@ -2767,15 +2822,15 @@ function graph_to_figure(
                     if any(mask)
                         push!(
                             traces,
-                            points_trace(
-                                data;
-                                x_log_regularization = configuration.x_axis.log_regularization,
-                                y_log_regularization = configuration.y_axis.log_regularization,
+                            points_trace(;
+                                data = graph.data,
+                                x_log_regularization = graph.configuration.x_axis.log_regularization,
+                                y_log_regularization = graph.configuration.y_axis.log_regularization,
                                 color = color,
                                 marker_size = marker_size,
                                 coloraxis = nothing,
-                                points_configuration = configuration.borders,
-                                colors_title = data.borders_colors_title,
+                                points_configuration = graph.configuration.borders,
+                                colors_title = graph.data.borders_colors_title,
                                 legend_group = "borders",
                                 mask = mask,
                                 name = value,
@@ -2787,7 +2842,7 @@ function graph_to_figure(
                 end
             end
         else
-            borders_colors = data.borders_colors
+            borders_colors = graph.data.borders_colors
             if borders_colors isa AbstractVector{<:AbstractString}
                 mask = borders_colors .!= ""
                 if mask !== nothing && marker_size_mask !== nothing
@@ -2799,19 +2854,19 @@ function graph_to_figure(
 
             push!(  # NOJET
                 traces,
-                points_trace(
-                    data;
-                    x_log_regularization = configuration.x_axis.log_regularization,
-                    y_log_regularization = configuration.y_axis.log_regularization,
+                points_trace(;
+                    data = graph.data,
+                    x_log_regularization = graph.configuration.x_axis.log_regularization,
+                    y_log_regularization = graph.configuration.y_axis.log_regularization,
                     color = if borders_colors !== nothing
-                        fix_colors(borders_colors, configuration.borders.color_scale.log_regularization)
+                        fix_colors(borders_colors, graph.configuration.borders.color_scale.log_regularization)
                     else
-                        configuration.borders.color
+                        graph.configuration.borders.color
                     end,
                     marker_size = marker_size,
                     coloraxis = "coloraxis2",
-                    points_configuration = configuration.borders,
-                    colors_title = data.borders_colors_title,
+                    points_configuration = graph.configuration.borders,
+                    colors_title = graph.data.borders_colors_title,
                     legend_group = "borders",
                     mask = mask,
                 ),
@@ -2825,9 +2880,9 @@ function graph_to_figure(
         marker_size_mask = nothing
     end
 
-    color_palette = configuration.points.color_palette
+    color_palette = graph.configuration.points.color_palette
     if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        colors = data.points_colors
+        colors = graph.data.points_colors
         @assert colors isa AbstractVector{<:AbstractString}
         is_first = true
         for (value, color) in color_palette
@@ -2839,15 +2894,15 @@ function graph_to_figure(
                 if any(mask)
                     push!(
                         traces,
-                        points_trace(
-                            data;
-                            x_log_regularization = configuration.x_axis.log_regularization,
-                            y_log_regularization = configuration.y_axis.log_regularization,
+                        points_trace(;
+                            data = graph.data,
+                            x_log_regularization = graph.configuration.x_axis.log_regularization,
+                            y_log_regularization = graph.configuration.y_axis.log_regularization,
                             color = color,
                             marker_size = sizes,
                             coloraxis = nothing,
-                            points_configuration = configuration.points,
-                            colors_title = data.points_colors_title,
+                            points_configuration = graph.configuration.points,
+                            colors_title = graph.data.points_colors_title,
                             legend_group = "points",
                             mask = mask,
                             name = value,
@@ -2859,7 +2914,7 @@ function graph_to_figure(
             end
         end
     else
-        colors = data.points_colors
+        colors = graph.data.points_colors
         if colors isa AbstractVector{<:AbstractString}
             mask = colors .!= ""
             if marker_size_mask !== nothing
@@ -2872,19 +2927,19 @@ function graph_to_figure(
         if mask === nothing || any(mask)
             push!(  # NOJET
                 traces,
-                points_trace(
-                    data;
-                    x_log_regularization = configuration.x_axis.log_regularization,
-                    y_log_regularization = configuration.y_axis.log_regularization,
+                points_trace(;
+                    data = graph.data,
+                    x_log_regularization = graph.configuration.x_axis.log_regularization,
+                    y_log_regularization = graph.configuration.y_axis.log_regularization,
                     color = if colors !== nothing
-                        fix_colors(colors, configuration.points.color_scale.log_regularization)
+                        fix_colors(colors, graph.configuration.points.color_scale.log_regularization)
                     else
-                        configuration.points.color
+                        graph.configuration.points.color
                     end,
                     marker_size = sizes,
                     coloraxis = "coloraxis",
-                    points_configuration = configuration.points,
-                    colors_title = data.points_colors_title,
+                    points_configuration = graph.configuration.points,
+                    colors_title = graph.data.points_colors_title,
                     legend_group = "points",
                     mask = mask,
                 ),
@@ -2892,15 +2947,15 @@ function graph_to_figure(
         end
     end
 
-    if edges_points !== nothing && configuration.edges_over_points
+    if edges_points !== nothing && graph.configuration.edges_over_points
         for index in 1:length(edges_points)
             push!(
                 traces,
-                edge_trace(
-                    data,
-                    configuration.edges;
-                    x_log_regularization = configuration.x_axis.log_regularization,
-                    y_log_regularization = configuration.y_axis.log_regularization,
+                edge_trace(;
+                    data = graph.data,
+                    edges_configuration = graph.configuration.edges,
+                    x_log_regularization = graph.configuration.x_axis.log_regularization,
+                    y_log_regularization = graph.configuration.y_axis.log_regularization,
                     index = index,
                 ),
             )
@@ -2909,19 +2964,19 @@ function graph_to_figure(
 
     for (band_configuration, is_filled, name) in (
         (
-            configuration.vertical_bands.high,
+            graph.configuration.vertical_bands.high,
             filled_vertical_high,
-            data.vertical_bands.high_title === nothing ? "right" : data.vertical_bands.high_title,
+            graph.data.vertical_bands.high_title === nothing ? "right" : graph.data.vertical_bands.high_title,
         ),
         (
-            configuration.vertical_bands.middle,
+            graph.configuration.vertical_bands.middle,
             filled_vertical_middle,
-            data.vertical_bands.middle_title === nothing ? "center" : data.vertical_bands.middle_title,
+            graph.data.vertical_bands.middle_title === nothing ? "center" : graph.data.vertical_bands.middle_title,
         ),
         (
-            configuration.vertical_bands.low,
+            graph.configuration.vertical_bands.low,
             filled_vertical_low,
-            data.vertical_bands.low_title === nothing ? "left" : data.vertical_bands.low_title,
+            graph.data.vertical_bands.low_title === nothing ? "left" : graph.data.vertical_bands.low_title,
         ),
     )
         if band_configuration.offset !== nothing && band_configuration.width !== nothing
@@ -2931,7 +2986,7 @@ function graph_to_figure(
                     band_configuration = band_configuration,
                     minimum_y = minimum_y,
                     maximum_y = maximum_y,
-                    show_legend = !is_filled && configuration.vertical_bands.show_legend,
+                    show_legend = !is_filled && graph.configuration.vertical_bands.show_legend,
                     legend_title = vertical_legend_title,
                     name = name,
                 ),
@@ -2941,19 +2996,19 @@ function graph_to_figure(
 
     for (band_configuration, is_filled, name) in (
         (
-            configuration.horizontal_bands.high,
+            graph.configuration.horizontal_bands.high,
             filled_horizontal_high,
-            data.horizontal_bands.high_title === nothing ? "high" : data.horizontal_bands.high_title,
+            graph.data.horizontal_bands.high_title === nothing ? "high" : graph.data.horizontal_bands.high_title,
         ),
         (
-            configuration.horizontal_bands.middle,
+            graph.configuration.horizontal_bands.middle,
             filled_horizontal_middle,
-            data.horizontal_bands.middle_title === nothing ? "middle" : data.horizontal_bands.middle_title,
+            graph.data.horizontal_bands.middle_title === nothing ? "middle" : graph.data.horizontal_bands.middle_title,
         ),
         (
-            configuration.horizontal_bands.low,
+            graph.configuration.horizontal_bands.low,
             filled_horizontal_low,
-            data.horizontal_bands.low_title === nothing ? "low" : data.horizontal_bands.low_title,
+            graph.data.horizontal_bands.low_title === nothing ? "low" : graph.data.horizontal_bands.low_title,
         ),
     )
         if band_configuration.offset !== nothing && band_configuration.width !== nothing
@@ -2963,7 +3018,7 @@ function graph_to_figure(
                     band_configuration = band_configuration,
                     minimum_x = minimum_x,
                     maximum_x = maximum_x,
-                    show_legend = !is_filled && configuration.horizontal_bands.show_legend,
+                    show_legend = !is_filled && graph.configuration.horizontal_bands.show_legend,
                     legend_title = horizontal_legend_title,
                     name = name,
                 ),
@@ -2973,19 +3028,19 @@ function graph_to_figure(
 
     for (band_configuration, is_filled, name) in (
         (
-            configuration.diagonal_bands.high,
+            graph.configuration.diagonal_bands.high,
             filled_diagonal_high,
-            data.diagonal_bands.high_title === nothing ? "high" : data.diagonal_bands.high_title,
+            graph.data.diagonal_bands.high_title === nothing ? "high" : graph.data.diagonal_bands.high_title,
         ),
         (
-            configuration.diagonal_bands.middle,
+            graph.configuration.diagonal_bands.middle,
             filled_diagonal_middle,
-            data.diagonal_bands.middle_title === nothing ? "middle" : data.diagonal_bands.middle_title,
+            graph.data.diagonal_bands.middle_title === nothing ? "middle" : graph.data.diagonal_bands.middle_title,
         ),
         (
-            configuration.diagonal_bands.low,
+            graph.configuration.diagonal_bands.low,
             filled_diagonal_low,
-            data.diagonal_bands.low_title === nothing ? "low" : data.diagonal_bands.low_title,
+            graph.data.diagonal_bands.low_title === nothing ? "low" : graph.data.diagonal_bands.low_title,
         ),
     )
         if band_configuration.offset !== nothing && band_configuration.width !== nothing
@@ -2997,8 +3052,8 @@ function graph_to_figure(
                     maximum_x = maximum_x,
                     minimum_y = minimum_y,
                     maximum_y = maximum_y,
-                    log_scale = configuration.x_axis.log_regularization !== nothing,
-                    show_legend = !is_filled && configuration.diagonal_bands.show_legend,
+                    log_scale = graph.configuration.x_axis.log_regularization !== nothing,
+                    show_legend = !is_filled && graph.configuration.diagonal_bands.show_legend,
                     legend_title = diagonal_legend_title,
                     name = name,
                 ),
@@ -3006,16 +3061,17 @@ function graph_to_figure(
         end
     end
 
-    layout = points_layout(
-        data,
-        minimum_x,
-        minimum_y,
-        maximum_x,
-        maximum_y;
-        configuration = configuration,
-        x_axis_configuration = configuration.x_axis,
-        y_axis_configuration = configuration.y_axis,
+    layout = points_layout(;
+        data = graph.data,
+        minimum_x = minimum_x,
+        minimum_y = minimum_y,
+        maximum_x = maximum_x,
+        maximum_y = maximum_y,
+        configuration = graph.configuration,
+        x_axis_configuration = graph.configuration.x_axis,
+        y_axis_configuration = graph.configuration.y_axis,
     )
+
     return plot(traces, layout)
 end
 
@@ -3166,12 +3222,12 @@ function push_fill_diagonal_bands_traces(;
     if fill_high
         push!(  # NOJET
             traces,
-            fill_high_diagonal_trace(
-                bands_configuration.high.offset,
-                minimum_x,
-                minimum_y,
-                maximum_x,
-                maximum_y;
+            fill_high_diagonal_trace(;
+                offset = bands_configuration.high.offset,
+                minimum_x = minimum_x,
+                minimum_y = minimum_y,
+                maximum_x = maximum_x,
+                maximum_y = maximum_y,
                 line_color = bands_configuration.high.color,
                 show_legend = bands_configuration.show_legend,
                 name = bands_data.high_title === nothing ? "higher" : bands_data.high_title,
@@ -3188,13 +3244,13 @@ function push_fill_diagonal_bands_traces(;
     if fill_middle
         push!(  # NOJET
             traces,
-            fill_middle_diagonal_trace(
-                bands_configuration.low.offset,
-                bands_configuration.high.offset,
-                minimum_x,
-                minimum_y,
-                maximum_x,
-                maximum_y;
+            fill_middle_diagonal_trace(;
+                low_offset = bands_configuration.low.offset,
+                high_offset = bands_configuration.high.offset,
+                minimum_x = minimum_x,
+                minimum_y = minimum_y,
+                maximum_x = maximum_x,
+                maximum_y = maximum_y,
                 line_color = bands_configuration.middle.color,
                 show_legend = bands_configuration.show_legend,
                 legend_title = legend_title,
@@ -3208,12 +3264,12 @@ function push_fill_diagonal_bands_traces(;
     if fill_low
         push!(  # NOJET
             traces,
-            fill_low_diagonal_trace(
-                bands_configuration.low.offset,
-                minimum_x,
-                minimum_y,
-                maximum_x,
-                maximum_y;
+            fill_low_diagonal_trace(;
+                offset = bands_configuration.low.offset,
+                minimum_x = minimum_x,
+                minimum_y = minimum_y,
+                maximum_x = maximum_x,
+                maximum_y = maximum_y,
                 line_color = bands_configuration.low.color,
                 show_legend = bands_configuration.show_legend,
                 name = bands_data.low_title === nothing ? "lower" : bands_data.low_title,
@@ -3226,12 +3282,12 @@ function push_fill_diagonal_bands_traces(;
     return fill_low, fill_middle, fill_high
 end
 
-function fill_low_diagonal_trace(
+function fill_low_diagonal_trace(;
     offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real;
+    maximum_y::Real,
     line_color::Maybe{AbstractString},
     show_legend::Bool,
     legend_title::Vector{Maybe{AbstractString}},
@@ -3262,12 +3318,12 @@ function fill_low_diagonal_trace(
     end
 end
 
-function fill_high_diagonal_trace(
+function fill_high_diagonal_trace(;
     offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real;
+    maximum_y::Real,
     line_color::Maybe{AbstractString},
     show_legend::Bool,
     legend_title::Vector{Maybe{AbstractString}},
@@ -3298,13 +3354,13 @@ function fill_high_diagonal_trace(
     end
 end
 
-function fill_middle_diagonal_trace(
+function fill_middle_diagonal_trace(;
     low_offset::Real,
     high_offset::Real,
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real;
+    maximum_y::Real,
     line_color::Maybe{AbstractString},
     show_legend::Bool,
     legend_title::Vector{Maybe{AbstractString}},
@@ -3390,8 +3446,8 @@ function fill_color(line_color::AbstractString)::AbstractString
     return hex(RGBA(rgba.r, rgba.g, rgba.b, rgba.alpha * 0.5), :RRGGBBAA)
 end
 
-function points_trace(
-    data::PointsGraphData;
+function points_trace(;
+    data::PointsGraphData,
     x_log_regularization::Maybe{AbstractFloat},
     y_log_regularization::Maybe{AbstractFloat},
     color::Maybe{Union{AbstractString, AbstractVector{<:AbstractString}, AbstractVector{<:Real}}},
@@ -3432,9 +3488,9 @@ function points_trace(
     )
 end
 
-function edge_trace(
+function edge_trace(;
     data::PointsGraphData,
-    edges_configuration::PointsConfiguration;
+    edges_configuration::PointsConfiguration,
     x_log_regularization::Maybe{AbstractFloat},
     y_log_regularization::Maybe{AbstractFloat},
     index::Int,
@@ -3875,35 +3931,40 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
     return nothing
 end
 
-function graph_to_figure(
-    data::GridGraphData,
-    configuration::GridGraphConfiguration = GridGraphConfiguration(),
-)::PlotlyFigure
-    assert_valid_object(data)
-    assert_valid_object(configuration)
-    assert_valid_render(data, configuration)
+"""
+A graph visualizing points along a grid. See [`GridGraphData`](@ref) and [`GridGraphConfiguration`](@ref).
 
-    if data.points_sizes !== nothing
-        n_rows, n_columns = size(data.points_sizes)
+An advantage of this over a heatmap is that you can control the color, size, and border color and size of the points to
+show more than one value per point. A disadvantage of this plot compared to a heatmap is that it only works for "small"
+amount of data. Also, you will need to manually tweak the graph size vs. the point sizes for best results, as Plotly's
+defaults aren't very good here.
+"""
+GridGraph = Graph{GridGraphData, GridGraphConfiguration}
+
+function graph_to_figure(graph::GridGraph)::PlotlyFigure
+    assert_valid_object(graph)
+
+    if graph.data.points_sizes !== nothing
+        n_rows, n_columns = size(graph.data.points_sizes)
     else
-        @assert data.points_colors !== nothing
-        n_rows, n_columns = size(data.points_colors)
+        @assert graph.data.points_colors !== nothing
+        n_rows, n_columns = size(graph.data.points_colors)
     end
 
     traces = Vector{GenericTrace}()
 
-    sizes = fix_sizes(data.points_sizes, configuration.points)
+    sizes = fix_sizes(graph.data.points_sizes, graph.configuration.points)
 
-    borders_colors = data.borders_colors
-    if borders_colors !== nothing || data.borders_sizes !== nothing
-        marker_size = border_marker_size(data, configuration, sizes)
+    borders_colors = graph.data.borders_colors
+    if borders_colors !== nothing || graph.data.borders_sizes !== nothing
+        marker_size = border_marker_size(graph.data, graph.configuration, sizes)
         if marker_size isa AbstractVector{<:Real}
             marker_size_mask = marker_size .> 0
         else
             marker_size_mask = nothing
         end
 
-        color_palette = configuration.borders.color_palette
+        color_palette = graph.configuration.borders.color_palette
         if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
             @assert borders_colors isa AbstractMatrix{<:AbstractString}
             is_first = true
@@ -3917,14 +3978,14 @@ function graph_to_figure(
                         push!(
                             traces,
                             grid_trace(;
-                                data = data,
+                                data = graph.data,
                                 n_rows = n_rows,
                                 n_columns = n_columns,
                                 color = color,
                                 marker_size = marker_size,
                                 coloraxis = nothing,
-                                points_configuration = configuration.borders,
-                                colors_title = data.borders_colors_title,
+                                points_configuration = graph.configuration.borders,
+                                colors_title = graph.data.borders_colors_title,
                                 legend_group = "borders",
                                 mask = mask,
                                 name = value,
@@ -3936,7 +3997,7 @@ function graph_to_figure(
                 end
             end
         else
-            borders_colors = data.borders_colors
+            borders_colors = graph.data.borders_colors
             if borders_colors isa AbstractMatrix{<:AbstractString}
                 mask = vec(borders_colors) .!= ""
                 if marker_size_mask !== nothing
@@ -3950,18 +4011,18 @@ function graph_to_figure(
                 push!(  # NOJET
                     traces,
                     grid_trace(;
-                        data = data,
+                        data = graph.data,
                         n_rows = n_rows,
                         n_columns = n_columns,
                         color = if borders_colors !== nothing
-                            fix_colors(borders_colors, configuration.borders.color_scale.log_regularization)
+                            fix_colors(borders_colors, graph.configuration.borders.color_scale.log_regularization)
                         else
-                            configuration.borders.color
+                            graph.configuration.borders.color
                         end,
                         marker_size = marker_size,
                         coloraxis = "coloraxis2",
-                        points_configuration = configuration.borders,
-                        colors_title = data.borders_colors_title,
+                        points_configuration = graph.configuration.borders,
+                        colors_title = graph.data.borders_colors_title,
                         mask = mask,
                         legend_group = "borders",
                     ),
@@ -3976,9 +4037,9 @@ function graph_to_figure(
         marker_size_mask = nothing
     end
 
-    color_palette = configuration.points.color_palette
+    color_palette = graph.configuration.points.color_palette
     if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        colors = data.points_colors
+        colors = graph.data.points_colors
         @assert colors isa AbstractMatrix{<:AbstractString}
         is_first = true
         for (value, color) in color_palette
@@ -3991,14 +4052,14 @@ function graph_to_figure(
                     push!(
                         traces,
                         grid_trace(;
-                            data = data,
+                            data = graph.data,
                             n_rows = n_rows,
                             n_columns = n_columns,
                             color = color,
                             marker_size = sizes,
                             coloraxis = nothing,
-                            points_configuration = configuration.points,
-                            colors_title = data.points_colors_title,
+                            points_configuration = graph.configuration.points,
+                            colors_title = graph.data.points_colors_title,
                             legend_group = "points",
                             mask = mask,
                             name = value,
@@ -4010,7 +4071,7 @@ function graph_to_figure(
             end
         end
     else
-        colors = data.points_colors
+        colors = graph.data.points_colors
         if colors isa AbstractMatrix{<:AbstractString}
             mask = vec(colors) .!= ""
             if marker_size_mask !== nothing
@@ -4024,18 +4085,18 @@ function graph_to_figure(
             push!(  # NOJET
                 traces,
                 grid_trace(;
-                    data = data,
+                    data = graph.data,
                     n_rows = n_rows,
                     n_columns = n_columns,
                     color = if colors !== nothing
-                        fix_colors(colors, configuration.points.color_scale.log_regularization)
+                        fix_colors(colors, graph.configuration.points.color_scale.log_regularization)
                     else
-                        configuration.points.color
+                        graph.configuration.points.color
                     end,
                     marker_size = sizes,
                     coloraxis = "coloraxis",
-                    points_configuration = configuration.points,
-                    colors_title = data.points_colors_title,
+                    points_configuration = graph.configuration.points,
+                    colors_title = graph.data.points_colors_title,
                     mask = mask,
                     legend_group = "points",
                 ),
@@ -4043,22 +4104,22 @@ function graph_to_figure(
         end
     end
 
-    columns_names = data.columns_names
+    columns_names = graph.data.columns_names
     if columns_names === nothing
         columns_names = [string(index) for index in 1:n_columns]
     end
-    rows_names = data.rows_names
+    rows_names = graph.data.rows_names
     if rows_names === nothing
         rows_names = [string(index) for index in 1:n_rows]
     end
 
-    layout = points_layout(
-        data,
-        0.5,
-        0.5,
-        n_columns + 0.5,
-        n_rows + 0.5;
-        configuration = configuration,
+    layout = points_layout(;
+        data = graph.data,
+        minimum_x = 0.5,
+        minimum_y = 0.5,
+        maximum_x = n_columns + 0.5,
+        maximum_y = n_rows + 0.5,
+        configuration = graph.configuration,
         x_axis_configuration = AxisConfiguration(),
         y_axis_configuration = AxisConfiguration(),
         rows_names = rows_names,
@@ -4067,94 +4128,117 @@ function graph_to_figure(
     return plot(traces, layout)
 end
 
-function assert_valid_render(data::PointsGraphData, configuration::PointsGraphConfiguration)::Nothing
-    x_log_regularization = configuration.x_axis.log_regularization
+function validate_graph(graph::PointsGraph)::Maybe{AbstractString}
+    x_log_regularization = graph.configuration.x_axis.log_regularization
     if x_log_regularization !== nothing
-        for (index, x) in enumerate(data.points_xs)
-            @assert x + x_log_regularization > 0 "log of non-positive data.points_xs[$(index)]: $(x + x_log_regularization)"
+        for (index, x) in enumerate(graph.data.points_xs)
+            if x + x_log_regularization <= 0
+                return "log of non-positive data.points_xs[$(index)]: $(x + x_log_regularization)"
+            end
         end
     end
 
-    y_log_regularization = configuration.y_axis.log_regularization
+    y_log_regularization = graph.configuration.y_axis.log_regularization
     if y_log_regularization !== nothing
-        for (index, y) in enumerate(data.points_ys)
-            @assert y + y_log_regularization > 0 "log of non-positive data.points_ys[$(index)]: $(y + y_log_regularization)"
+        for (index, y) in enumerate(graph.data.points_ys)
+            if y + y_log_regularization <= 0
+                return "log of non-positive data.points_ys[$(index)]: $(y + y_log_regularization)"
+            end
         end
     end
 
-    assert_valid_vector_colors("data.points_colors", data.points_colors, "configuration.points", configuration.points)
-    assert_valid_vector_colors(
-        "data.borders_colors",
-        data.borders_colors,
-        "configuration.borders",
-        configuration.borders,
+    message = validate_vector_colors(
+        "data.points_colors",
+        graph.data.points_colors,
+        "configuration.points",
+        graph.configuration.points,
     )
+    if message === nothing
+        message = validate_vector_colors(
+            "data.borders_colors",
+            graph.data.borders_colors,
+            "configuration.borders",
+            graph.configuration.borders,
+        )
+    end
 
-    return nothing
+    return message
 end
 
-function assert_valid_render(data::GridGraphData, configuration::GridGraphConfiguration)::Nothing
-    assert_valid_matrix_colors("data.points_colors", data.points_colors, "configuration.points", configuration.points)
-    assert_valid_matrix_colors(
-        "data.borders_colors",
-        data.borders_colors,
-        "configuration.borders",
-        configuration.borders,
+function validate_graph(graph::GridGraph)::Maybe{AbstractString}
+    message = validate_matrix_colors(
+        "data.points_colors",
+        graph.data.points_colors,
+        "configuration.points",
+        graph.configuration.points,
     )
-
-    return nothing
+    if message === nothing
+        message = validate_matrix_colors(
+            "data.borders_colors",
+            graph.data.borders_colors,
+            "configuration.borders",
+            graph.configuration.borders,
+        )
+    end
+    return message
 end
 
-function assert_valid_vector_colors(
+function validate_vector_colors(
     what_colors::AbstractString,
     colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}},
     what_configuration::AbstractString,
     configuration::PointsConfiguration,
-)::Nothing
+)::Maybe{AbstractString}
     color_palette = configuration.color_palette
     if colors isa AbstractVector{<:AbstractString}
         if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
             scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
             for (index, color) in enumerate(colors)
-                if color != ""
-                    @assert color in scale_colors "categorical $(what_configuration).color_palette does not contain $(what_colors)[$(index)]: $(color)"
+                if color != "" && !(color in scale_colors)
+                    return "categorical $(what_configuration).color_palette does not contain $(what_colors)[$(index)]: $(color)"
                 end
             end
         else
             for (index, color) in enumerate(colors)
-                if color != ""
-                    @assert is_valid_color(color) "invalid $(what_colors)[$(index)]: $(color)"
+                if color != "" && !is_valid_color(color)
+                    return "invalid $(what_colors)[$(index)]: $(color)"
                 end
             end
         end
-    else
-        @assert !(color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}) "non-string $(what_colors) for categorical $(what_configuration).color_pallete"
+    elseif (color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}})
+        return "non-string $(what_colors) for categorical $(what_configuration).color_palette"
     end
 
     if configuration.show_color_scale
-        @assert colors !== nothing "no $(what_colors) specified for $(what_configuration).show_color_scale"
-        @assert !(colors isa AbstractVector{<:AbstractString}) ||
-                configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit $(what_colors) specified for $(what_configuration).show_color_scale"
-        )
+        if colors === nothing
+            return "no $(what_colors) specified for $(what_configuration).show_color_scale"
+        end
+        if colors isa AbstractVector{<:AbstractString} &&
+           !(configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}})
+            return "explicit $(what_colors) specified for $(what_configuration).show_color_scale"
+        end
     end
 
     if configuration.color_scale.log_regularization !== nothing
-        @assert colors isa AbstractVector{<:Real} "non-real $(what_colors) with $(what_configuration).color_scale.log_regularization"
+        if !(colors isa AbstractVector{<:Real})
+            return "non-real $(what_colors) with $(what_configuration).color_scale.log_regularization"
+        end
         index = argmin(colors)  # NOJET
         minimal_color = colors[index] + configuration.color_scale.log_regularization
-        @assert minimal_color > 0 "log of non-positive $(what_colors)[$(index)]: $(minimal_color)"
+        if minimal_color <= 0
+            return "log of non-positive $(what_colors)[$(index)]: $(minimal_color)"
+        end
     end
 
     return nothing
 end
 
-function assert_valid_matrix_colors(
+function validate_matrix_colors(
     what_colors::AbstractString,
     colors::Maybe{Union{AbstractMatrix{<:AbstractString}, AbstractMatrix{<:Real}}},
     what_configuration::AbstractString,
     configuration::PointsConfiguration,
-)::Nothing
+)::Maybe{AbstractString}
     color_palette = configuration.color_palette
     if colors isa AbstractMatrix{<:AbstractString}
         n_rows, n_columns = size(colors)
@@ -4163,8 +4247,8 @@ function assert_valid_matrix_colors(
             for row_index in 1:n_rows
                 for column_index in 1:n_columns
                     color = colors[row_index, column_index]
-                    if color != ""
-                        @assert color in scale_colors "categorical $(what_configuration).color_palette does not contain $(what_colors)[$(row_index),$(column_index))]: $(color)"
+                    if color != "" && !(color in scale_colors)
+                        return "categorical $(what_configuration).color_palette does not contain $(what_colors)[$(row_index),$(column_index))]: $(color)"
                     end
                 end
             end
@@ -4172,29 +4256,35 @@ function assert_valid_matrix_colors(
             for row_index in 1:n_rows
                 for column_index in 1:n_columns
                     color = colors[row_index, column_index]
-                    if color != ""
-                        @assert is_valid_color(color) "invalid $(what_colors)[$(row_index),$(column_index)]: $(color)"
+                    if color != "" && !is_valid_color(color)
+                        return "invalid $(what_colors)[$(row_index),$(column_index)]: $(color)"
                     end
                 end
             end
         end
-    else
-        @assert !(color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}) "non-string $(what_colors) for categorical $(what_configuration).color_pallete"
+    elseif color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        return "non-string $(what_colors) for categorical $(what_configuration).color_palette"
     end
 
     if configuration.show_color_scale
-        @assert colors !== nothing "no $(what_colors) specified for $(what_configuration).show_color_scale"
-        @assert !(colors isa AbstractMatrix{<:AbstractString}) ||
-                configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}} (
-            "explicit $(what_colors) specified for $(what_configuration).show_color_scale"
-        )
+        if colors === nothing
+            return "no $(what_colors) specified for $(what_configuration).show_color_scale"
+        end
+        if colors isa AbstractMatrix{<:AbstractString} &&
+           !(configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}})
+            return "explicit $(what_colors) specified for $(what_configuration).show_color_scale"
+        end
     end
 
     if configuration.color_scale.log_regularization !== nothing
-        @assert colors isa AbstractMatrix{<:Real} "non-real $(what_colors) with $(what_configuration).color_scale.log_regularization"
-        row_index, column_index = argmin(colors).I
+        if !(colors isa AbstractMatrix{<:Real})
+            return "non-real $(what_colors) with $(what_configuration).color_scale.log_regularization"
+        end
+        row_index, column_index = argmin(colors).I  # NOJET
         minimal_color = colors[row_index, column_index] + configuration.color_scale.log_regularization
-        @assert minimal_color > 0 "log of non-positive $(what_colors)[$(row_index),$(column_index)]: $(minimal_color)"
+        if minimal_color <= 0
+            return "log of non-positive $(what_colors)[$(row_index),$(column_index)]: $(minimal_color)"
+        end
     end
 
     return nothing
@@ -4278,12 +4368,12 @@ function masked_ys(
     return masked_data(points_ys, mask)
 end
 
-function points_layout(
+function points_layout(;
     data::Union{PointsGraphData, GridGraphData},
     minimum_x::Real,
     minimum_y::Real,
     maximum_x::Real,
-    maximum_y::Real;
+    maximum_y::Real,
     configuration::Union{PointsGraphConfiguration, GridGraphConfiguration},
     x_axis_configuration::AxisConfiguration,
     y_axis_configuration::AxisConfiguration,
@@ -4467,9 +4557,9 @@ function fix_sizes(
     return (sizes .- smin) .* (largest - smallest) ./ (smax - smin) .+ smallest
 end
 
-function range_of(
+function range_of(;
     values::AbstractVector{<:AbstractVector{<:Real}},
-    log_regularization::Maybe{Real};
+    log_regularization::Maybe{Real},
     apply_log::Bool,
 )::Tuple{Real, Real}
     minimum_value = minimum([minimum(vector) for vector in values])

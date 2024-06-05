@@ -517,210 +517,13 @@
 <div>
 <pre>
 <code class="language-julia hljs">graph_to_figure(graph::Graph)::PlotlyFigure
-graph_to_figure(data::AbstractGraphData, configuration::AbstractGraphConfiguration = ...)::PlotlyFigure
 </code>
 </pre>
 <p>Render a graph given its data and configuration. Technically this just converts the graph to a 
 <a href="renderers.html#MCGraphs.Renderers.PlotlyFigure">
 <code>PlotlyFigure
 </code>
-</a> which Julia knows how display for us, rather than actually display the graph.
-</p>
-<p>The implementation depends on the specific graph. For each 
-<a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
-<code>AbstractGraphData
-</code>
-</a> there is a matching 
-<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
-<code>AbstractGraphConfiguration
-</code>
-</a> (a default one is provided for the 
-<code>configuration
-</code>). The supported type pairs are:
-</p>
-<table>
-<tr>
-<th style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
-<code>AbstractGraphData
-</code>
-</a>
-</th>
-<th style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
-<code>AbstractGraphConfiguration
-</code>
-</a>
-</th>
-<th style="text-align: left">Description
-</th>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
-<code>PointsGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
-<code>PointsGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of points, possibly with edges between them.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
-<code>GridGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
-<code>GridGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of a grid of points (e.g. for correlations).
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.LineGraphData">
-<code>LineGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
-<code>LineGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of a single line (e.g. a function y=f(x)).
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.LinesGraphData">
-<code>LinesGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
-<code>LinesGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of multiple functions, possibly stacked.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
-<code>CdfGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
-<code>CdfGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of a single cumulative distribution function.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.CdfsGraphData">
-<code>CdfsGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.CdfsGraphConfiguration">
-<code>CdfsGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of multiple cumulative distribution functions.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
-<code>DistributionGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
-<code>DistributionGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of a single distribution.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
-<code>DistributionsGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphConfiguration">
-<code>DistributionsGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of multiple distributions.
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
-<code>BarGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
-<code>BarGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of a single set of bars (histogram).
-</td>
-</tr>
-<tr>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.BarsGraphData">
-<code>BarsGraphData
-</code>
-</a>
-</td>
-<td style="text-align: left">
-<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
-<code>BarsGraphConfiguration
-</code>
-</a>
-</td>
-<td style="text-align: left">Graph of multiple sets of bars (histograms).
-</td>
-</tr>
-</table>
-<p>This returns a 
-<a href="renderers.html#MCGraphs.Renderers.PlotlyFigure">
-<code>PlotlyFigure
-</code>
-</a> which can be displayed directly, or converted to JSON for transfer to other programming languages (Python or R)
+</a> which Julia knows how display for us, rather than actually display the graph. The implementation depends on the specific graph type.
 </p>
 <div class="admonition is-info">
 <header class="admonition-header">Note
@@ -781,6 +584,32 @@ graph_to_figure(data::AbstractGraphData, configuration::AbstractGraphConfigurati
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.PointsGraph" href="#MCGraphs.Renderers.PointsGraph">
+<code>MCGraphs.Renderers.PointsGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing scattered points (possibly with edges between them). See 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphConfiguration">
+<code>PointsGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.PointsGraphData" href="#MCGraphs.Renderers.PointsGraphData">
 <code>MCGraphs.Renderers.PointsGraphData
 </code>
@@ -804,8 +633,8 @@ graph_to_figure(data::AbstractGraphData, configuration::AbstractGraphConfigurati
     borders_sizes_title::Maybe{AbstractString} = nothing
     edges_group_title::Maybe{AbstractString} = nothing
     edges_line_title::Maybe{AbstractString} = nothing
-    points_xs::AbstractVector{&lt;:Real}
-    points_ys::AbstractVector{&lt;:Real}
+    points_xs::AbstractVector{&lt;:Real} = Float32[]
+    points_ys::AbstractVector{&lt;:Real = Float32[]
     points_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing
     sizes::Maybe{AbstractVector{&lt;:Real}} = nothing
     hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
@@ -1056,6 +885,34 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GridGraph" href="#MCGraphs.Renderers.GridGraph">
+<code>MCGraphs.Renderers.GridGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing points along a grid. See 
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>GridGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
+<code>GridGraphConfiguration
+</code>
+</a>.
+</p>
+<p>An advantage of this over a heatmap is that you can control the color, size, and border color and size of the points to show more than one value per point. A disadvantage of this plot compared to a heatmap is that it only works for &quot;small&quot; amount of data. Also, you will need to manually tweak the graph size vs. the point sizes for best results, as Plotly&#39;s defaults aren&#39;t very good here.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.GridGraphData" href="#MCGraphs.Renderers.GridGraphData">
 <code>MCGraphs.Renderers.GridGraphData
 </code>
@@ -1133,6 +990,58 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LineGraph" href="#MCGraphs.Renderers.LineGraph">
+<code>MCGraphs.Renderers.LineGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph for visualizing a single line (typically Y as a function of X). See 
+<a href="renderers.html#MCGraphs.Renderers.LineGraphData">
+<code>LineGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
+<code>LineGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.LinesGraph" href="#MCGraphs.Renderers.LinesGraph">
+<code>MCGraphs.Renderers.LinesGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing multiple lines (typically Ys as functions of the same X). See 
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphData">
+<code>LinesGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphConfiguration">
+<code>LinesGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.LineGraphData" href="#MCGraphs.Renderers.LineGraphData">
 <code>MCGraphs.Renderers.LineGraphData
 </code>
@@ -1149,8 +1058,8 @@ end
     y_axis_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
     horizontal_bands::BandsData = BandsData()
-    points_xs::AbstractVector{&lt;:Real}
-    points_ys::AbstractVector{&lt;:Real}
+    points_xs::AbstractVector{&lt;:Real} = Float32[]
+    points_ys::AbstractVector{&lt;:Real} = Float32[]
 end
 </code>
 </pre>
@@ -1194,8 +1103,8 @@ end
     legend_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
     horizontal_bands::BandsData = BandsData()
-    lines_xs::AbstractVector{AbstractVector{&lt;:Real}}
-    lines_ys::AbstractVector{AbstractVector{&lt;:Real}}
+    lines_xs::AbstractVector{AbstractVector{&lt;:Real}} = Vector{Float32}[]
+    lines_ys::AbstractVector{AbstractVector{&lt;:Real}} = Vector{Float32}[]
     lines_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     lines_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     lines_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
@@ -1370,6 +1279,58 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfGraph" href="#MCGraphs.Renderers.CdfGraph">
+<code>MCGraphs.Renderers.CdfGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing a single cumulative distribution function. See 
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
+<code>CdfGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
+<code>CdfGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.CdfsGraph" href="#MCGraphs.Renderers.CdfsGraph">
+<code>MCGraphs.Renderers.CdfsGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing multiple cumulative distribution functions. See 
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphData">
+<code>CdfsGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphConfiguration">
+<code>CdfsGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.CdfGraphData" href="#MCGraphs.Renderers.CdfGraphData">
 <code>MCGraphs.Renderers.CdfGraphData
 </code>
@@ -1384,7 +1345,7 @@ end
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
-    line_values::AbstractVector{&lt;:Real}
+    cdf_values::AbstractVector{&lt;:Real} = Float32[]
 end
 </code>
 </pre>
@@ -1423,12 +1384,12 @@ end
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
-    lines_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}}
-    lines_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    lines_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    lines_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
-    lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
-    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing
+    cdfs_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[]
+    cdfs_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    cdfs_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    cdfs_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
+    cdfs_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing
+    cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing
 end
 </code>
 </pre>
@@ -1443,7 +1404,7 @@ end
 </code> for the axes.
 </p>
 <p>The order of the entries inside each of the 
-<code>lines_values
+<code>cdfs_values
 </code> does not matter.
 </p>
 </div>
@@ -1568,6 +1529,58 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarGraph" href="#MCGraphs.Renderers.BarGraph">
+<code>MCGraphs.Renderers.BarGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing a single series of bars. See 
+<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
+<code>BarGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
+<code>BarGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.BarsGraph" href="#MCGraphs.Renderers.BarsGraph">
+<code>MCGraphs.Renderers.BarsGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing multiple series of bars. See 
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphData">
+<code>BarsGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphConfiguration">
+<code>BarsGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.BarGraphData" href="#MCGraphs.Renderers.BarGraphData">
 <code>MCGraphs.Renderers.BarGraphData
 </code>
@@ -1582,7 +1595,7 @@ end
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
-    bars_values::AbstractVector{&lt;:Real}
+    bars_values::AbstractVector{&lt;:Real} = Float32[]
     bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     bars_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     bars_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
@@ -1669,7 +1682,7 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    series_values::AbstractString{&lt;:AbstractVector{&lt;:Real}}
+    series_values::AbstractString{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[]
     series_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     series_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     series_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
@@ -1766,6 +1779,58 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraph" href="#MCGraphs.Renderers.DistributionGraph">
+<code>MCGraphs.Renderers.DistributionGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph for visualizing a single distribution. See 
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
+<code>DistributionGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
+<code>DistributionGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.DistributionsGraph" href="#MCGraphs.Renderers.DistributionsGraph">
+<code>MCGraphs.Renderers.DistributionsGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph for visualizing multiple distributions. See 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphConfiguration">
+<code>DistributionsGraphConfiguration
+</code>
+</a>.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.DistributionGraphData" href="#MCGraphs.Renderers.DistributionGraphData">
 <code>MCGraphs.Renderers.DistributionGraphData
 </code>
@@ -1780,7 +1845,7 @@ end
     graph_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
-    distribution_values::AbstractVector{&lt;:Real}
+    distribution_values::AbstractVector{&lt;:Real} = Float32[]
     distribution_name::Maybe{AbstractString} = nothing
 end
 </code>
@@ -1817,7 +1882,7 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    distributions_values::AbstractVector{AbstractVector{&lt;:Real}}
+    distributions_values::AbstractVector{AbstractVector{&lt;:Real}} = Vector{Float32}[]
     distributions_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     distributions_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
@@ -2345,6 +2410,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.BarGraph">
+<code>MCGraphs.Renderers.BarGraph
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.BarGraphConfiguration">
 <code>MCGraphs.Renderers.BarGraphConfiguration
 </code>
@@ -2353,6 +2424,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.BarGraphData">
 <code>MCGraphs.Renderers.BarGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.BarsGraph">
+<code>MCGraphs.Renderers.BarsGraph
 </code>
 </a>
 </li>
@@ -2375,6 +2452,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.CdfGraph">
+<code>MCGraphs.Renderers.CdfGraph
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.CdfGraphConfiguration">
 <code>MCGraphs.Renderers.CdfGraphConfiguration
 </code>
@@ -2383,6 +2466,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
 <code>MCGraphs.Renderers.CdfGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraph">
+<code>MCGraphs.Renderers.CdfsGraph
 </code>
 </a>
 </li>
@@ -2405,6 +2494,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraph">
+<code>MCGraphs.Renderers.DistributionGraph
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
 <code>MCGraphs.Renderers.DistributionGraphConfiguration
 </code>
@@ -2413,6 +2508,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
 <code>MCGraphs.Renderers.DistributionGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraph">
+<code>MCGraphs.Renderers.DistributionsGraph
 </code>
 </a>
 </li>
@@ -2447,6 +2548,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.GridGraph">
+<code>MCGraphs.Renderers.GridGraph
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
 <code>MCGraphs.Renderers.GridGraphConfiguration
 </code>
@@ -2465,6 +2572,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.LineGraph">
+<code>MCGraphs.Renderers.LineGraph
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.LineGraphConfiguration">
 <code>MCGraphs.Renderers.LineGraphConfiguration
 </code>
@@ -2473,6 +2586,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.LineGraphData">
 <code>MCGraphs.Renderers.LineGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.LinesGraph">
+<code>MCGraphs.Renderers.LinesGraph
 </code>
 </a>
 </li>
@@ -2497,6 +2616,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.PointsConfiguration">
 <code>MCGraphs.Renderers.PointsConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.PointsGraph">
+<code>MCGraphs.Renderers.PointsGraph
 </code>
 </a>
 </li>
