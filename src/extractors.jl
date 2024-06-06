@@ -248,6 +248,7 @@ name twice, why the sphere was merged).
     min_significant_gene_UMIs::Integer = 40,
     gene_fraction_regularization::AbstractFloat = 1e-5,
     confidence::AbstractFloat = 0.9,
+    noisy_gene_fold::AbstractFloat = 1.0,
 )::PointsGraphData
     @assert gene_fraction_regularization > 0
     @assert 0 < confidence < 1
@@ -288,6 +289,8 @@ name twice, why the sphere was merged).
         log_increased_fraction_of_y_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_y_metacells)
     end
 
+    is_noisy_of_genes = get_vector(daf, "gene", "is_noisy")
+
     n_genes = axis_length(daf, "gene")
     mask_of_genes = zeros(Bool, n_genes)
     distance_of_genes = Vector{Float32}(undef, n_genes)
@@ -315,6 +318,9 @@ name twice, why the sphere was merged).
             min_significant_gene_UMIs = min_significant_gene_UMIs,
             is_self_difference = is_self_difference,
             gene_index = gene_index,
+            gene_is_noisy = is_noisy_of_genes[gene_index],
+            noisy_gene_fold = noisy_gene_fold,
+            gene_fraction_regularization = gene_fraction_regularization,
         )
         if x_metacell_index !== nothing && y_metacell_index !== nothing
             mask_of_genes[gene_index] = true
@@ -334,7 +340,7 @@ name twice, why the sphere was merged).
                     0.0,
                 )
                 y_confidence_fraction_of_genes[gene_index] = max(
-                    2^log_decreased_fraction_of_y_metacells_of_genes[x_metacell_index, gene_index] -
+                    2^log_decreased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index] -
                     gene_fraction_regularization,
                     0.0,
                 )
@@ -345,7 +351,7 @@ name twice, why the sphere was merged).
                     0.0,
                 )
                 y_confidence_fraction_of_genes[gene_index] = max(
-                    2^log_increased_fraction_of_y_metacells_of_genes[x_metacell_index, gene_index] -
+                    2^log_increased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index] -
                     gene_fraction_regularization,
                     0.0,
                 )
@@ -369,6 +375,7 @@ name twice, why the sphere was merged).
     points_colors = Vector{AbstractString}(undef, n_significant_genes * 2)
     points_hovers = Vector{AbstractString}(undef, n_significant_genes * 2)
     edges_points = Vector{Tuple{Int, Int}}(undef, n_significant_genes)
+    borders_colors = Vector{AbstractString}(undef, n_significant_genes * 2)
 
     not_correlated = "uncorrelated for both"
     x_correlated = "correlated for $(x_sphere)"
@@ -409,6 +416,7 @@ name twice, why the sphere was merged).
             x_label, y_label = "$(x_sphere):", "$(y_sphere):"
         end
 
+        borders_colors[point_index] = is_noisy_of_genes[gene_index] ? "noisy" : ""
         points_hovers[point_index] = join(  # NOJET
             [
                 "Gene: $(names_of_genes[gene_index])",
@@ -433,6 +441,7 @@ name twice, why the sphere was merged).
         point_index += 1
         points_xs[point_index] = x_confidence_fraction_of_genes[gene_index]
         points_ys[point_index] = y_confidence_fraction_of_genes[gene_index]
+        borders_colors[point_index] = ""
         points_colors[point_index] = ""
         points_hovers[point_index] = ""
     end
@@ -443,12 +452,13 @@ name twice, why the sphere was merged).
         graph_title = "Spheres Genes Difference",
         x_axis_title = x_sphere,
         y_axis_title = y_sphere,
-        points_colors_title = "Gene",
+        borders_colors_title = "Genes",
         edges_group_title = "Lines",
         edges_line_title = "Confidence",
         points_xs = points_xs,
         points_ys = points_ys,
         points_colors = points_colors,
+        borders_colors = borders_colors,
         points_hovers = points_hovers,
         edges_points = edges_points,
     )
@@ -483,6 +493,9 @@ function compute_most_different_metacells_of_gene(;  # untested
     min_significant_gene_UMIs::Integer,
     is_self_difference::Bool,
     gene_index::Integer,
+    gene_is_noisy::Bool,
+    noisy_gene_fold::Real,
+    gene_fraction_regularization::Real,
 )::Tuple{Float32, Maybe{Int}, Maybe{Int}}
     n_genes = size(total_UMIs_of_x_metacells_of_genes, 2)
     n_x_metacells = size(total_UMIs_of_x_metacells_of_genes, 1)
@@ -524,8 +537,8 @@ function compute_most_different_metacells_of_gene(;  # untested
                     total_UMIs_of_y_metacells_of_genes[y_metacell_index, gene_index],
                     log_decreased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index],
                     log_increased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index],
-                    0.0,
-                    false,
+                    noisy_gene_fold,
+                    gene_is_noisy,
                 )
                 if distance > most_distance
                     most_x_metacell_index = x_metacell_index
@@ -542,10 +555,13 @@ function compute_most_different_metacells_of_gene(;  # untested
                 if total_UMIs_of_x_metacells_of_genes[x_metacell_index, gene_index] +
                    total_UMIs_of_y_metacells_of_genes[y_metacell_index, gene_index] >= min_significant_gene_UMIs
                     distance =
-                        fraction_of_y_metacells_of_genes[y_metacell_index] -
-                        fraction_of_x_metacells_of_genes[x_metacell_index]
+                        log2(fraction_of_y_metacells_of_genes[y_metacell_index] .+ gene_fraction_regularization) -
+                        log2(fraction_of_x_metacells_of_genes[x_metacell_index] .+ gene_fraction_regularization)
                     if !is_self_difference
                         distance = abs(distance)
+                    end
+                    if gene_is_noisy
+                        distance -= noisy_gene_fold
                     end
                     if distance > most_distance
                         most_distance = distance
@@ -594,6 +610,9 @@ function default_sphere_sphere_configuration(;  # untested
         ("correlated for $(y_sphere)", "royalblue"),
         ("correlated for both", "darkturquoise"),
     ]
+    configuration.borders.show_color_scale = true
+    configuration.borders.size = 2
+    configuration.borders.color_palette = [("noisy", "darkorchid")]
     return configuration
 end
 
