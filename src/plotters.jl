@@ -87,7 +87,6 @@ function plot_sphere_sphere(
     min_significant_gene_UMIs::Integer = 40,
     max_sphere_diameter::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
-    confidence::AbstractFloat = 0.9,
 )::Graph
     data = extract_sphere_sphere_data(
         daf;
@@ -95,7 +94,6 @@ function plot_sphere_sphere(
         y_sphere = y_sphere,
         min_significant_gene_UMIs = min_significant_gene_UMIs,
         gene_fraction_regularization = gene_fraction_regularization,
-        confidence = confidence,
     )
     configuration = default_sphere_sphere_configuration(;
         x_sphere = x_sphere,

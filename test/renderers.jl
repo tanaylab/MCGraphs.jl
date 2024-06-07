@@ -958,21 +958,21 @@ nested_test("renderers") do
 
         nested_test("stack") do
             nested_test("values") do
-                graph.configuration.data_stacking = StackDataValues
+                graph.configuration.stacking_normalization = NormalizeToValues
                 test_html(graph, "lines.stack.values.html")
                 return nothing
             end
 
             nested_test("percents") do
                 graph.data.lines_ys[1][1] = 0.2
-                graph.configuration.data_stacking = StackDataPercents
+                graph.configuration.stacking_normalization = NormalizeToPercents
                 test_html(graph, "lines.stack.percents.html")
                 return nothing
             end
 
             nested_test("fractions") do
                 graph.data.lines_ys[1][1] = 0.2
-                graph.configuration.data_stacking = StackDataFractions
+                graph.configuration.stacking_normalization = NormalizeToFractions
                 test_html(graph, "lines.stack.fractions.html")
                 return nothing
             end
@@ -1158,11 +1158,20 @@ nested_test("renderers") do
         end
 
         nested_test("percent") do
-            graph.configuration.show_percent = true
+            graph.configuration.fractions_normalization = NormalizeToPercents
             graph.configuration.value_bands.middle.offset = 110
             graph.configuration.fraction_bands.middle.offset = 0.5
             graph.configuration.fraction_bands.middle.is_dashed = true
             test_html(graph, "cdf.percent.html")
+            return nothing
+        end
+
+        nested_test("values") do
+            graph.configuration.fractions_normalization = NormalizeToValues
+            graph.configuration.value_bands.middle.offset = 110
+            graph.configuration.fraction_bands.middle.offset = 0.5
+            graph.configuration.fraction_bands.middle.is_dashed = true
+            test_html(graph, "cdf.values.html")
             return nothing
         end
 
@@ -1223,12 +1232,31 @@ nested_test("renderers") do
         end
 
         nested_test("percent") do
-            graph.configuration.show_percent = true
+            graph.configuration.fractions_normalization = NormalizeToPercents
             graph.configuration.value_bands.middle.offset = 11
             graph.configuration.fraction_bands.middle.offset = 0.5
             graph.configuration.fraction_bands.middle.is_dashed = true
             test_html(graph, "cdfs.percent.html")
             return nothing
+        end
+
+        nested_test("values") do
+            graph.configuration.fractions_normalization = NormalizeToValues
+            graph.configuration.value_bands.middle.offset = 11
+            graph.configuration.fraction_bands.middle.offset = 0.5
+            graph.configuration.fraction_bands.middle.is_dashed = true
+
+            nested_test("!length") do
+                @test_throws dedent("""
+                    the data.cdfs_values[2] size: 273
+                    is different from the data.cdfs_values[1] size: 26
+                """) graph_to_figure(graph)
+            end
+
+            nested_test("()") do
+                resize!(graph.data.cdfs_values[2], length(graph.data.cdfs_values[1]))
+                return test_html(graph, "cdfs.values.html")
+            end
         end
 
         nested_test("downto") do
@@ -1441,19 +1469,19 @@ nested_test("renderers") do
 
         nested_test("stack") do
             nested_test("values") do
-                graph.configuration.data_stacking = StackDataValues
+                graph.configuration.stacking_normalization = NormalizeToValues
                 test_html(graph, "bars.stack.values.html")
                 return nothing
             end
 
             nested_test("percents") do
-                graph.configuration.data_stacking = StackDataPercents
+                graph.configuration.stacking_normalization = NormalizeToPercents
                 test_html(graph, "bars.stack.percents.html")
                 return nothing
             end
 
             nested_test("fractions") do
-                graph.configuration.data_stacking = StackDataFractions
+                graph.configuration.stacking_normalization = NormalizeToFractions
                 test_html(graph, "bars.stack.fractions.html")
                 return nothing
             end

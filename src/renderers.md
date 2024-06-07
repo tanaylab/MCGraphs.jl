@@ -80,7 +80,7 @@ MCGraphs.Renderers.DistributionConfiguration
 MCGraphs.Renderers.GraphConfiguration
 MCGraphs.Renderers.AxisConfiguration
 MCGraphs.Renderers.ValuesOrientation
-MCGraphs.Renderers.GraphDataStacking
+MCGraphs.Renderers.GraphNormalization
 MCGraphs.Renderers.SizeRangeConfiguration
 MCGraphs.Renderers.BandsConfiguration
 MCGraphs.Renderers.BandConfiguration

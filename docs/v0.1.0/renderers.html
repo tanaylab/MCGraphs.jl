@@ -1209,16 +1209,16 @@ end
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
-    data_stacking::Maybe{GraphDataStacking} = nothing
+    stacking_normalization::Maybe{GraphNormalization} = nothing
 end
 </code>
 </pre>
 <p>Configure a graph for showing multiple line plots. This allows using 
 <code>show_legend
 </code> to display a legend of the different lines, and 
-<code>data_stacking
+<code>stacking_normalization
 </code> to stack instead of overlay the lines. If 
-<code>data_stacking
+<code>stacking_normalization
 </code> is specified, then 
 <code>is_filled
 </code> is implied, regardless of what its actual setting is.
@@ -1428,6 +1428,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
+    fractions_normalization::GraphNormalization = NormalizeToFractions
     line::LineConfiguration = LineConfiguration()
     values_orientation::ValuesOrientation = HorizontalValues
     cdf_direction::CdfDirection = CdfUpToValue
@@ -1444,6 +1445,14 @@ end
 </a> with the addition of a 
 <code>show_legend
 </code> field.
+</p>
+<p>If 
+<code>fractions_normalization
+</code> is 
+<code>NormalizeToValues
+</code>, then the number of values in all the 
+<code>cdfs_values
+</code> vectors must be the same.
 </p>
 <p>CDF graphs are internally converted to line graphs for rendering.
 </p>
@@ -1468,6 +1477,7 @@ end
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
+    fractions_normalization::GraphNormalization = NormalizeToFractions,
     line::LineConfiguration = LineConfiguration()
     values_orientation::ValuesOrientation = HorizontalValues
     cdf_direction::CdfDirection = CdfUpToValue
@@ -1482,9 +1492,11 @@ end
 <code>cdf_direction
 </code>.
 </p>
-<p>By default, the fraction axis units are between 0 and 1; if 
-<code>show_percent
-</code>, this is changed to between 0 and 100.
+<p>The fraction axis is normalized according to 
+<code>fractions_normalization
+</code>. The 
+<code>fraction_bands
+</code> offset is always given as a fraction between zero and one, to allow for easily switching the axis normalization without worrying about the band offset.
 </p>
 <p>CDF graphs are internally converted to line graphs for rendering.
 </p>
@@ -1746,7 +1758,7 @@ end
     values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
     show_legend::Bool = false
-    data_stacking::Maybe{GraphDataStacking} = nothing
+    stacking_normalization::Maybe{GraphNormalization} = nothing
 end
 </code>
 </pre>
@@ -1759,9 +1771,9 @@ end
 </code> field (which makes no sense when multiple series are shown), and with the addition of a 
 <code>show_legend
 </code> and 
-<code>data_stacking
+<code>stacking_normalization
 </code> fields. If 
-<code>data_stacking
+<code>stacking_normalization
 </code> isn&#39;t specified then the different series are just grouped.
 </p>
 </div>
@@ -2195,8 +2207,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.GraphDataStacking" href="#MCGraphs.Renderers.GraphDataStacking">
-<code>MCGraphs.Renderers.GraphDataStacking
+<a class="docstring-binding" id="MCGraphs.Renderers.GraphNormalization" href="#MCGraphs.Renderers.GraphNormalization">
+<code>MCGraphs.Renderers.GraphNormalization
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -2204,18 +2216,18 @@ end
 </header>
 <section>
 <div>
-<p>If stacking the data of multiple graphs, how:
+<p>If normalizing the data of a graphs, how:
 </p>
 <p>
-<code>StackDataValues
+<code>NormalizeToValues
 </code> - simply add the values on top of each other.
 </p>
 <p>
-<code>StackDataFractions
+<code>NormalizeToFractions
 </code> - normalize the added values so their some is 1. The values must not be negative.
 </p>
 <p>
-<code>StackDataPercents
+<code>NormalizeToPercents
 </code> - normalize the added values so their some is 100 (percent). The values must not be negative.
 </p>
 </div>
@@ -2542,8 +2554,8 @@ end
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.GraphDataStacking">
-<code>MCGraphs.Renderers.GraphDataStacking
+<a href="renderers.html#MCGraphs.Renderers.GraphNormalization">
+<code>MCGraphs.Renderers.GraphNormalization
 </code>
 </a>
 </li>

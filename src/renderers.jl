@@ -44,7 +44,7 @@ export DistributionsGraphConfiguration
 export DistributionsGraphData
 export Graph
 export GraphConfiguration
-export GraphDataStacking
+export GraphNormalization
 export GridGraph
 export GridGraphConfiguration
 export GridGraphData
@@ -56,15 +56,15 @@ export LineGraphData
 export LinesGraph
 export LinesGraphConfiguration
 export LinesGraphData
+export NormalizeToFractions
+export NormalizeToPercents
+export NormalizeToValues
 export PlotlyFigure
 export PointsConfiguration
 export PointsGraph
 export PointsGraphConfiguration
 export PointsGraphData
 export SizeRangeConfiguration
-export StackDataFractions
-export StackDataPercents
-export StackDataValues
 export ValuesOrientation
 export VerticalValues
 export graph_to_figure
@@ -1071,15 +1071,15 @@ function line_trace(data::LineGraphData, line::LineConfiguration)::GenericTrace
 end
 
 """
-If stacking the data of multiple graphs, how:
+If normalizing the data of a graphs, how:
 
-`StackDataValues` - simply add the values on top of each other.
+`NormalizeToValues` - simply add the values on top of each other.
 
-`StackDataFractions` - normalize the added values so their some is 1. The values must not be negative.
+`NormalizeToFractions` - normalize the added values so their some is 1. The values must not be negative.
 
-`StackDataPercents` - normalize the added values so their some is 100 (percent). The values must not be negative.
+`NormalizeToPercents` - normalize the added values so their some is 100 (percent). The values must not be negative.
 """
-@enum GraphDataStacking StackDataValues StackDataFractions StackDataPercents
+@enum GraphNormalization NormalizeToValues NormalizeToFractions NormalizeToPercents
 
 """
     @kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
@@ -1090,12 +1090,12 @@ If stacking the data of multiple graphs, how:
         vertical_bands::BandsConfiguration = BandsConfiguration()
         horizontal_bands::BandsConfiguration = BandsConfiguration()
         show_legend::Bool = false
-        data_stacking::Maybe{GraphDataStacking} = nothing
+        stacking_normalization::Maybe{GraphNormalization} = nothing
     end
 
 Configure a graph for showing multiple line plots. This allows using `show_legend` to display a legend of the different
-lines, and `data_stacking` to stack instead of overlay the lines. If `data_stacking` is specified, then `is_filled` is
-implied, regardless of what its actual setting is.
+lines, and `stacking_normalization` to stack instead of overlay the lines. If `stacking_normalization` is specified,
+then `is_filled` is implied, regardless of what its actual setting is.
 """
 @kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
@@ -1105,7 +1105,7 @@ implied, regardless of what its actual setting is.
     vertical_bands::BandsConfiguration = BandsConfiguration()
     horizontal_bands::BandsConfiguration = BandsConfiguration()
     show_legend::Bool = false
-    data_stacking::Maybe{GraphDataStacking} = nothing
+    stacking_normalization::Maybe{GraphNormalization} = nothing
 end
 
 function Validations.validate_object(
@@ -1258,7 +1258,8 @@ LinesGraph = Graph{LinesGraphData, LinesGraphConfiguration}
 function graph_to_figure(graph::LinesGraph)::PlotlyFigure
     assert_valid_object(graph)
 
-    if graph.configuration.data_stacking == StackDataPercents || graph.configuration.data_stacking == StackDataFractions
+    if graph.configuration.stacking_normalization == NormalizeToPercents ||
+       graph.configuration.stacking_normalization == NormalizeToFractions
         for (line_index, points_ys) in enumerate(graph.data.lines_ys)
             for (point_index, point_y) in enumerate(points_ys)
                 @assert point_y >= 0 "negative stacked fraction/percent data.lines_ys[$(line_index),$(point_index)]: $(point_y)"
@@ -1266,7 +1267,7 @@ function graph_to_figure(graph::LinesGraph)::PlotlyFigure
         end
     end
 
-    if graph.configuration.data_stacking === nothing
+    if graph.configuration.stacking_normalization === nothing
         lines_xs = graph.data.lines_xs
         lines_ys = graph.data.lines_ys
     else
@@ -1281,11 +1282,11 @@ function graph_to_figure(graph::LinesGraph)::PlotlyFigure
         apply_log = false,
     )
 
-    if graph.configuration.data_stacking == StackDataFractions
+    if graph.configuration.stacking_normalization == NormalizeToFractions
         minimum_y, maximum_y = -0.05, 1.05
-    elseif graph.configuration.data_stacking == StackDataPercents
+    elseif graph.configuration.stacking_normalization == NormalizeToPercents
         minimum_y, maximum_y = -5.0, 105.0
-    elseif graph.configuration.data_stacking == StackDataValues
+    elseif graph.configuration.stacking_normalization == NormalizeToValues
         minimum_y = maximum_x * -0.05 / 1.05
     else
         minimum_y, maximum_y = range_of(;
@@ -1538,10 +1539,10 @@ function lines_trace(;
             "tonexty"
         end,
         name = graph.data.lines_names !== nothing ? graph.data.lines_names[index] : "Trace $(index)",
-        stackgroup = graph.configuration.data_stacking === nothing ? nothing : "stacked",
-        groupnorm = if graph.configuration.data_stacking == StackDataFractions
+        stackgroup = graph.configuration.stacking_normalization === nothing ? nothing : "stacked",
+        groupnorm = if graph.configuration.stacking_normalization == NormalizeToFractions
             "fraction"
-        elseif graph.configuration.data_stacking == StackDataPercents
+        elseif graph.configuration.stacking_normalization == NormalizeToPercents
             "percent"
         else
             nothing
@@ -1605,6 +1606,7 @@ The direction of the CDF graph:
         graph::GraphConfiguration = GraphConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         fraction_axis::AxisConfiguration = AxisConfiguration()
+        fractions_normalization::GraphNormalization = NormalizeToFractions,
         line::LineConfiguration = LineConfiguration()
         values_orientation::ValuesOrientation = HorizontalValues
         cdf_direction::CdfDirection = CdfUpToValue
@@ -1616,7 +1618,9 @@ Configure a graph for showing a CDF (Cumulative Distribution Function) graph. By
 values and the Y axis for the fraction; this can be switched using the `values_orientation`. By default, the fraction is
 of the values up to each value; this can be switched using the `cdf_direction`.
 
-By default, the fraction axis units are between 0 and 1; if `show_percent`, this is changed to between 0 and 100.
+The fraction axis is normalized according to `fractions_normalization`. The `fraction_bands` offset is always given as a
+fraction between zero and one, to allow for easily switching the axis normalization without worrying about the band
+offset.
 
 CDF graphs are internally converted to line graphs for rendering.
 """
@@ -1624,12 +1628,12 @@ CDF graphs are internally converted to line graphs for rendering.
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
+    fractions_normalization::GraphNormalization = NormalizeToFractions
     line::LineConfiguration = LineConfiguration()
     values_orientation::ValuesOrientation = HorizontalValues
     cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
     fraction_bands::BandsConfiguration = BandsConfiguration()
-    show_percent::Bool = false
 end
 
 """
@@ -1673,7 +1677,7 @@ CdfGraph = Graph{CdfGraphData, CdfGraphConfiguration}
 function graph_to_figure(graph::CdfGraph)::PlotlyFigure
     assert_valid_object(graph)
     line_data = cdf_data_as_line_data(graph)
-    line_configuration = cdf_configuration_as_line_configuration(graph.configuration)
+    line_configuration = cdf_configuration_as_line_configuration(graph)
     return graph_to_figure(LineGraph(line_data, line_configuration))
 end
 
@@ -1702,44 +1706,68 @@ function cdf_data_as_line_data(graph::CdfGraph)::LineGraphData
     end
 end
 
-function cdf_configuration_as_line_configuration(configuration::CdfGraphConfiguration)::LineGraphConfiguration
-    if configuration.values_orientation == HorizontalValues
+function cdf_configuration_as_line_configuration(graph::CdfGraph)::LineGraphConfiguration
+    if graph.configuration.values_orientation == HorizontalValues
         return LineGraphConfiguration(;
-            graph = configuration.graph,
-            x_axis = configuration.value_axis,
-            y_axis = configuration.fraction_axis,
-            line = configuration.line,
-            vertical_bands = configuration.value_bands,
-            horizontal_bands = percent_bands(configuration.fraction_bands, configuration.show_percent),
+            graph = graph.configuration.graph,
+            x_axis = graph.configuration.value_axis,
+            y_axis = graph.configuration.fraction_axis,
+            line = graph.configuration.line,
+            vertical_bands = graph.configuration.value_bands,
+            horizontal_bands = normalized_bands(
+                graph.configuration.fraction_bands,
+                graph.configuration.fractions_normalization,
+                length(graph.data.cdf_values),
+            ),
         )
     else
         return LineGraphConfiguration(;
-            graph = configuration.graph,
-            x_axis = configuration.fraction_axis,
-            y_axis = configuration.value_axis,
-            line = configuration.line,
-            vertical_bands = percent_bands(configuration.fraction_bands, configuration.show_percent),
-            horizontal_bands = configuration.value_bands,
+            graph = graph.configuration.graph,
+            x_axis = graph.configuration.fraction_axis,
+            y_axis = graph.configuration.value_axis,
+            line = graph.configuration.line,
+            vertical_bands = normalized_bands(
+                graph.configuration.fraction_bands,
+                graph.configuration.fractions_normalization,
+                length(graph.data.cdf_values),
+            ),
+            horizontal_bands = graph.configuration.value_bands,
         )
     end
 end
 
-function percent_bands(bands_configuration::BandsConfiguration, show_percent::Bool)::BandsConfiguration
+function normalized_bands(
+    bands_configuration::BandsConfiguration,
+    fractions_normalization::GraphNormalization,
+    n_values::Integer,
+)::BandsConfiguration
     return BandsConfiguration(;
-        low = percent_band(bands_configuration.low, show_percent),
-        middle = percent_band(bands_configuration.middle, show_percent),
-        high = percent_band(bands_configuration.high, show_percent),
+        low = normalized_band(bands_configuration.low, fractions_normalization, n_values),
+        middle = normalized_band(bands_configuration.middle, fractions_normalization, n_values),
+        high = normalized_band(bands_configuration.high, fractions_normalization, n_values),
         show_legend = bands_configuration.show_legend,
     )
 end
 
-function percent_band(band_configuration::BandConfiguration, show_percent::Bool)::BandConfiguration
+function normalized_band(
+    band_configuration::BandConfiguration,
+    fractions_normalization::GraphNormalization,
+    n_values::Integer,
+)::BandConfiguration
+    if band_configuration.offset === nothing
+        offset = band_configuration.offset
+    elseif fractions_normalization == NormalizeToValues
+        offset = band_configuration.offset * n_values
+    elseif fractions_normalization == NormalizeToFractions
+        offset = band_configuration.offset
+    elseif fractions_normalization == NormalizeToPercents
+        offset = band_configuration.offset * 100
+    else
+        @assert false
+    end
+
     return BandConfiguration(;
-        offset = if band_configuration.offset !== nothing && show_percent
-            band_configuration.offset * 100
-        else
-            band_configuration.offset
-        end,
+        offset = offset,
         color = band_configuration.color,
         width = band_configuration.width,
         is_dashed = band_configuration.is_dashed,
@@ -1752,6 +1780,7 @@ end
         graph::GraphConfiguration = GraphConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         fraction_axis::AxisConfiguration = AxisConfiguration()
+        fractions_normalization::GraphNormalization = NormalizeToFractions
         line::LineConfiguration = LineConfiguration()
         values_orientation::ValuesOrientation = HorizontalValues
         cdf_direction::CdfDirection = CdfUpToValue
@@ -1763,18 +1792,21 @@ end
 Configure a graph for showing multiple CDF (Cumulative Distribution Function) graph. This is the same as
 [`CdfGraphConfiguration`](@ref) with the addition of a `show_legend` field.
 
+If `fractions_normalization` is `NormalizeToValues`, then the number of values in all the `cdfs_values` vectors must be
+the same.
+
 CDF graphs are internally converted to line graphs for rendering.
 """
 @kwdef mutable struct CdfsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
+    fractions_normalization::GraphNormalization = NormalizeToFractions
     line::LineConfiguration = LineConfiguration()
     values_orientation::ValuesOrientation = HorizontalValues
     cdf_direction::CdfDirection = CdfUpToValue
     value_bands::BandsConfiguration = BandsConfiguration()
     fraction_bands::BandsConfiguration = BandsConfiguration()
-    show_percent::Bool = false
     show_legend::Bool = false
 end
 
@@ -1860,11 +1892,24 @@ A graph visualizing multiple cumulative distribution functions. See [`CdfsGraphD
 """
 CdfsGraph = Graph{CdfsGraphData, CdfsGraphConfiguration}
 
+function validate_graph(graph::CdfsGraph)::Maybe{AbstractString}
+    if graph.configuration.fractions_normalization == NormalizeToValues
+        n_values = length(graph.data.cdfs_values[1])
+        for (index, cdfs_values) in enumerate(graph.data.cdfs_values)
+            if length(cdfs_values) != n_values
+                return "the data.cdfs_values[$(index)] size: $(length(cdfs_values))\n" *
+                       "is different from the data.cdfs_values[1] size: $(n_values)"
+            end
+        end
+    end
+    return nothing
+end
+
 function graph_to_figure(graph::CdfsGraph)::PlotlyFigure
     assert_valid_object(graph)
 
     lines_data = cdfs_data_as_lines_data(graph)
-    lines_configuration = cdfs_configuration_as_lines_configuration(graph.configuration)
+    lines_configuration = cdfs_configuration_as_lines_configuration(graph)
     return graph_to_figure(LinesGraph(lines_data, lines_configuration))
 end
 
@@ -1913,36 +1958,51 @@ function collect_cdf_data(
 )::Tuple{Vector{T}, Vector{Float64}} where {T <: Real}
     n_values = length(values)
     sorted_values = sort(values)
-    fractions = collect(1.0:length(sorted_values)) ./ n_values
+
+    fractions = collect(1.0:length(sorted_values))
     if configuration.cdf_direction == CdfDownToValue
-        fractions = (1 + 1 / n_values) .- fractions
+        fractions = 1.0 + n_values .- fractions
     end
-    if configuration.show_percent
-        fractions .*= 100
+
+    if configuration.fractions_normalization == NormalizeToFractions
+        fractions ./= n_values
+    elseif configuration.fractions_normalization == NormalizeToPercents
+        fractions .*= 100 / n_values
+    else
+        @assert configuration.fractions_normalization == NormalizeToValues
     end
+
     return (sorted_values, fractions)
 end
 
-function cdfs_configuration_as_lines_configuration(configuration::CdfsGraphConfiguration)::LinesGraphConfiguration
-    if configuration.values_orientation == HorizontalValues
+function cdfs_configuration_as_lines_configuration(graph::CdfsGraph)::LinesGraphConfiguration
+    if graph.configuration.values_orientation == HorizontalValues
         return LinesGraphConfiguration(;
-            graph = configuration.graph,
-            x_axis = configuration.value_axis,
-            y_axis = configuration.fraction_axis,
-            line = configuration.line,
-            vertical_bands = configuration.value_bands,
-            horizontal_bands = percent_bands(configuration.fraction_bands, configuration.show_percent),
-            show_legend = configuration.show_legend,
+            graph = graph.configuration.graph,
+            x_axis = graph.configuration.value_axis,
+            y_axis = graph.configuration.fraction_axis,
+            line = graph.configuration.line,
+            vertical_bands = graph.configuration.value_bands,
+            horizontal_bands = normalized_bands(
+                graph.configuration.fraction_bands,
+                graph.configuration.fractions_normalization,
+                length(graph.data.cdfs_values[1]),
+            ),
+            show_legend = graph.configuration.show_legend,
         )
     else
         return LinesGraphConfiguration(;
-            graph = configuration.graph,
-            x_axis = configuration.fraction_axis,
-            y_axis = configuration.value_axis,
-            line = configuration.line,
-            vertical_bands = percent_bands(configuration.fraction_bands, configuration.show_percent),
-            horizontal_bands = configuration.value_bands,
-            show_legend = configuration.show_legend,
+            graph = graph.configuration.graph,
+            x_axis = graph.configuration.fraction_axis,
+            y_axis = graph.configuration.value_axis,
+            line = graph.configuration.line,
+            vertical_bands = normalized_bands(
+                graph.configuration.fraction_bands,
+                graph.configuration.fractions_normalization,
+                length(graph.data.cdfs_values[1]),
+            ),
+            horizontal_bands = graph.configuration.value_bands,
+            show_legend = graph.configuration.show_legend,
         )
     end
 end
@@ -2055,12 +2115,13 @@ end
         values_orientation::ValuesOrientation = VerticalValues
         bars_gap::Maybe{Real} = nothing
         show_legend::Bool = false
-        data_stacking::Maybe{GraphDataStacking} = nothing
+        stacking_normalization::Maybe{GraphNormalization} = nothing
     end
 
 Configure a graph for showing multiple bars (histograms) graph. This is similar to [`BarGraphConfiguration`](@ref),
 without the `color` field (which makes no sense when multiple series are shown), and with the addition of a
-`show_legend` and `data_stacking` fields. If `data_stacking` isn't specified then the different series are just grouped.
+`show_legend` and `stacking_normalization` fields. If `stacking_normalization` isn't specified then the different series
+are just grouped.
 """
 @kwdef mutable struct BarsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
@@ -2068,7 +2129,7 @@ without the `color` field (which makes no sense when multiple series are shown),
     values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
     show_legend::Bool = false
-    data_stacking::Maybe{GraphDataStacking} = nothing
+    stacking_normalization::Maybe{GraphNormalization} = nothing
 end
 
 function Validations.validate_object(
@@ -2188,8 +2249,8 @@ BarsGraph = Graph{BarsGraphData, BarsGraphConfiguration}
 function graph_to_figure(graph::BarsGraph)::PlotlyFigure
     assert_valid_object(graph)
 
-    data_stacking = graph.configuration.data_stacking
-    if data_stacking === nothing
+    stacking_normalization = graph.configuration.stacking_normalization
+    if stacking_normalization === nothing
         series_values = graph.data.series_values
     else
         for (series_index, bars_values) in enumerate(graph.data.series_values)
@@ -2197,7 +2258,7 @@ function graph_to_figure(graph::BarsGraph)::PlotlyFigure
                 @assert value >= 0 "negative stacked data.series_values[$(series_index),$(bar_index)]: $(value)"
             end
         end
-        series_values = stacked_values(data_stacking, graph.data.series_values)
+        series_values = stacked_values(stacking_normalization, graph.data.series_values)
     end
 
     traces = Vector{GenericTrace}()
@@ -2233,17 +2294,17 @@ function graph_to_figure(graph::BarsGraph)::PlotlyFigure
         graph = graph,
         has_tick_names = graph.data.bars_names !== nothing,
         show_legend = graph.configuration.show_legend,
-        stacked = graph.configuration.data_stacking !== nothing,
+        stacked = graph.configuration.stacking_normalization !== nothing,
     )
 
     return plot(traces, layout)
 end
 
 function stacked_values(
-    data_stacking::GraphDataStacking,
+    stacking_normalization::GraphNormalization,
     series_values::T,
 )::T where {(T <: AbstractVector{<:AbstractVector{<:Real}})}
-    if data_stacking == StackDataValues
+    if stacking_normalization == NormalizeToValues
         return series_values
     end
 
@@ -2252,7 +2313,7 @@ function stacked_values(
         total_values .+= bars_values
     end
 
-    if data_stacking == StackDataPercents
+    if stacking_normalization == NormalizeToPercents
         total_values ./= 100
     end
     total_values[total_values .== 0] .= 1
