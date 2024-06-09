@@ -211,6 +211,7 @@ end
         x_sphere::AbstractString,
         y_sphere::AbstractString,
         min_significant_gene_UMIs::Integer = 40,
+        max_sphere_diameter::AbstractFloat = 2.0,
         gene_fraction_regularization::AbstractFloat = 1e-5,
     )::PointsGraphData
 
@@ -249,7 +250,9 @@ name twice, why the sphere was merged).
     x_sphere::AbstractString,
     y_sphere::AbstractString,
     min_significant_gene_UMIs::Integer = 40,
+    max_sphere_diameter::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
+    confidence::AbstractFloat = 0.9,
 )::PointsGraphData
     @assert gene_fraction_regularization > 0
 
@@ -262,6 +265,7 @@ name twice, why the sphere was merged).
             gene_fraction_regularization = gene_fraction_regularization,
             fraction_of_genes_in_metacells = transposer!(fraction_of_x_metacells_of_genes),
             total_UMIs_of_metacells = total_UMIs_of_x_metacells,
+            confidence = confidence,
         )
     log_decreased_fraction_of_x_metacells_of_genes = transposer!(log_decreased_fraction_of_genes_in_x_metacells)
     log_increased_fraction_of_x_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_x_metacells)
@@ -282,6 +286,7 @@ name twice, why the sphere was merged).
                 gene_fraction_regularization = gene_fraction_regularization,
                 fraction_of_genes_in_metacells = transposer!(fraction_of_y_metacells_of_genes),
                 total_UMIs_of_metacells = total_UMIs_of_y_metacells,
+                confidence = confidence,
             )
         log_decreased_fraction_of_y_metacells_of_genes = transposer!(log_decreased_fraction_of_genes_in_y_metacells)
         log_increased_fraction_of_y_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_y_metacells)
@@ -356,17 +361,24 @@ name twice, why the sphere was merged).
         end
     end
 
-    is_lateral_of_genes = get_vector(daf, "gene", "is_lateral"; default = false)
+    is_lateral_of_genes = get_vector(daf, "gene", "is_lateral")
     main_neighborhoods_of_spheres = get_vector(daf, "sphere", "neighborhood.main")
     x_neighborhood = main_neighborhoods_of_spheres[x_sphere]
     y_neighborhood = main_neighborhoods_of_spheres[y_sphere]
 
-    is_correlated_of_x_neighborhood_of_genes =
-        get_query(daf, Axis("neighborhood") |> IsEqual(x_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
-    is_correlated_of_y_neighborhood_of_genes =
-        get_query(daf, Axis("neighborhood") |> IsEqual(y_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
+    if has_matrix(daf, "gene", "neighborhood", "is_correlated")
+        is_correlated_of_x_neighborhood_of_genes =
+            get_query(daf, Axis("neighborhood") |> IsEqual(x_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
+        is_correlated_of_y_neighborhood_of_genes =
+            get_query(daf, Axis("neighborhood") |> IsEqual(y_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
+    else
+        is_correlated_of_x_neighborhood_of_genes =
+            get_query(daf, Axis("sphere") |> IsEqual(x_sphere) |> Axis("gene") |> Lookup("is_correlated"))
+        is_correlated_of_y_neighborhood_of_genes =
+            get_query(daf, Axis("sphere") |> IsEqual(y_sphere) |> Axis("gene") |> Lookup("is_correlated"))
+    end
 
-    get_matrix(daf, "sphere", "gene", "is_correlated"; default = false)
+    get_matrix(daf, "sphere", "gene", "is_correlated")
 
     n_significant_genes = sum(mask_of_genes)
     @assert n_significant_genes > 0
@@ -376,11 +388,43 @@ name twice, why the sphere was merged).
     points_colors = Vector{AbstractString}(undef, n_significant_genes * 2)
     points_hovers = Vector{AbstractString}(undef, n_significant_genes * 2)
     edges_points = Vector{Tuple{Int, Int}}(undef, n_significant_genes)
+    borders_colors = Vector{AbstractString}(undef, n_significant_genes * 2)
 
     not_correlated = "uncorrelated for both"
     x_correlated = "correlated for $(x_sphere)"
     y_correlated = "correlated for $(y_sphere)"
     xy_correlated = "correlated for both"
+
+    diameters_of_neighborhoods = get_vector(daf, "neighborhood", "diameter")
+    is_member_of_spheres_in_neighborhoods = get_matrix(daf, "sphere", "neighborhood", "is_member")
+    if x_neighborhood == y_neighborhood
+        neighborhood_diameter = diameters_of_neighborhoods[x_neighborhood]
+        x_axis_title = "$(x_sphere) (main: $(x_neighborhood) diameter: $(neighborhood_diameter))"
+        y_axis_title = "$(y_sphere) (main: $(y_neighborhood) diameter: $(neighborhood_diameter))"
+    else
+        x_diameter = diameters_of_neighborhoods[x_neighborhood]
+        is_x_sphere_member_of_main_neighborhood_of_y_sphere =
+            is_member_of_spheres_in_neighborhoods[x_sphere, y_neighborhood]
+        if is_x_sphere_member_of_main_neighborhood_of_y_sphere
+            x_is_not = "is"
+        else
+            x_is_not = "not"
+        end
+        x_axis_title = "$(x_sphere) (main: $(x_neighborhood) diameter: $(x_diameter), $(x_is_not) in: $(y_neighborhood))"
+
+        y_diameter = diameters_of_neighborhoods[x_neighborhood]
+
+        is_y_sphere_member_of_main_neighborhood_of_x_sphere =
+            is_member_of_spheres_in_neighborhoods[y_sphere, x_neighborhood]
+        if is_y_sphere_member_of_main_neighborhood_of_x_sphere
+            y_is_not = "is"
+        else
+            y_is_not = "not"
+        end
+        y_axis_title = "$(y_sphere) (main: $(y_neighborhood) diameter: $(y_diameter), $(y_is_not) in: $(x_neighborhood))"
+
+        neighborhood_diameter = x_diameter
+    end
 
     edge_index = 0
     point_index = 0
@@ -416,6 +460,17 @@ name twice, why the sphere was merged).
             x_label, y_label = "$(x_sphere):", "$(y_sphere):"
         end
 
+        @assert neighborhood_diameter > max_sphere_diameter
+
+        borders_colors[point_index] = "not a certificate"
+        if points_colors[point_index] != not_correlated && !is_lateral_of_genes[gene_index]
+            if distance_of_genes[gene_index] >= neighborhood_diameter
+                borders_colors[point_index] = "certificate for $(x_sphere) neighborhood"
+            elseif distance_of_genes[gene_index] >= max_sphere_diameter
+                borders_colors[point_index] = "certificate for $(x_sphere) sphere"
+            end
+        end
+
         points_hovers[point_index] = join(  # NOJET
             [
                 "Gene: $(names_of_genes[gene_index])",
@@ -443,47 +498,24 @@ name twice, why the sphere was merged).
         points_ys[point_index] = y_confidence_fraction_of_genes[gene_index]
         points_colors[point_index] = ""
         points_hovers[point_index] = ""
+        borders_colors[point_index] = ""
     end
     @assert point_index == n_significant_genes * 2
     @assert edge_index == n_significant_genes
-
-    diameters_of_neighborhoods = get_vector(daf, "neighborhood", "diameter")
-    is_member_of_spheres_in_neighborhoods = get_matrix(daf, "sphere", "neighborhood", "is_member")
-    if x_neighborhood == y_neighborhood
-        diameter = diameters_of_neighborhoods[x_neighborhood]
-        x_axis_title = "$(x_sphere) (main: $(x_neighborhood) diameter: $(diameter))"
-        y_axis_title = "$(y_sphere) (main: $(y_neighborhood) diameter: $(diameter))"
-    else
-        x_diameter = diameters_of_neighborhoods[x_neighborhood]
-        is_x_sphere_member_of_main_neighborhood_of_y_sphere =
-            is_member_of_spheres_in_neighborhoods[x_sphere, y_neighborhood]
-        if is_x_sphere_member_of_main_neighborhood_of_y_sphere
-            x_axis_title = "$(x_sphere) (main: $(x_neighborhood) diameter: $(x_diameter), not in: $(y_neighborhood))"
-        else
-            x_axis_title = "$(x_sphere) (main: $(x_neighborhood) diameter: $(x_diameter), is in: $(y_neighborhood))"
-        end
-
-        y_diameter = diameters_of_neighborhoods[x_neighborhood]
-        is_y_sphere_member_of_main_neighborhood_of_x_sphere =
-            is_member_of_spheres_in_neighborhoods[y_sphere, x_neighborhood]
-        if is_y_sphere_member_of_main_neighborhood_of_x_sphere
-            y_axis_title = "$(y_sphere) (main: $(y_neighborhood) diameter: $(y_diameter), not in: $(x_neighborhood))"
-        else
-            y_axis_title = "$(y_sphere) (main: $(y_neighborhood) diameter: $(y_diameter), is in: $(x_neighborhood))"
-        end
-    end
 
     return PointsGraphData(;
         graph_title = "Spheres Genes Difference",
         x_axis_title = x_axis_title,
         y_axis_title = y_axis_title,
         points_colors_title = "Genes",
+        borders_colors_title = "Certificates",
         edges_group_title = "Lines",
         edges_line_title = "Confidence",
         points_xs = points_xs,
         points_ys = points_ys,
         points_colors = points_colors,
         points_hovers = points_hovers,
+        borders_colors = borders_colors,
         edges_points = edges_points,
     )
 end
@@ -517,7 +549,7 @@ function compute_most_different_metacells_of_gene(;  # untested
     min_significant_gene_UMIs::Integer,
     is_self_difference::Bool,
     gene_index::Integer,
-    divergence_of_gene::AbstractFloat,
+    divergence_of_gene::Union{AbstractFloat, Bool},
     gene_fraction_regularization::Real,
 )::Tuple{Float32, Maybe{Int}, Maybe{Int}}
     n_genes = size(total_UMIs_of_x_metacells_of_genes, 2)
@@ -552,7 +584,7 @@ function compute_most_different_metacells_of_gene(;  # untested
                 if is_self_difference && distance < 0
                     continue
                 end
-                distance = gene_distance(
+                distance = gene_distance(  # NOJET
                     min_significant_gene_UMIs,
                     total_UMIs_of_x_metacells_of_genes[x_metacell_index, gene_index],
                     log_decreased_fraction_of_x_metacells_of_genes[x_metacell_index, gene_index],
@@ -562,6 +594,7 @@ function compute_most_different_metacells_of_gene(;  # untested
                     log_increased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index],
                     divergence_of_gene,
                 )
+
                 if distance > most_distance
                     most_x_metacell_index = x_metacell_index
                     most_y_metacell_index = y_metacell_index
@@ -601,6 +634,8 @@ end
         configuration::PointsGraphConfiguration = PointsGraphConfiguration();
         x_sphere::AbstractString,
         y_sphere::AbstractString,
+        x_neighborhood::AbstractString,
+        max_sphere_diameter::AbstractFloat = 2.0,
         gene_fraction_regularization::AbstractFloat = 1e-5,
     )::PointsGraphConfiguration
 
@@ -622,6 +657,7 @@ function default_sphere_sphere_configuration(;  # untested
     configuration.edges_over_points = false
     configuration.edges.show_color_scale = true
     configuration.points.show_color_scale = true
+    configuration.borders.show_color_scale = true
     configuration.points.color_palette = [
         ("lateral", "grey"),
         ("uncorrelated for both", "salmon"),
@@ -629,9 +665,11 @@ function default_sphere_sphere_configuration(;  # untested
         ("correlated for $(y_sphere)", "royalblue"),
         ("correlated for both", "darkturquoise"),
     ]
-    configuration.borders.show_color_scale = true
-    configuration.borders.size = 2
-    configuration.borders.color_palette = [("noisy", "darkorchid")]
+    configuration.borders.color_palette = [
+        ("not a certificate", "lavender"),
+        ("certificate for $(x_sphere) sphere", "mediumpurple"),
+        ("certificate for $(x_sphere) neighborhood", "mediumorchid"),
+    ]
     return configuration
 end
 

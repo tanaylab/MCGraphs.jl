@@ -193,18 +193,6 @@
 <code>struct
 </code> containing the configuration of the graph. The rendering function takes both and either returns a JavaScript blob needed to create the interactive graph, or writes the graph to a file.
 </p>
-<p>TODO:
-</p>
-<ul>
-<li>Sizes legends.
-</li>
-<li>Heatmaps.
-</li>
-<li>Heatmap subplots as annotations for bar graph.
-</li>
-<li>Heatmap subplots as annotations for heatmaps.
-</li>
-</ul>
 </div>
 </section>
 </article>
@@ -584,6 +572,59 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.points_graph" href="#MCGraphs.Renderers.points_graph">
+<code>MCGraphs.Renderers.points_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function points_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    vertical_bands::BandsData = BandsData(),
+    horizontal_bands::BandsData = BandsData(),
+    diagonal_bands::BandsData = BandsData(),
+    points_colors_title::Maybe{AbstractString} = nothing,
+    points_sizes_title::Maybe{AbstractString} = nothing,
+    borders_colors_title::Maybe{AbstractString} = nothing,
+    borders_sizes_title::Maybe{AbstractString} = nothing,
+    edges_group_title::Maybe{AbstractString} = nothing,
+    edges_line_title::Maybe{AbstractString} = nothing,
+    points_xs::AbstractVector{&lt;:Real} = Float32[],
+    points_ys::AbstractVector{&lt;:Real} = Float32[],
+    points_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing,
+    points_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing,
+    points_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    borders_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing,
+    borders_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing,
+    edges_points::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing,
+    edges_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing,
+    edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing,
+)::PointsGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraph">
+<code>PointsGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.PointsGraph" href="#MCGraphs.Renderers.PointsGraph">
 <code>MCGraphs.Renderers.PointsGraph
 </code>
@@ -885,6 +926,49 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.grid_graph" href="#MCGraphs.Renderers.grid_graph">
+<code>MCGraphs.Renderers.grid_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function grid_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    points_colors_title::Maybe{AbstractString} = nothing,
+    borders_colors_title::Maybe{AbstractString} = nothing,
+    columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    points_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing,
+    points_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing,
+    points_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing,
+    borders_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing,
+    borders_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing,
+)::GridGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.GridGraph">
+<code>GridGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>GridGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.GridGraph" href="#MCGraphs.Renderers.GridGraph">
 <code>MCGraphs.Renderers.GridGraph
 </code>
@@ -986,6 +1070,88 @@ end
 <a class="docs-heading-anchor-permalink" href="#Lines" title="Permalink">
 </a>
 </h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.line_graph" href="#MCGraphs.Renderers.line_graph">
+<code>MCGraphs.Renderers.line_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function line_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    vertical_bands::BandsData = BandsData(),
+    horizontal_bands::BandsData = BandsData(),
+    points_xs::AbstractVector{&lt;:Real} = Float32[],
+    points_ys::AbstractVector{&lt;:Real} = Float32[],
+)::LineGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.LineGraph">
+<code>LineGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.LineGraphData">
+<code>LineGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.lines_graph" href="#MCGraphs.Renderers.lines_graph">
+<code>MCGraphs.Renderers.lines_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function lines_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+    vertical_bands::BandsData = BandsData(),
+    horizontal_bands::BandsData = BandsData(),
+    lines_xs::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[],
+    lines_ys::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[],
+    lines_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    lines_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    lines_widths::Maybe{AbstractVector{&lt;:Real}} = nothing,
+    lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
+    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+)::LinesGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.LinesGraph">
+<code>LinesGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.LinesGraphData">
+<code>LinesGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
@@ -1103,8 +1269,8 @@ end
     legend_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
     horizontal_bands::BandsData = BandsData()
-    lines_xs::AbstractVector{AbstractVector{&lt;:Real}} = Vector{Float32}[]
-    lines_ys::AbstractVector{AbstractVector{&lt;:Real}} = Vector{Float32}[]
+    lines_xs::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[]
+    lines_ys::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[]
     lines_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     lines_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     lines_widths::Maybe{AbstractVector{&lt;:Real}} = nothing
@@ -1275,6 +1441,84 @@ end
 <a class="docs-heading-anchor-permalink" href="#CDFs" title="Permalink">
 </a>
 </h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.cdf_graph" href="#MCGraphs.Renderers.cdf_graph">
+<code>MCGraphs.Renderers.cdf_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function cdf_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    fraction_axis_title::Maybe{AbstractString} = nothing,
+    value_bands::BandsData = BandsData(),
+    fraction_bands::BandsData = BandsData(),
+    cdf_values::AbstractVector{&lt;:Real} = Float32[],
+)::CdfGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.CdfGraph">
+<code>CdfGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.CdfGraphData">
+<code>CdfGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.cdfs_graph" href="#MCGraphs.Renderers.cdfs_graph">
+<code>MCGraphs.Renderers.cdfs_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function cdfs_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    fraction_axis_title::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+    cdfs_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[],
+    cdfs_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    cdfs_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    cdfs_widths::Maybe{AbstractVector{&lt;:Real}} = nothing,
+    cdfs_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
+    cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+)::CdfsGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraph">
+<code>CdfsGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.CdfsGraphData">
+<code>CdfsGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
@@ -1541,6 +1785,85 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
+<a class="docstring-binding" id="MCGraphs.Renderers.bar_graph" href="#MCGraphs.Renderers.bar_graph">
+<code>MCGraphs.Renderers.bar_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function bar_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    bar_axis_title::Maybe{AbstractString} = nothing,
+    bars_values::AbstractVector{&lt;:Real} = Float32[],
+    bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    bars_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    bars_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+)::BarGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.BarGraph">
+<code>BarGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.BarGraphData">
+<code>BarGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.bars_graph" href="#MCGraphs.Renderers.bars_graph">
+<code>MCGraphs.Renderers.bars_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function bars_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    bar_axis_title::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+    series_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[],
+    series_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    series_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    series_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    bars_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+)::BarsGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.BarsGraph">
+<code>BarsGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.BarsGraphData">
+<code>BarsGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
 <a class="docstring-binding" id="MCGraphs.Renderers.BarGraph" href="#MCGraphs.Renderers.BarGraph">
 <code>MCGraphs.Renderers.BarGraph
 </code>
@@ -1694,7 +2017,7 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    series_values::AbstractString{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[]
+    series_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[]
     series_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     series_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     series_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
@@ -1787,6 +2110,80 @@ end
 <a class="docs-heading-anchor-permalink" href="#Distribution" title="Permalink">
 </a>
 </h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.distribution_graph" href="#MCGraphs.Renderers.distribution_graph">
+<code>MCGraphs.Renderers.distribution_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function distribution_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    trace_axis_title::Maybe{AbstractString} = nothing,
+    distribution_values::AbstractVector{&lt;:Real} = Float32[],
+    distribution_name::Maybe{AbstractString} = nothing,
+)::DistributionGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraph">
+<code>DistributionGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.DistributionGraphData">
+<code>DistributionGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.distributions_graph" href="#MCGraphs.Renderers.distributions_graph">
+<code>MCGraphs.Renderers.distributions_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function distributions_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    trace_axis_title::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+    distributions_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[],
+    distributions_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    distributions_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+)::DistributionsGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraph">
+<code>DistributionsGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.DistributionsGraphData">
+<code>DistributionsGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
 <article class="docstring">
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
@@ -1894,7 +2291,7 @@ end
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    distributions_values::AbstractVector{AbstractVector{&lt;:Real}} = Vector{Float32}[]
+    distributions_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[]
     distributions_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     distributions_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
 end
@@ -1937,7 +2334,7 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    distribution::DistributionConfiguration = DistributionConfiguration()
+    distribution::DistributionConfiguration = DistributionConfiguration(show_curve = false, show_box = true)
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 </code>
@@ -1979,7 +2376,7 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionsGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    distribution::DistributionConfiguration = DistributionConfiguration()
+    distribution::DistributionConfiguration = DistributionConfiguration(show_curve = false, show_box = true)
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
     distributions_gap::Maybe{Real} = nothing
@@ -1988,6 +2385,8 @@ end
 </code>
 </pre>
 <p>Configure a graph for showing several distributions several distributions.
+</p>
+<p>By defaults, we show box plots when visualizing multiple distributions.
 </p>
 <p>This is identical to 
 <a href="renderers.html#MCGraphs.Renderers.DistributionGraphConfiguration">
@@ -2031,10 +2430,10 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionConfiguration
-    values_orientation::ValuesOrientation = VerticalValues
-    show_box::Bool = true
+    values_orientation::ValuesOrientation = HorizontalValues
+    show_box::Bool = false
     show_violin::Bool = false
-    show_curve::Bool = false
+    show_curve::Bool = true
     show_outliers::Bool = false
     color::Maybe{AbstractString} = nothing
 end
@@ -2056,7 +2455,7 @@ end
 </p>
 <p>If 
 <code>show_curve
-</code>, show a density curve.
+</code>, show a density curve. This is the default.
 </p>
 <p>You can combine the above; however, a density curve is just the positive side of a violin graph, so you can&#39;t combine the two.
 </p>
@@ -2662,8 +3061,68 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.bar_graph">
+<code>MCGraphs.Renderers.bar_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.bars_graph">
+<code>MCGraphs.Renderers.bars_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.cdf_graph">
+<code>MCGraphs.Renderers.cdf_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.cdfs_graph">
+<code>MCGraphs.Renderers.cdfs_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.distribution_graph">
+<code>MCGraphs.Renderers.distribution_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.distributions_graph">
+<code>MCGraphs.Renderers.distributions_graph
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.graph_to_figure">
 <code>MCGraphs.Renderers.graph_to_figure
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.grid_graph">
+<code>MCGraphs.Renderers.grid_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.line_graph">
+<code>MCGraphs.Renderers.line_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.lines_graph">
+<code>MCGraphs.Renderers.lines_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.points_graph">
+<code>MCGraphs.Renderers.points_graph
 </code>
 </a>
 </li>

@@ -5,13 +5,6 @@ This provides a selection of basic graph types needed for metacells visualizatio
 containing all the data for the graph, and a separate `struct` containing the configuration of the graph. The rendering
 function takes both and either returns a JavaScript blob needed to create the interactive graph, or writes the graph to
 a file.
-
-TODO:
-
-  - Sizes legends.
-  - Heatmaps.
-  - Heatmap subplots as annotations for bar graph.
-  - Heatmap subplots as annotations for heatmaps.
 """
 module Renderers
 
@@ -67,7 +60,17 @@ export PointsGraphData
 export SizeRangeConfiguration
 export ValuesOrientation
 export VerticalValues
+export bar_graph
+export bars_graph
+export cdf_graph
+export cdfs_graph
+export distribution_graph
+export distributions_graph
 export graph_to_figure
+export grid_graph
+export line_graph
+export lines_graph
+export points_graph
 export save_graph
 
 using ..Validations
@@ -301,10 +304,10 @@ end
 
 """
     @kwdef mutable struct DistributionConfiguration
-        values_orientation::ValuesOrientation = VerticalValues
-        show_box::Bool = true
+        values_orientation::ValuesOrientation = HorizontalValues
+        show_box::Bool = false
         show_violin::Bool = false
-        show_curve::Bool = false
+        show_curve::Bool = true
         show_outliers::Bool = false
         color::Maybe{AbstractString} = nothing
     end
@@ -318,7 +321,7 @@ If `show_box`, show a box graph.
 
 If `show_violin`, show a violin graph.
 
-If `show_curve`, show a density curve.
+If `show_curve`, show a density curve. This is the default.
 
 You can combine the above; however, a density curve is just the positive side of a violin graph, so you can't combine
 the two.
@@ -330,9 +333,9 @@ the [`DistributionsGraphData`](@ref).
 """
 @kwdef mutable struct DistributionConfiguration
     values_orientation::ValuesOrientation = VerticalValues
-    show_box::Bool = true
+    show_box::Bool = false
     show_violin::Bool = false
-    show_curve::Bool = false
+    show_curve::Bool = true
     show_outliers::Bool = false
     color::Maybe{AbstractString} = nothing
 end
@@ -377,7 +380,7 @@ end
 """
     @kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
-        distribution::DistributionConfiguration = DistributionConfiguration()
+        distribution::DistributionConfiguration = DistributionConfiguration(show_curve = false, show_box = true)
         value_axis::AxisConfiguration = AxisConfiguration()
     end
 
@@ -407,7 +410,7 @@ end
 """
     @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
         graph::GraphConfiguration = GraphConfiguration()
-        distribution::DistributionConfiguration = DistributionConfiguration()
+        distribution::DistributionConfiguration = DistributionConfiguration(show_curve = false, show_box = true)
         value_axis::AxisConfiguration = AxisConfiguration()
         show_legend::Bool = false
         distributions_gap::Maybe{Real} = nothing
@@ -415,6 +418,8 @@ end
     end
 
 Configure a graph for showing several distributions several distributions.
+
+By defaults, we show box plots when visualizing multiple distributions.
 
 This is identical to [`DistributionGraphConfiguration`](@ref) with the addition of `show_legend` to show a legend. This
 is not set by default as it makes little sense unless `overlay_distributions` is also set. The `distributions_gap` is
@@ -426,7 +431,7 @@ the fraction of white space between the distributions.
 """
 @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
-    distribution::DistributionConfiguration = DistributionConfiguration()
+    distribution::DistributionConfiguration = DistributionConfiguration(; show_curve = false, show_box = true)
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
     distributions_gap::Maybe{Real} = nothing
@@ -488,7 +493,7 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
-        distributions_values::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
+        distributions_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
         distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
@@ -503,7 +508,7 @@ elements as the number of vectors in the `distributions_values`.
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
-    distributions_values::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
+    distributions_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
     distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
@@ -549,10 +554,76 @@ A graph for visualizing a single distribution. See [`DistributionGraphData`](@re
 DistributionGraph = Graph{DistributionGraphData, DistributionGraphConfiguration}
 
 """
+    function distribution_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        value_axis_title::Maybe{AbstractString} = nothing,
+        trace_axis_title::Maybe{AbstractString} = nothing,
+        distribution_values::AbstractVector{<:Real} = Float32[],
+        distribution_name::Maybe{AbstractString} = nothing,
+    )::DistributionGraph
+
+Create a [`DistributionGraph`](@ref) by initializing only the [`DistributionGraphData`](@ref) fields.
+"""
+function distribution_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    trace_axis_title::Maybe{AbstractString} = nothing,
+    distribution_values::AbstractVector{<:Real} = Float32[],
+    distribution_name::Maybe{AbstractString} = nothing,
+)::DistributionGraph
+    return DistributionGraph(
+        DistributionGraphData(;
+            graph_title = graph_title,
+            value_axis_title = value_axis_title,
+            trace_axis_title = trace_axis_title,
+            distribution_values = distribution_values,
+            distribution_name = distribution_name,
+        ),
+        DistributionGraphConfiguration(),
+    )
+end
+
+"""
 A graph for visualizing multiple distributions. See [`DistributionsGraphData`](@ref) and
 [`DistributionsGraphConfiguration`](@ref).
 """
 DistributionsGraph = Graph{DistributionsGraphData, DistributionsGraphConfiguration}
+
+"""
+    function distributions_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        value_axis_title::Maybe{AbstractString} = nothing,
+        trace_axis_title::Maybe{AbstractString} = nothing,
+        legend_title::Maybe{AbstractString} = nothing,
+        distributions_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+        distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    )::DistributionsGraph
+
+Create a [`DistributionsGraph`](@ref) by initializing only the [`DistributionsGraphData`](@ref) fields.
+"""
+function distributions_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    trace_axis_title::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+    distributions_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+    distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+)::DistributionsGraph
+    return DistributionsGraph(
+        DistributionsGraphData(;
+            graph_title = graph_title,
+            value_axis_title = value_axis_title,
+            trace_axis_title = trace_axis_title,
+            legend_title = legend_title,
+            distributions_values = distributions_values,
+            distributions_names = distributions_names,
+            distributions_colors = distributions_colors,
+        ),
+        DistributionsGraphConfiguration(),
+    )
+end
 
 const BOX = 1
 const VIOLIN = 2
@@ -937,6 +1008,42 @@ A graph for visualizing a single line (typically Y as a function of X). See [`Li
 """
 LineGraph = Graph{LineGraphData, LineGraphConfiguration}
 
+"""
+    function line_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        x_axis_title::Maybe{AbstractString} = nothing,
+        y_axis_title::Maybe{AbstractString} = nothing,
+        vertical_bands::BandsData = BandsData(),
+        horizontal_bands::BandsData = BandsData(),
+        points_xs::AbstractVector{<:Real} = Float32[],
+        points_ys::AbstractVector{<:Real} = Float32[],
+    )::LineGraph
+
+Create a [`LineGraph`](@ref) by initializing only the [`LineGraphData`](@ref) fields.
+"""
+function line_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    vertical_bands::BandsData = BandsData(),
+    horizontal_bands::BandsData = BandsData(),
+    points_xs::AbstractVector{<:Real} = Float32[],
+    points_ys::AbstractVector{<:Real} = Float32[],
+)::LineGraph
+    return LineGraph(
+        LineGraphData(;
+            graph_title = graph_title,
+            x_axis_title = x_axis_title,
+            y_axis_title = y_axis_title,
+            vertical_bands = vertical_bands,
+            horizontal_bands = horizontal_bands,
+            points_xs = points_xs,
+            points_ys = points_ys,
+        ),
+        LineGraphConfiguration(),
+    )
+end
+
 function graph_to_figure(graph::LineGraph)::PlotlyFigure
     assert_valid_object(graph)
 
@@ -1146,8 +1253,8 @@ end
         legend_title::Maybe{AbstractString} = nothing
         vertical_bands::BandsData = BandsData()
         horizontal_bands::BandsData = BandsData()
-        lines_xs::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
-        lines_ys::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
+        lines_xs::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
+        lines_ys::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
         lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         lines_widths::Maybe{AbstractVector{<:Real}} = nothing
@@ -1176,8 +1283,8 @@ options of the `line` must not be used.
     legend_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
     horizontal_bands::BandsData = BandsData()
-    lines_xs::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
-    lines_ys::AbstractVector{AbstractVector{<:Real}} = Vector{Float32}[]
+    lines_xs::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
+    lines_ys::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
     lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
     lines_widths::Maybe{AbstractVector{<:Real}} = nothing
@@ -1254,6 +1361,60 @@ A graph visualizing multiple lines (typically Ys as functions of the same X). Se
 [`LinesGraphConfiguration`](@ref).
 """
 LinesGraph = Graph{LinesGraphData, LinesGraphConfiguration}
+
+"""
+    function lines_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        x_axis_title::Maybe{AbstractString} = nothing,
+        y_axis_title::Maybe{AbstractString} = nothing,
+        legend_title::Maybe{AbstractString} = nothing,
+        vertical_bands::BandsData = BandsData(),
+        horizontal_bands::BandsData = BandsData(),
+        lines_xs::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+        lines_ys::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+        lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        lines_widths::Maybe{AbstractVector{<:Real}} = nothing,
+        lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
+        lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+    )::LinesGraph
+
+Create a [`LinesGraph`](@ref) by initializing only the [`LinesGraphData`](@ref) fields.
+"""
+function lines_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+    vertical_bands::BandsData = BandsData(),
+    horizontal_bands::BandsData = BandsData(),
+    lines_xs::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+    lines_ys::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+    lines_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    lines_widths::Maybe{AbstractVector{<:Real}} = nothing,
+    lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
+    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+)::LinesGraph
+    return LinesGraph(
+        LinesGraphData(;
+            graph_title = graph_title,
+            x_axis_title = x_axis_title,
+            y_axis_title = y_axis_title,
+            legend_title = legend_title,
+            vertical_bands = vertical_bands,
+            horizontal_bands = horizontal_bands,
+            lines_xs = lines_xs,
+            lines_ys = lines_ys,
+            lines_names = lines_names,
+            lines_colors = lines_colors,
+            lines_widths = lines_widths,
+            lines_are_filled = lines_are_filled,
+            lines_are_dashed = lines_are_dashed,
+        ),
+        LinesGraphConfiguration(),
+    )
+end
 
 function graph_to_figure(graph::LinesGraph)::PlotlyFigure
     assert_valid_object(graph)
@@ -1674,6 +1835,39 @@ A graph visualizing a single cumulative distribution function. See [`CdfGraphDat
 """
 CdfGraph = Graph{CdfGraphData, CdfGraphConfiguration}
 
+"""
+    function cdf_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        value_axis_title::Maybe{AbstractString} = nothing,
+        fraction_axis_title::Maybe{AbstractString} = nothing,
+        value_bands::BandsData = BandsData(),
+        fraction_bands::BandsData = BandsData(),
+        cdf_values::AbstractVector{<:Real} = Float32[],
+    )::CdfGraph
+
+Create a [`CdfGraph`](@ref) by initializing only the [`CdfGraphData`](@ref) fields.
+"""
+function cdf_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    fraction_axis_title::Maybe{AbstractString} = nothing,
+    value_bands::BandsData = BandsData(),
+    fraction_bands::BandsData = BandsData(),
+    cdf_values::AbstractVector{<:Real} = Float32[],
+)::CdfGraph
+    return CdfGraph(
+        CdfGraphData(;
+            graph_title = graph_title,
+            value_axis_title = value_axis_title,
+            fraction_axis_title = fraction_axis_title,
+            value_bands = value_bands,
+            fraction_bands = fraction_bands,
+            cdf_values = cdf_values,
+        ),
+        CdfGraphConfiguration(),
+    )
+end
+
 function graph_to_figure(graph::CdfGraph)::PlotlyFigure
     assert_valid_object(graph)
     line_data = cdf_data_as_line_data(graph)
@@ -1892,6 +2086,51 @@ A graph visualizing multiple cumulative distribution functions. See [`CdfsGraphD
 """
 CdfsGraph = Graph{CdfsGraphData, CdfsGraphConfiguration}
 
+"""
+    function cdfs_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        value_axis_title::Maybe{AbstractString} = nothing,
+        fraction_axis_title::Maybe{AbstractString} = nothing,
+        legend_title::Maybe{AbstractString} = nothing,
+        cdfs_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+        cdfs_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        cdfs_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        cdfs_widths::Maybe{AbstractVector{<:Real}} = nothing,
+        cdfs_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
+        cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+    )::CdfsGraph
+
+Create a [`CdfsGraph`](@ref) by initializing only the [`CdfsGraphData`](@ref) fields.
+"""
+function cdfs_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    fraction_axis_title::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+    cdfs_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+    cdfs_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    cdfs_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    cdfs_widths::Maybe{AbstractVector{<:Real}} = nothing,
+    cdfs_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
+    cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+)::CdfsGraph
+    return CdfsGraph(
+        CdfsGraphData(;
+            graph_title = graph_title,
+            value_axis_title = value_axis_title,
+            fraction_axis_title = fraction_axis_title,
+            legend_title = legend_title,
+            cdfs_values = cdfs_values,
+            cdfs_names = cdfs_names,
+            cdfs_colors = cdfs_colors,
+            cdfs_widths = cdfs_widths,
+            cdfs_are_filled = cdfs_are_filled,
+            cdfs_are_dashed = cdfs_are_dashed,
+        ),
+        CdfsGraphConfiguration(),
+    )
+end
+
 function validate_graph(graph::CdfsGraph)::Maybe{AbstractString}
     if graph.configuration.fractions_normalization == NormalizeToValues
         n_values = length(graph.data.cdfs_values[1])
@@ -2092,6 +2331,42 @@ A graph visualizing a single series of bars. See [`BarGraphData`](@ref) and [`Ba
 """
 BarGraph = Graph{BarGraphData, BarGraphConfiguration}
 
+"""
+    function bar_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        value_axis_title::Maybe{AbstractString} = nothing,
+        bar_axis_title::Maybe{AbstractString} = nothing,
+        bars_values::AbstractVector{<:Real} = Float32[],
+        bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        bars_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    )::BarGraph
+
+Create a [`BarGraph`](@ref) by initializing only the [`BarGraphData`](@ref) fields.
+"""
+function bar_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    bar_axis_title::Maybe{AbstractString} = nothing,
+    bars_values::AbstractVector{<:Real} = Float32[],
+    bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    bars_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+)::BarGraph
+    return BarGraph(
+        BarGraphData(;
+            graph_title = graph_title,
+            value_axis_title = value_axis_title,
+            bar_axis_title = bar_axis_title,
+            bars_values = bars_values,
+            bars_names = bars_names,
+            bars_colors = bars_colors,
+            bars_hovers = bars_hovers,
+        ),
+        BarGraphConfiguration(),
+    )
+end
+
 function graph_to_figure(graph::BarGraph)::PlotlyFigure
     assert_valid_object(graph)
 
@@ -2161,7 +2436,7 @@ end
         value_axis_title::Maybe{AbstractString} = nothing
         bar_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
-        series_values::AbstractString{<:AbstractVector{<:Real}} = Vector{Float32}[]
+        series_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
         series_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         series_colors::Maybe{AbstractVector{<:AbstractString}} = nothing
         series_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
@@ -2245,6 +2520,51 @@ end
 A graph visualizing multiple series of bars. See [`BarsGraphData`](@ref) and [`BarsGraphConfiguration`](@ref).
 """
 BarsGraph = Graph{BarsGraphData, BarsGraphConfiguration}
+
+"""
+    function bars_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        value_axis_title::Maybe{AbstractString} = nothing,
+        bar_axis_title::Maybe{AbstractString} = nothing,
+        legend_title::Maybe{AbstractString} = nothing,
+        series_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+        series_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        series_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        series_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    )::BarsGraph
+
+Create a [`BarsGraph`](@ref) by initializing only the [`BarsGraphData`](@ref) fields.
+"""
+function bars_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    value_axis_title::Maybe{AbstractString} = nothing,
+    bar_axis_title::Maybe{AbstractString} = nothing,
+    legend_title::Maybe{AbstractString} = nothing,
+    series_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
+    series_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    series_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    series_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+)::BarsGraph
+    return BarsGraph(
+        BarsGraphData(;
+            graph_title = graph_title,
+            value_axis_title = value_axis_title,
+            bar_axis_title = bar_axis_title,
+            legend_title = legend_title,
+            series_values = series_values,
+            series_names = series_names,
+            series_colors = series_colors,
+            series_hovers = series_hovers,
+            bars_hovers = bars_hovers,
+            bars_names = bars_names,
+        ),
+        BarsGraphConfiguration(),
+    )
+end
 
 function graph_to_figure(graph::BarsGraph)::PlotlyFigure
     assert_valid_object(graph)
@@ -2790,6 +3110,87 @@ A graph visualizing scattered points (possibly with edges between them). See [`P
 [`PointsGraphConfiguration`](@ref).
 """
 PointsGraph = Graph{PointsGraphData, PointsGraphConfiguration}
+
+"""
+    function points_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        x_axis_title::Maybe{AbstractString} = nothing,
+        y_axis_title::Maybe{AbstractString} = nothing,
+        vertical_bands::BandsData = BandsData(),
+        horizontal_bands::BandsData = BandsData(),
+        diagonal_bands::BandsData = BandsData(),
+        points_colors_title::Maybe{AbstractString} = nothing,
+        points_sizes_title::Maybe{AbstractString} = nothing,
+        borders_colors_title::Maybe{AbstractString} = nothing,
+        borders_sizes_title::Maybe{AbstractString} = nothing,
+        edges_group_title::Maybe{AbstractString} = nothing,
+        edges_line_title::Maybe{AbstractString} = nothing,
+        points_xs::AbstractVector{<:Real} = Float32[],
+        points_ys::AbstractVector{<:Real} = Float32[],
+        points_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing,
+        points_sizes::Maybe{AbstractVector{<:Real}} = nothing,
+        points_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        borders_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing,
+        borders_sizes::Maybe{AbstractVector{<:Real}} = nothing,
+        edges_points::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing,
+        edges_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing,
+        edges_sizes::Maybe{AbstractVector{<:Real}} = nothing,
+    )::PointsGraph
+
+Create a [`PointsGraph`](@ref) by initializing only the [`PointsGraphData`](@ref) fields.
+"""
+function points_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    vertical_bands::BandsData = BandsData(),
+    horizontal_bands::BandsData = BandsData(),
+    diagonal_bands::BandsData = BandsData(),
+    points_colors_title::Maybe{AbstractString} = nothing,
+    points_sizes_title::Maybe{AbstractString} = nothing,
+    borders_colors_title::Maybe{AbstractString} = nothing,
+    borders_sizes_title::Maybe{AbstractString} = nothing,
+    edges_group_title::Maybe{AbstractString} = nothing,
+    edges_line_title::Maybe{AbstractString} = nothing,
+    points_xs::AbstractVector{<:Real} = Float32[],
+    points_ys::AbstractVector{<:Real} = Float32[],
+    points_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing,
+    points_sizes::Maybe{AbstractVector{<:Real}} = nothing,
+    points_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    borders_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing,
+    borders_sizes::Maybe{AbstractVector{<:Real}} = nothing,
+    edges_points::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing,
+    edges_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing,
+    edges_sizes::Maybe{AbstractVector{<:Real}} = nothing,
+)::PointsGraph
+    return PointsGraph(
+        PointsGraphData(;
+            graph_title = graph_title,
+            x_axis_title = x_axis_title,
+            y_axis_title = y_axis_title,
+            vertical_bands = vertical_bands,
+            horizontal_bands = horizontal_bands,
+            diagonal_bands = diagonal_bands,
+            points_colors_title = points_colors_title,
+            points_sizes_title = points_sizes_title,
+            borders_colors_title = borders_colors_title,
+            borders_sizes_title = borders_sizes_title,
+            edges_group_title = edges_group_title,
+            edges_line_title = edges_line_title,
+            points_xs = points_xs,
+            points_ys = points_ys,
+            points_colors = points_colors,
+            points_sizes = points_sizes,
+            points_hovers = points_hovers,
+            borders_colors = borders_colors,
+            borders_sizes = borders_sizes,
+            edges_points = edges_points,
+            edges_colors = edges_colors,
+            edges_sizes = edges_sizes,
+        ),
+        PointsGraphConfiguration(),
+    )
+end
 
 function graph_to_figure(graph::PointsGraph)::PlotlyFigure
     assert_valid_object(graph)
@@ -4002,6 +4403,57 @@ defaults aren't very good here.
 """
 GridGraph = Graph{GridGraphData, GridGraphConfiguration}
 
+"""
+    function grid_graph(;
+        graph_title::Maybe{AbstractString} = nothing,
+        x_axis_title::Maybe{AbstractString} = nothing,
+        y_axis_title::Maybe{AbstractString} = nothing,
+        points_colors_title::Maybe{AbstractString} = nothing,
+        borders_colors_title::Maybe{AbstractString} = nothing,
+        columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
+        points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
+        points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing,
+        borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
+        borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
+    )::GridGraph
+
+Create a [`GridGraph`](@ref) by initializing only the [`GridGraphData`](@ref) fields.
+"""
+function grid_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    points_colors_title::Maybe{AbstractString} = nothing,
+    borders_colors_title::Maybe{AbstractString} = nothing,
+    columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
+    points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
+    points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing,
+    borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
+    borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
+)::GridGraph
+    return GridGraph(
+        GridGraphData(;
+            graph_title = graph_title,
+            x_axis_title = x_axis_title,
+            y_axis_title = y_axis_title,
+            points_colors_title = points_colors_title,
+            borders_colors_title = borders_colors_title,
+            columns_names = columns_names,
+            rows_names = rows_names,
+            points_colors = points_colors,
+            points_sizes = points_sizes,
+            points_hovers = points_hovers,
+            borders_colors = borders_colors,
+            borders_sizes = borders_sizes,
+        ),
+        GridGraphConfiguration(),
+    )
+end
+
 function graph_to_figure(graph::GridGraph)::PlotlyFigure
     assert_valid_object(graph)
 
@@ -4266,7 +4718,7 @@ function validate_vector_colors(
                 end
             end
         end
-    elseif (color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}})
+    elseif colors !== nothing && (color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}})
         return "non-string $(what_colors) for categorical $(what_configuration).color_palette"
     end
 
@@ -4323,7 +4775,7 @@ function validate_matrix_colors(
                 end
             end
         end
-    elseif color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+    elseif colors !== nothing && color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         return "non-string $(what_colors) for categorical $(what_configuration).color_palette"
     end
 

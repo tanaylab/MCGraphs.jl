@@ -13,6 +13,7 @@ MCGraphs.Renderers.PlotlyFigure
 ## Points
 
 ```@docs
+MCGraphs.Renderers.points_graph
 MCGraphs.Renderers.PointsGraph
 MCGraphs.Renderers.PointsGraphData
 MCGraphs.Renderers.PointsGraphConfiguration
@@ -22,6 +23,7 @@ MCGraphs.Renderers.PointsConfiguration
 ## Grid
 
 ```@docs
+MCGraphs.Renderers.grid_graph
 MCGraphs.Renderers.GridGraph
 MCGraphs.Renderers.GridGraphData
 MCGraphs.Renderers.GridGraphConfiguration
@@ -30,6 +32,8 @@ MCGraphs.Renderers.GridGraphConfiguration
 ## Lines
 
 ```@docs
+MCGraphs.Renderers.line_graph
+MCGraphs.Renderers.lines_graph
 MCGraphs.Renderers.LineGraph
 MCGraphs.Renderers.LinesGraph
 MCGraphs.Renderers.LineGraphData
@@ -42,6 +46,8 @@ MCGraphs.Renderers.LineConfiguration
 ## CDFs
 
 ```@docs
+MCGraphs.Renderers.cdf_graph
+MCGraphs.Renderers.cdfs_graph
 MCGraphs.Renderers.CdfGraph
 MCGraphs.Renderers.CdfsGraph
 MCGraphs.Renderers.CdfGraphData
@@ -54,6 +60,8 @@ MCGraphs.Renderers.CdfDirection
 ## Bars
 
 ```@docs
+MCGraphs.Renderers.bar_graph
+MCGraphs.Renderers.bars_graph
 MCGraphs.Renderers.BarGraph
 MCGraphs.Renderers.BarsGraph
 MCGraphs.Renderers.BarGraphData
@@ -65,6 +73,8 @@ MCGraphs.Renderers.BarsGraphConfiguration
 ## Distribution
 
 ```@docs
+MCGraphs.Renderers.distribution_graph
+MCGraphs.Renderers.distributions_graph
 MCGraphs.Renderers.DistributionGraph
 MCGraphs.Renderers.DistributionsGraph
 MCGraphs.Renderers.DistributionGraphData

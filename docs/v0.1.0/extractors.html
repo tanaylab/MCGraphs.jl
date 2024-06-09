@@ -244,6 +244,7 @@
     x_sphere::AbstractString,
     y_sphere::AbstractString,
     min_significant_gene_UMIs::Integer = 40,
+    max_sphere_diameter::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
 )::PointsGraphData
 </code>
@@ -335,6 +336,8 @@
     configuration::PointsGraphConfiguration = PointsGraphConfiguration();
     x_sphere::AbstractString,
     y_sphere::AbstractString,
+    x_neighborhood::AbstractString,
+    max_sphere_diameter::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
 )::PointsGraphConfiguration
 </code>
