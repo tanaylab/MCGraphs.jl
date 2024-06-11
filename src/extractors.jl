@@ -366,19 +366,10 @@ name twice, why the sphere was merged).
     x_neighborhood = main_neighborhoods_of_spheres[x_sphere]
     y_neighborhood = main_neighborhoods_of_spheres[y_sphere]
 
-    if has_matrix(daf, "gene", "neighborhood", "is_correlated")
-        is_correlated_of_x_neighborhood_of_genes =
-            get_query(daf, Axis("neighborhood") |> IsEqual(x_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
-        is_correlated_of_y_neighborhood_of_genes =
-            get_query(daf, Axis("neighborhood") |> IsEqual(y_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
-    else
-        is_correlated_of_x_neighborhood_of_genes =
-            get_query(daf, Axis("sphere") |> IsEqual(x_sphere) |> Axis("gene") |> Lookup("is_correlated"))
-        is_correlated_of_y_neighborhood_of_genes =
-            get_query(daf, Axis("sphere") |> IsEqual(y_sphere) |> Axis("gene") |> Lookup("is_correlated"))
-    end
-
-    get_matrix(daf, "sphere", "gene", "is_correlated")
+    is_correlated_of_x_neighborhood_of_genes =
+        get_query(daf, Axis("neighborhood") |> IsEqual(x_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
+    is_correlated_of_y_neighborhood_of_genes =
+        get_query(daf, Axis("neighborhood") |> IsEqual(y_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
 
     n_significant_genes = sum(mask_of_genes)
     @assert n_significant_genes > 0
