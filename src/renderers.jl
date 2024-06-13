@@ -177,28 +177,28 @@ graph type.
 """
 function graph_to_figure end
 
-function Base.Multimedia.display(graph::Graph)::Any  # untested
-    return Base.Multimedia.display(graph_to_figure(graph))  # NOLINT
+function Base.show(io::IO, mime::AbstractString, graph::Graph)::Nothing  # untested
+    return show(io, mime, graph_to_figure(graph))
 end
 
-function Base.Multimedia.display(mime::AbstractString, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(mime, graph_to_figure(graph))  # NOLINT
+function Base.show(io::IO, mime::MIME, graph::Graph)::Nothing  # untested
+    return show(io, mime, graph_to_figure(graph))
 end
 
-function Base.Multimedia.display(on_display::AbstractDisplay, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, graph_to_figure(graph))  # NOLINT
+function Base.show(io::IO, mime::MIME{Symbol}, graph::Graph)::Nothing  # untested
+    return show(io, mime, graph_to_figure(graph))
 end
 
-function Base.Multimedia.display(on_display::TextDisplay, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, graph_to_figure(graph))  # NOLINT
+function Base.show(io::IO, mime::MIME{Symbol("text/plain")}, graph::Graph)::Nothing  # untested
+    return show(io, mime, graph_to_figure(graph))
 end
 
-function Base.Multimedia.display(on_display::REPL.REPLDisplay, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, graph_to_figure(graph))  # NOLINT
+function Base.show(io::IO, mime::MIME{Symbol("text/csv")}, graph::Graph)::Nothing  # untested
+    return show(io, mime, graph_to_figure(graph))
 end
 
-function Base.Multimedia.display(on_display::AbstractDisplay, mime::AbstractString, graph::Graph)::Any  # untested
-    return Base.Multimedia.display(on_display, mime, graph_to_figure(graph))  # NOLINT
+function Base.show(io::IO, mime::MIME{Symbol("text/tab-separated-values")}, graph::Graph)::Nothing  # untested
+    return show(io, mime, graph_to_figure(graph))
 end
 
 """
