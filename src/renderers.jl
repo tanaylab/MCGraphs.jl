@@ -332,7 +332,7 @@ The `color` is chosen automatically by default. When showing multiple distributi
 the [`DistributionsGraphData`](@ref).
 """
 @kwdef mutable struct DistributionConfiguration
-    values_orientation::ValuesOrientation = VerticalValues
+    values_orientation::ValuesOrientation = HorizontalValues
     show_box::Bool = false
     show_violin::Bool = false
     show_curve::Bool = true

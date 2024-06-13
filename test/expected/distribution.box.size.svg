@@ -29,12 +29,12 @@
 <g class="imagelayer"/>
 </g>
 <g class="gridlayer">
-<g class="x"/>
-<g class="y">
-<path class="ygrid crisp" transform="translate(0,133.07)" d="M50,0h92" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="ygrid crisp" transform="translate(0,98.59)" d="M50,0h92" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="ygrid crisp" transform="translate(0,64.1)" d="M50,0h92" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
+<g class="x">
+<path class="xgrid crisp" transform="translate(60.019999999999996,0)" d="M0,60v82" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
+<path class="xgrid crisp" transform="translate(98.71000000000001,0)" d="M0,60v82" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
+<path class="xgrid crisp" transform="translate(137.4,0)" d="M0,60v82" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
 </g>
+<g class="y"/>
 </g>
 <g class="zerolinelayer"/>
 <path class="xlines-below"/>
@@ -46,7 +46,7 @@
 <g class="plot" transform="translate(50,60)" clip-path="url('#id-2')">
 <g class="boxlayer mlayer">
 <g class="trace boxes" style="opacity: 1;">
-<path class="box" d="M23.46,55.14H68.54M23.46,67.55H68.54V51H23.46ZM46,67.55V77.9M46,51V4.1M34.73,77.9H57.27M34.73,4.1H57.27" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(31, 119, 180); stroke-opacity: 1; fill: rgb(31, 119, 180); fill-opacity: 0.5;"/>
+<path class="box" d="M30.14,61.09V20.91M16.21,61.09V20.91H34.78V61.09ZM16.21,41H4.6M34.78,41H87.4M4.6,51.05V30.96M87.4,51.05V30.96" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(31, 119, 180); stroke-opacity: 1; fill: rgb(31, 119, 180); fill-opacity: 0.5;"/>
 </g>
 </g>
 </g>
@@ -54,21 +54,21 @@
 <path class="xlines-above crisp" d="M0,0" style="fill: none;"/>
 <path class="ylines-above crisp" d="M0,0" style="fill: none;"/>
 <g class="overlines-above"/>
-<g class="xaxislayer-above"/>
-<g class="yaxislayer-above">
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,133.07)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+<g class="xaxislayer-above">
+<g class="xtick">
+<text text-anchor="middle" x="0" y="155" transform="translate(60.019999999999996,0)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
 50</text>
 </g>
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,98.59)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+<g class="xtick">
+<text text-anchor="middle" x="0" y="155" transform="translate(98.71000000000001,0)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
 100</text>
 </g>
-<g class="ytick">
-<text text-anchor="end" x="49" y="4.199999999999999" transform="translate(0,64.1)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
+<g class="xtick">
+<text text-anchor="middle" x="0" y="155" transform="translate(137.4,0)" style="font-family: 'Open Sans', verdana, arial, sans-serif; font-size: 12px; fill: rgb(68, 68, 68); fill-opacity: 1; white-space: pre;">
 150</text>
 </g>
 </g>
+<g class="yaxislayer-above"/>
 <g class="overaxes-above"/>
 </g>
 </g>

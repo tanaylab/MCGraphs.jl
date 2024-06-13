@@ -228,9 +228,9 @@ nested_test("renderers") do
                 return nothing
             end
 
-            nested_test("horizontal") do
-                graph.configuration.distribution.values_orientation = HorizontalValues
-                test_html(graph, "distribution.box.horizontal.html")
+            nested_test("vertical") do
+                graph.configuration.distribution.values_orientation = VerticalValues
+                test_html(graph, "distribution.box.vertical.html")
                 return nothing
             end
 
@@ -288,9 +288,9 @@ nested_test("renderers") do
                 return nothing
             end
 
-            nested_test("horizontal") do
-                graph.configuration.distribution.values_orientation = HorizontalValues
-                test_html(graph, "distribution.violin.horizontal.html")
+            nested_test("vertical") do
+                graph.configuration.distribution.values_orientation = VerticalValues
+                test_html(graph, "distribution.violin.vertical.html")
                 return nothing
             end
 
@@ -322,9 +322,9 @@ nested_test("renderers") do
                 return nothing
             end
 
-            nested_test("horizontal") do
-                graph.configuration.distribution.values_orientation = HorizontalValues
-                test_html(graph, "distribution.curve.horizontal.html")
+            nested_test("vertical") do
+                graph.configuration.distribution.values_orientation = VerticalValues
+                test_html(graph, "distribution.curve.vertical.html")
                 return nothing
             end
 
@@ -427,9 +427,9 @@ nested_test("renderers") do
                 return nothing
             end
 
-            nested_test("horizontal") do
-                graph.configuration.distribution.values_orientation = HorizontalValues
-                test_html(graph, "distributions.box.horizontal.html")
+            nested_test("vertical") do
+                graph.configuration.distribution.values_orientation = VerticalValues
+                test_html(graph, "distributions.box.vertical.html")
                 return nothing
             end
 
@@ -441,9 +441,9 @@ nested_test("renderers") do
                     return nothing
                 end
 
-                nested_test("horizontal") do
-                    graph.configuration.distribution.values_orientation = HorizontalValues
-                    test_html(graph, "distributions.box.overlay.horizontal.html")
+                nested_test("vertical") do
+                    graph.configuration.distribution.values_orientation = VerticalValues
+                    test_html(graph, "distributions.box.overlay.vertical.html")
                     return nothing
                 end
 
@@ -470,9 +470,9 @@ nested_test("renderers") do
                 return nothing
             end
 
-            nested_test("horizontal") do
-                graph.configuration.distribution.values_orientation = HorizontalValues
-                test_html(graph, "distributions.violin.horizontal.html")
+            nested_test("vertical") do
+                graph.configuration.distribution.values_orientation = VerticalValues
+                test_html(graph, "distributions.violin.vertical.html")
                 return nothing
             end
 
@@ -484,9 +484,9 @@ nested_test("renderers") do
                     return nothing
                 end
 
-                nested_test("horizontal") do
-                    graph.configuration.distribution.values_orientation = HorizontalValues
-                    test_html(graph, "distributions.violin.overlay.horizontal.html")
+                nested_test("vertical") do
+                    graph.configuration.distribution.values_orientation = VerticalValues
+                    test_html(graph, "distributions.violin.overlay.vertical.html")
                     return nothing
                 end
 
@@ -514,9 +514,9 @@ nested_test("renderers") do
                 return nothing
             end
 
-            nested_test("horizontal") do
-                graph.configuration.distribution.values_orientation = HorizontalValues
-                test_html(graph, "distributions.curve.horizontal.html")
+            nested_test("vertical") do
+                graph.configuration.distribution.values_orientation = VerticalValues
+                test_html(graph, "distributions.curve.vertical.html")
                 return nothing
             end
 
@@ -528,9 +528,9 @@ nested_test("renderers") do
                     return nothing
                 end
 
-                nested_test("horizontal") do
-                    graph.configuration.distribution.values_orientation = HorizontalValues
-                    test_html(graph, "distributions.curve.overlay.horizontal.html")
+                nested_test("vertical") do
+                    graph.configuration.distribution.values_orientation = VerticalValues
+                    test_html(graph, "distributions.curve.overlay.vertical.html")
                     return nothing
                 end
 
