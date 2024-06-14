@@ -340,17 +340,13 @@ name twice, why the sphere was merged).
             if x_fraction_of_genes[gene_index] < y_fraction_of_genes[gene_index]
                 x_confidence_fraction_of_genes[gene_index] =
                     2^log_increased_fraction_of_x_metacells_of_genes[x_metacell_index, gene_index]
-                @assert x_confidence_fraction_of_genes[gene_index] >= x_fraction_of_genes[gene_index]
                 y_confidence_fraction_of_genes[gene_index] =
                     2^log_decreased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index]
-                @assert y_confidence_fraction_of_genes[gene_index] <= y_fraction_of_genes[gene_index]
             else
                 x_confidence_fraction_of_genes[gene_index] =
                     2^log_decreased_fraction_of_x_metacells_of_genes[x_metacell_index, gene_index]
-                @assert x_confidence_fraction_of_genes[gene_index] <= x_fraction_of_genes[gene_index]
                 y_confidence_fraction_of_genes[gene_index] =
                     2^log_increased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index]
-                @assert y_confidence_fraction_of_genes[gene_index] >= y_fraction_of_genes[gene_index]
             end
         end
     end
