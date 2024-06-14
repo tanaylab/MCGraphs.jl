@@ -269,6 +269,7 @@ name twice, why the sphere was merged).
         )
     log_decreased_fraction_of_x_metacells_of_genes = transposer!(log_decreased_fraction_of_genes_in_x_metacells)
     log_increased_fraction_of_x_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_x_metacells)
+    @assert all(log_decreased_fraction_of_x_metacells_of_genes .<= log_increased_fraction_of_x_metacells_of_genes)
 
     is_self_difference = x_sphere == y_sphere
     if is_self_difference
@@ -291,6 +292,7 @@ name twice, why the sphere was merged).
         log_decreased_fraction_of_y_metacells_of_genes = transposer!(log_decreased_fraction_of_genes_in_y_metacells)
         log_increased_fraction_of_y_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_y_metacells)
     end
+    @assert all(log_decreased_fraction_of_y_metacells_of_genes .<= log_increased_fraction_of_y_metacells_of_genes)
 
     divergence_of_genes = get_vector(daf, "gene", "divergence")
 
@@ -336,27 +338,19 @@ name twice, why the sphere was merged).
             x_fraction_of_genes[gene_index] = fraction_of_x_metacells_of_genes[x_metacell_index, gene_index]
             y_fraction_of_genes[gene_index] = fraction_of_y_metacells_of_genes[y_metacell_index, gene_index]
             if x_fraction_of_genes[gene_index] < y_fraction_of_genes[gene_index]
-                x_confidence_fraction_of_genes[gene_index] = max(
-                    2^log_increased_fraction_of_x_metacells_of_genes[x_metacell_index, gene_index] -
-                    gene_fraction_regularization,
-                    0.0,
-                )
-                y_confidence_fraction_of_genes[gene_index] = max(
-                    2^log_decreased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index] -
-                    gene_fraction_regularization,
-                    0.0,
-                )
+                x_confidence_fraction_of_genes[gene_index] =
+                    2^log_increased_fraction_of_x_metacells_of_genes[x_metacell_index, gene_index]
+                @assert x_confidence_fraction_of_genes[gene_index] >= x_fraction_of_genes[gene_index]
+                y_confidence_fraction_of_genes[gene_index] =
+                    2^log_decreased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index]
+                @assert y_confidence_fraction_of_genes[gene_index] <= y_fraction_of_genes[gene_index]
             else
-                x_confidence_fraction_of_genes[gene_index] = max(
-                    2^log_decreased_fraction_of_x_metacells_of_genes[x_metacell_index, gene_index] -
-                    gene_fraction_regularization,
-                    0.0,
-                )
-                y_confidence_fraction_of_genes[gene_index] = max(
-                    2^log_increased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index] -
-                    gene_fraction_regularization,
-                    0.0,
-                )
+                x_confidence_fraction_of_genes[gene_index] =
+                    2^log_decreased_fraction_of_x_metacells_of_genes[x_metacell_index, gene_index]
+                @assert x_confidence_fraction_of_genes[gene_index] <= x_fraction_of_genes[gene_index]
+                y_confidence_fraction_of_genes[gene_index] =
+                    2^log_increased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index]
+                @assert y_confidence_fraction_of_genes[gene_index] >= y_fraction_of_genes[gene_index]
             end
         end
     end
@@ -378,7 +372,7 @@ name twice, why the sphere was merged).
     points_ys = Vector{Float32}(undef, n_significant_genes * 3)
     points_colors = Vector{AbstractString}(undef, n_significant_genes * 3)
     points_hovers = Vector{AbstractString}(undef, n_significant_genes * 3)
-    edges_points = Vector{Tuple{Int, Int}}(undef, n_significant_genes)
+    edges_points = Vector{Tuple{Int, Int}}(undef, n_significant_genes * 2)
     borders_colors = Vector{AbstractString}(undef, n_significant_genes * 3)
 
     not_correlated = "uncorrelated for both"
@@ -493,27 +487,26 @@ name twice, why the sphere was merged).
         borders_colors[point_index] = ""
 
         if divergence > 0
+            edge_index += 1
+            edges_points[edge_index] = (point_index, point_index + 1)
+
             point_index += 1
             points_xs[point_index] = x_confidence_fraction_of_genes[gene_index]
             points_ys[point_index] = y_confidence_fraction_of_genes[gene_index]
-            if points_ys[point_index] > points_ys[point_index]
-                points_ys[point_index] *= (1 - divergence)
-            else
-                points_ys[point_index] *= (1 + divergence)
-            end
+            points_ys[point_index] =
+                points_xs[point_index] * (points_ys[point_index] / points_xs[point_index])^(1 - divergence)
             points_colors[point_index] = ""
             points_hovers[point_index] = ""
             borders_colors[point_index] = ""
         end
     end
-    @assert point_index <= n_significant_genes * 3
-    @assert edge_index == n_significant_genes
 
     resize!(points_xs, point_index)
     resize!(points_ys, point_index)
     resize!(points_colors, point_index)
     resize!(points_hovers, point_index)
     resize!(borders_colors, point_index)
+    resize!(edges_points, edge_index)
 
     return PointsGraphData(;
         graph_title = "Spheres Genes Difference",
