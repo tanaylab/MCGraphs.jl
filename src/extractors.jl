@@ -34,10 +34,10 @@ end
         x_gene::AbstractString,
         y_gene::AbstractString,
         axis::QueryString,
-        min_significant_gene_UMIs::Integer = 40,
+        [min_significant_gene_UMIs::Integer = 40,
         color::Maybe{QueryString} = nothing,
         entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
-        genes_hovers::Maybe{QueryColumns} = nothing,
+        genes_hovers::Maybe{QueryColumns} = nothing],
     )::PointsGraphData
 
 Extract the data for a gene-gene graph from the `daf` data. The X coordinate of each point is the fraction of the
@@ -189,7 +189,7 @@ end
 """
     default_gene_gene_configuration(
         configuration = PointsGraphConfiguration();
-        gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
+        [gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5],
     )::PointsGraphConfiguration
 
 Return a default configuration for a gene-gene graph. This just applies the log scale to the axes.
@@ -210,9 +210,9 @@ end
         daf::DafReader;
         x_sphere::AbstractString,
         y_sphere::AbstractString,
-        min_significant_gene_UMIs::Integer = 40,
+        [min_significant_gene_UMIs::Integer = 40,
         max_sphere_diameter::AbstractFloat = 2.0,
-        gene_fraction_regularization::AbstractFloat = 1e-5,
+        gene_fraction_regularization::AbstractFloat = 1e-5],
     )::PointsGraphData
 
 Extract the data for a sphere-sphere graph. This shows why two spheres were not merged (or, if given the same sphere
@@ -636,18 +636,18 @@ end
 
 """
     default_sphere_sphere_configuration(
-        configuration::PointsGraphConfiguration = PointsGraphConfiguration();
+        [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
         x_sphere::AbstractString,
         y_sphere::AbstractString,
         x_neighborhood::AbstractString,
-        max_sphere_diameter::AbstractFloat = 2.0,
-        gene_fraction_regularization::AbstractFloat = 1e-5,
+        [max_sphere_diameter::AbstractFloat = 2.0,
+        gene_fraction_regularization::AbstractFloat = 1e-5],
     )::PointsGraphConfiguration
 
 Return a default configuration for a sphere-sphere graph. Will modify `configuration` in-place and return it.
 """
-function default_sphere_sphere_configuration(;  # untested
-    configuration::PointsGraphConfiguration = PointsGraphConfiguration(),
+function default_sphere_sphere_configuration(  # untested
+    configuration::PointsGraphConfiguration = PointsGraphConfiguration();
     x_sphere::AbstractString,
     y_sphere::AbstractString,
     max_sphere_diameter::AbstractFloat = 2.0,

@@ -189,10 +189,10 @@
     x_gene::AbstractString,
     y_gene::AbstractString,
     axis::QueryString,
-    min_significant_gene_UMIs::Integer = 40,
+    [min_significant_gene_UMIs::Integer = 40,
     color::Maybe{QueryString} = nothing,
     entries_hovers::Maybe{QueryColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
-    genes_hovers::Maybe{QueryColumns} = nothing,
+    genes_hovers::Maybe{QueryColumns} = nothing],
 )::PointsGraphData
 </code>
 </pre>
@@ -243,9 +243,9 @@
     daf::DafReader;
     x_sphere::AbstractString,
     y_sphere::AbstractString,
-    min_significant_gene_UMIs::Integer = 40,
+    [min_significant_gene_UMIs::Integer = 40,
     max_sphere_diameter::AbstractFloat = 2.0,
-    gene_fraction_regularization::AbstractFloat = 1e-5,
+    gene_fraction_regularization::AbstractFloat = 1e-5],
 )::PointsGraphData
 </code>
 </pre>
@@ -307,7 +307,7 @@
 <pre>
 <code class="language-julia hljs">default_gene_gene_configuration(
     configuration = PointsGraphConfiguration();
-    gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
+    [gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5],
 )::PointsGraphConfiguration
 </code>
 </pre>
@@ -333,12 +333,12 @@
 <div>
 <pre>
 <code class="language-julia hljs">default_sphere_sphere_configuration(
-    configuration::PointsGraphConfiguration = PointsGraphConfiguration();
+    [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
     x_sphere::AbstractString,
     y_sphere::AbstractString,
     x_neighborhood::AbstractString,
-    max_sphere_diameter::AbstractFloat = 2.0,
-    gene_fraction_regularization::AbstractFloat = 1e-5,
+    [max_sphere_diameter::AbstractFloat = 2.0,
+    gene_fraction_regularization::AbstractFloat = 1e-5],
 )::PointsGraphConfiguration
 </code>
 </pre>

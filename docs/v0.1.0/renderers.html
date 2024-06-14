@@ -595,7 +595,7 @@
 <div>
 <pre>
 <code class="language-julia hljs">function points_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     vertical_bands::BandsData = BandsData(),
@@ -616,7 +616,7 @@
     borders_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing,
     edges_points::Maybe{AbstractVector{Tuple{&lt;:Integer, &lt;:Integer}}} = nothing,
     edges_colors::Maybe{Union{AbstractVector{&lt;:AbstractString}, AbstractVector{&lt;:Real}}} = nothing,
-    edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing,
+    edges_sizes::Maybe{AbstractVector{&lt;:Real}} = nothing],
 )::PointsGraph
 </code>
 </pre>
@@ -949,7 +949,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function grid_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     points_colors_title::Maybe{AbstractString} = nothing,
@@ -960,7 +960,7 @@ end
     points_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing,
     points_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing,
     borders_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing,
-    borders_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing,
+    borders_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing],
 )::GridGraph
 </code>
 </pre>
@@ -1097,13 +1097,13 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function line_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     vertical_bands::BandsData = BandsData(),
     horizontal_bands::BandsData = BandsData(),
     points_xs::AbstractVector{&lt;:Real} = Float32[],
-    points_ys::AbstractVector{&lt;:Real} = Float32[],
+    points_ys::AbstractVector{&lt;:Real} = Float32[]],
 )::LineGraph
 </code>
 </pre>
@@ -1135,7 +1135,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function lines_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -1147,7 +1147,7 @@ end
     lines_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
     lines_widths::Maybe{AbstractVector{&lt;:Real}} = nothing,
     lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
-    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+    lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing],
 )::LinesGraph
 </code>
 </pre>
@@ -1468,12 +1468,12 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function cdf_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     fraction_axis_title::Maybe{AbstractString} = nothing,
     value_bands::BandsData = BandsData(),
     fraction_bands::BandsData = BandsData(),
-    cdf_values::AbstractVector{&lt;:Real} = Float32[],
+    cdf_values::AbstractVector{&lt;:Real} = Float32[]],
 )::CdfGraph
 </code>
 </pre>
@@ -1505,7 +1505,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function cdfs_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     fraction_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -1514,7 +1514,7 @@ end
     cdfs_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
     cdfs_widths::Maybe{AbstractVector{&lt;:Real}} = nothing,
     cdfs_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
-    cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+    cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing],
 )::CdfsGraph
 </code>
 </pre>
@@ -1808,13 +1808,13 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function bar_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     bar_axis_title::Maybe{AbstractString} = nothing,
     bars_values::AbstractVector{&lt;:Real} = Float32[],
     bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
     bars_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
-    bars_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    bars_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing],
 )::BarGraph
 </code>
 </pre>
@@ -1846,7 +1846,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function bars_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     bar_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -1855,7 +1855,7 @@ end
     series_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
     series_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
     bars_hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
-    bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    bars_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing],
 )::BarsGraph
 </code>
 </pre>
@@ -2137,11 +2137,11 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function distribution_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     trace_axis_title::Maybe{AbstractString} = nothing,
     distribution_values::AbstractVector{&lt;:Real} = Float32[],
-    distribution_name::Maybe{AbstractString} = nothing,
+    distribution_name::Maybe{AbstractString} = nothing],
 )::DistributionGraph
 </code>
 </pre>
@@ -2173,13 +2173,13 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function distributions_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    [graph_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     trace_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
     distributions_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[],
     distributions_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
-    distributions_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    distributions_colors::Maybe{AbstractVector{&lt;:AbstractString}} = nothing],
 )::DistributionsGraph
 </code>
 </pre>

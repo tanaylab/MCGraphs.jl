@@ -14,17 +14,18 @@ using ..Extractors
 
 """
     plot_gene_gene(
-        daf::DafReader;
+        daf::DafReader
+        [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
         x_gene::AbstractString,
         y_gene::AbstractString,
-        axis::QueryString = "metacell",
+        [axis::QueryString = "metacell",
         color::Maybe{QueryString} = "type",
         min_significant_gene_UMIs::Integer = 40,
         gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
         colors::Maybe{QueryString} = "/ type : color",
         entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
-        genes_hovers::Maybe{QueryColumns} = nothing,
-    )::Graph
+        genes_hovers::Maybe{QueryColumns} = nothing,]
+    )::PointsGraph
 
 Generate a complete gene-gene graph using [`extract_gene_gene_data`](@ref), [`extract_categorical_color_palette`](@ref),
 and [`default_gene_gene_configuration`](@ref).
@@ -34,7 +35,8 @@ graph is a gene which has a robust comparable expression (at least `min_signific
 entries).
 """
 function plot_gene_gene(  # untested
-    daf::DafReader;
+    daf::DafReader,
+    configuration::PointsGraphConfiguration = PointsGraphConfiguration();
     x_gene::AbstractString,
     y_gene::AbstractString,
     axis::QueryString = "metacell",
@@ -44,7 +46,7 @@ function plot_gene_gene(  # untested
     colors::Maybe{QueryString} = "/ type : color",
     entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
     genes_hovers::Maybe{QueryColumns} = nothing,
-)::Graph
+)::PointsGraph
     data = extract_gene_gene_data(
         daf;
         x_gene = x_gene,
@@ -55,23 +57,24 @@ function plot_gene_gene(  # untested
         entries_hovers = entries_hovers,
         genes_hovers = genes_hovers,
     )
-    configuration = default_gene_gene_configuration(; gene_fraction_regularization = gene_fraction_regularization)
+    default_gene_gene_configuration(configuration; gene_fraction_regularization = gene_fraction_regularization)
     if colors !== nothing
         configuration.points.color_palette = extract_categorical_color_palette(daf, colors)
     end
-    return Graph(data, configuration)
+    return PointsGraph(data, configuration)
 end
 
 """
     plot_sphere_sphere(
-        daf::DafReader;
+        daf::DafReader,
+        [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
         x_sphere::AbstractString,
         y_sphere::AbstractString,
-        min_significant_gene_UMIs::Integer = 40,
+        [min_significant_gene_UMIs::Integer = 40,
         max_sphere_diameter::AbstractFloat = 2.0,
         gene_fraction_regularization::AbstractFloat = 1e-5,
-        confidence::AbstractFloat = 0.9,
-    )::Graph
+        confidence::AbstractFloat = 0.9],
+    )::PointsGraph
 
 Generate a complete sphere-sphere graph using [`extract_sphere_sphere_data`](@ref) and
 [`default_sphere_sphere_configuration`](@ref).
@@ -81,13 +84,14 @@ both spgeres). A line is attached to each point showing the confidence modificat
 metacells into spheres.
 """
 function plot_sphere_sphere(
-    daf::DafReader;
+    daf::DafReader,
+    configuration::PointsGraphConfiguration = PointsGraphConfiguration();
     x_sphere::AbstractString,
     y_sphere::AbstractString,
     min_significant_gene_UMIs::Integer = 40,
     max_sphere_diameter::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
-)::Graph
+)::PointsGraph
     data = extract_sphere_sphere_data(
         daf;
         x_sphere = x_sphere,
@@ -95,7 +99,8 @@ function plot_sphere_sphere(
         min_significant_gene_UMIs = min_significant_gene_UMIs,
         gene_fraction_regularization = gene_fraction_regularization,
     )
-    configuration = default_sphere_sphere_configuration(;
+    default_sphere_sphere_configuration(
+        configuration;
         x_sphere = x_sphere,
         y_sphere = y_sphere,
         max_sphere_diameter = max_sphere_diameter,

@@ -547,11 +547,11 @@ DistributionGraph = Graph{DistributionGraphData, DistributionGraphConfiguration}
 
 """
     function distribution_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         trace_axis_title::Maybe{AbstractString} = nothing,
         distribution_values::AbstractVector{<:Real} = Float32[],
-        distribution_name::Maybe{AbstractString} = nothing,
+        distribution_name::Maybe{AbstractString} = nothing],
     )::DistributionGraph
 
 Create a [`DistributionGraph`](@ref) by initializing only the [`DistributionGraphData`](@ref) fields.
@@ -583,13 +583,13 @@ DistributionsGraph = Graph{DistributionsGraphData, DistributionsGraphConfigurati
 
 """
     function distributions_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         trace_axis_title::Maybe{AbstractString} = nothing,
         legend_title::Maybe{AbstractString} = nothing,
         distributions_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[],
         distributions_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
-        distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        distributions_colors::Maybe{AbstractVector{<:AbstractString}} = nothing],
     )::DistributionsGraph
 
 Create a [`DistributionsGraph`](@ref) by initializing only the [`DistributionsGraphData`](@ref) fields.
@@ -1002,13 +1002,13 @@ LineGraph = Graph{LineGraphData, LineGraphConfiguration}
 
 """
     function line_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         vertical_bands::BandsData = BandsData(),
         horizontal_bands::BandsData = BandsData(),
         points_xs::AbstractVector{<:Real} = Float32[],
-        points_ys::AbstractVector{<:Real} = Float32[],
+        points_ys::AbstractVector{<:Real} = Float32[]],
     )::LineGraph
 
 Create a [`LineGraph`](@ref) by initializing only the [`LineGraphData`](@ref) fields.
@@ -1356,7 +1356,7 @@ LinesGraph = Graph{LinesGraphData, LinesGraphConfiguration}
 
 """
     function lines_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         legend_title::Maybe{AbstractString} = nothing,
@@ -1368,7 +1368,7 @@ LinesGraph = Graph{LinesGraphData, LinesGraphConfiguration}
         lines_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
         lines_widths::Maybe{AbstractVector{<:Real}} = nothing,
         lines_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
-        lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+        lines_are_dashed::Maybe{AbstractVector{Bool}} = nothing],
     )::LinesGraph
 
 Create a [`LinesGraph`](@ref) by initializing only the [`LinesGraphData`](@ref) fields.
@@ -1829,12 +1829,12 @@ CdfGraph = Graph{CdfGraphData, CdfGraphConfiguration}
 
 """
     function cdf_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         fraction_axis_title::Maybe{AbstractString} = nothing,
         value_bands::BandsData = BandsData(),
         fraction_bands::BandsData = BandsData(),
-        cdf_values::AbstractVector{<:Real} = Float32[],
+        cdf_values::AbstractVector{<:Real} = Float32[]],
     )::CdfGraph
 
 Create a [`CdfGraph`](@ref) by initializing only the [`CdfGraphData`](@ref) fields.
@@ -2080,7 +2080,7 @@ CdfsGraph = Graph{CdfsGraphData, CdfsGraphConfiguration}
 
 """
     function cdfs_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         fraction_axis_title::Maybe{AbstractString} = nothing,
         legend_title::Maybe{AbstractString} = nothing,
@@ -2089,7 +2089,7 @@ CdfsGraph = Graph{CdfsGraphData, CdfsGraphConfiguration}
         cdfs_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
         cdfs_widths::Maybe{AbstractVector{<:Real}} = nothing,
         cdfs_are_filled::Maybe{Union{AbstractVector{Bool}, BitVector}} = nothing,
-        cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing,
+        cdfs_are_dashed::Maybe{AbstractVector{Bool}} = nothing],
     )::CdfsGraph
 
 Create a [`CdfsGraph`](@ref) by initializing only the [`CdfsGraphData`](@ref) fields.
@@ -2325,13 +2325,13 @@ BarGraph = Graph{BarGraphData, BarGraphConfiguration}
 
 """
     function bar_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         bar_axis_title::Maybe{AbstractString} = nothing,
         bars_values::AbstractVector{<:Real} = Float32[],
         bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
         bars_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
-        bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing],
     )::BarGraph
 
 Create a [`BarGraph`](@ref) by initializing only the [`BarGraphData`](@ref) fields.
@@ -2515,7 +2515,7 @@ BarsGraph = Graph{BarsGraphData, BarsGraphConfiguration}
 
 """
     function bars_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         bar_axis_title::Maybe{AbstractString} = nothing,
         legend_title::Maybe{AbstractString} = nothing,
@@ -2524,7 +2524,7 @@ BarsGraph = Graph{BarsGraphData, BarsGraphConfiguration}
         series_colors::Maybe{AbstractVector{<:AbstractString}} = nothing,
         series_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
         bars_hovers::Maybe{AbstractVector{<:AbstractString}} = nothing,
-        bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        bars_names::Maybe{AbstractVector{<:AbstractString}} = nothing],
     )::BarsGraph
 
 Create a [`BarsGraph`](@ref) by initializing only the [`BarsGraphData`](@ref) fields.
@@ -3105,7 +3105,7 @@ PointsGraph = Graph{PointsGraphData, PointsGraphConfiguration}
 
 """
     function points_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         vertical_bands::BandsData = BandsData(),
@@ -3126,7 +3126,7 @@ PointsGraph = Graph{PointsGraphData, PointsGraphConfiguration}
         borders_sizes::Maybe{AbstractVector{<:Real}} = nothing,
         edges_points::Maybe{AbstractVector{Tuple{<:Integer, <:Integer}}} = nothing,
         edges_colors::Maybe{Union{AbstractVector{<:AbstractString}, AbstractVector{<:Real}}} = nothing,
-        edges_sizes::Maybe{AbstractVector{<:Real}} = nothing,
+        edges_sizes::Maybe{AbstractVector{<:Real}} = nothing],
     )::PointsGraph
 
 Create a [`PointsGraph`](@ref) by initializing only the [`PointsGraphData`](@ref) fields.
@@ -4397,7 +4397,7 @@ GridGraph = Graph{GridGraphData, GridGraphConfiguration}
 
 """
     function grid_graph(;
-        graph_title::Maybe{AbstractString} = nothing,
+        [graph_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         points_colors_title::Maybe{AbstractString} = nothing,
@@ -4408,7 +4408,7 @@ GridGraph = Graph{GridGraphData, GridGraphConfiguration}
         points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
         points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing,
         borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
-        borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
+        borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing],
     )::GridGraph
 
 Create a [`GridGraph`](@ref) by initializing only the [`GridGraphData`](@ref) fields.

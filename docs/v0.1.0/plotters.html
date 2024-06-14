@@ -179,17 +179,18 @@
 <div>
 <pre>
 <code class="language-julia hljs">plot_gene_gene(
-    daf::DafReader;
+    daf::DafReader
+    [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
     x_gene::AbstractString,
     y_gene::AbstractString,
-    axis::QueryString = &quot;metacell&quot;,
+    [axis::QueryString = &quot;metacell&quot;,
     color::Maybe{QueryString} = &quot;type&quot;,
     min_significant_gene_UMIs::Integer = 40,
     gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
     colors::Maybe{QueryString} = &quot;/ type : color&quot;,
     entries_hovers::Maybe{QueryColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
-    genes_hovers::Maybe{QueryColumns} = nothing,
-)::Graph
+    genes_hovers::Maybe{QueryColumns} = nothing,]
+)::PointsGraph
 </code>
 </pre>
 <p>Generate a complete gene-gene graph using 
@@ -230,14 +231,15 @@
 <div>
 <pre>
 <code class="language-julia hljs">plot_sphere_sphere(
-    daf::DafReader;
+    daf::DafReader,
+    [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
     x_sphere::AbstractString,
     y_sphere::AbstractString,
-    min_significant_gene_UMIs::Integer = 40,
+    [min_significant_gene_UMIs::Integer = 40,
     max_sphere_diameter::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
-    confidence::AbstractFloat = 0.9,
-)::Graph
+    confidence::AbstractFloat = 0.9],
+)::PointsGraph
 </code>
 </pre>
 <p>Generate a complete sphere-sphere graph using 
