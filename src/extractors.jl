@@ -374,12 +374,12 @@ name twice, why the sphere was merged).
     n_significant_genes = sum(mask_of_genes)
     @assert n_significant_genes > 0
 
-    points_xs = Vector{Float32}(undef, n_significant_genes * 2)
-    points_ys = Vector{Float32}(undef, n_significant_genes * 2)
-    points_colors = Vector{AbstractString}(undef, n_significant_genes * 2)
-    points_hovers = Vector{AbstractString}(undef, n_significant_genes * 2)
+    points_xs = Vector{Float32}(undef, n_significant_genes * 3)
+    points_ys = Vector{Float32}(undef, n_significant_genes * 3)
+    points_colors = Vector{AbstractString}(undef, n_significant_genes * 3)
+    points_hovers = Vector{AbstractString}(undef, n_significant_genes * 3)
     edges_points = Vector{Tuple{Int, Int}}(undef, n_significant_genes)
-    borders_colors = Vector{AbstractString}(undef, n_significant_genes * 2)
+    borders_colors = Vector{AbstractString}(undef, n_significant_genes * 3)
 
     not_correlated = "uncorrelated for both"
     x_correlated = "correlated for $(x_sphere)"
@@ -462,11 +462,12 @@ name twice, why the sphere was merged).
             end
         end
 
+        divergence = divergence_of_genes[gene_index]
         points_hovers[point_index] = join(  # NOJET
             [
                 "Gene: $(names_of_genes[gene_index])",
                 "distance: $(distance_of_genes[gene_index])",
-                "divergence: $(divergence_of_genes[gene_index])",
+                "divergence: $(divergence)",
                 x_label,
                 "- metacell: $(x_metacell_of_genes[gene_index])",
                 "- fraction: $(format_gene_fraction(x_fraction_of_genes[gene_index]))",
@@ -490,9 +491,29 @@ name twice, why the sphere was merged).
         points_colors[point_index] = ""
         points_hovers[point_index] = ""
         borders_colors[point_index] = ""
+
+        if divergence > 0
+            point_index += 1
+            points_xs[point_index] = x_confidence_fraction_of_genes[gene_index]
+            points_ys[point_index] = y_confidence_fraction_of_genes[gene_index]
+            if points_ys[point_index] > points_ys[point_index]
+                points_ys[point_index] *= (1 - divergence)
+            else
+                points_ys[point_index] *= (1 + divergence)
+            end
+            points_colors[point_index] = ""
+            points_hovers[point_index] = ""
+            borders_colors[point_index] = ""
+        end
     end
-    @assert point_index == n_significant_genes * 2
+    @assert point_index <= n_significant_genes * 3
     @assert edge_index == n_significant_genes
+
+    resize!(points_xs, point_index)
+    resize!(points_ys, point_index)
+    resize!(points_colors, point_index)
+    resize!(points_hovers, point_index)
+    resize!(borders_colors, point_index)
 
     return PointsGraphData(;
         graph_title = "Spheres Genes Difference",
