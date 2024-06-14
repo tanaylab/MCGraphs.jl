@@ -227,13 +227,19 @@
 </code>
 </a> which Julia knows how to display for us.
 </p>
-<p>You can 
-<code>display
-</code> the 
-<code>Graph
-</code> inside interactive environments (Julia REPL and/or Jupyter notebooks), and/or use 
+<p>Accessing the 
+<code>.figure
+</code> property of the graph will return it as a 
+<code>PlotlyFigure
+</code>, which can be displayed in interactive environments (Julia REPL and/or Jupyter notebooks). You should call 
+<a href="renderers.html#MCGraphs.Renderers.save_graph">
 <code>save_graph
-</code> to write it to a file.
+</code>
+</a> to save the graph to a file (instead of calling 
+<code>savefig
+</code> on the 
+<code>.figure
+</code>).
 </p>
 <p>The valid combinations of concrete data and configuration which we can render are:
 </p>
@@ -512,6 +518,12 @@
 <code>PlotlyFigure
 </code>
 </a> which Julia knows how display for us, rather than actually display the graph. The implementation depends on the specific graph type.
+</p>
+<p>You can just write 
+<code>graph.figure
+</code> instead of 
+<code>graph_to_figure(graph)
+</code>.
 </p>
 <div class="admonition is-info">
 <header class="admonition-header">Note

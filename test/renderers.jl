@@ -158,22 +158,25 @@ nested_test("renderers") do
             ],
         )
 
+        nested_test("show") do
+            @test "$(graph)" ==
+                  "Graph{DistributionGraphData, DistributionGraphConfiguration} (use .figure to show the graph)"
+        end
+
         nested_test("invalid") do
             nested_test("!style") do
                 graph.configuration.distribution.show_curve = false
-                @test_throws "must specify at least one of: configuration.distribution.show_box, configuration.distribution.show_violin, configuration.distribution.show_curve" graph_to_figure(
-                    graph,
-                )
+                @test_throws "must specify at least one of: configuration.distribution.show_box, configuration.distribution.show_violin, configuration.distribution.show_curve" graph.figure
             end
 
             nested_test("!width") do
                 graph.configuration.graph.width = 0
-                @test_throws "non-positive configuration.graph.width: 0" graph_to_figure(graph)
+                @test_throws "non-positive configuration.graph.width: 0" graph.figure
             end
 
             nested_test("!height") do
                 graph.configuration.graph.height = 0
-                @test_throws "non-positive configuration.graph.height: 0" graph_to_figure(graph)
+                @test_throws "non-positive configuration.graph.height: 0" graph.figure
             end
 
             nested_test("!range") do
@@ -182,25 +185,23 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     configuration.value_axis.maximum: 0
                     is not larger than configuration.value_axis.minimum: 1
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("curve&violin") do
                 graph.configuration.distribution.show_curve = true
                 graph.configuration.distribution.show_violin = true
-                @test_throws "must not specify both of: configuration.distribution.show_violin, configuration.distribution.show_curve" graph_to_figure(
-                    graph,
-                )
+                @test_throws "must not specify both of: configuration.distribution.show_violin, configuration.distribution.show_curve" graph.figure
             end
 
             nested_test("!values") do
                 empty!(graph.data.distribution_values)
-                @test_throws "empty data.distribution_values vector" graph_to_figure(graph)
+                @test_throws "empty data.distribution_values vector" graph.figure
             end
 
             nested_test("!log_regularization") do
                 graph.configuration.value_axis.log_regularization = -1.0
-                @test_throws "negative configuration.value_axis.log_regularization: -1.0" graph_to_figure(graph)
+                @test_throws "negative configuration.value_axis.log_regularization: -1.0" graph.figure
             end
         end
 
@@ -248,7 +249,7 @@ nested_test("renderers") do
 
             nested_test("!color") do
                 graph.configuration.distribution.color = "oobleck"
-                @test_throws "invalid configuration.distribution.color: oobleck" graph_to_figure(graph)
+                @test_throws "invalid configuration.distribution.color: oobleck" graph.figure
                 return nothing
             end
             nested_test("color") do
@@ -375,12 +376,12 @@ nested_test("renderers") do
         nested_test("invalid") do
             nested_test("!values") do
                 empty!(graph.data.distributions_values)
-                @test_throws "empty data.distributions_values vector" graph_to_figure(graph)
+                @test_throws "empty data.distributions_values vector" graph.figure
             end
 
             nested_test("!value") do
                 empty!(graph.data.distributions_values[1])
-                @test_throws "empty data.distributions_values[1] vector" graph_to_figure(graph)
+                @test_throws "empty data.distributions_values[1] vector" graph.figure
             end
 
             nested_test("~names") do
@@ -388,12 +389,12 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.distributions_names size: 1
                     is different from the data.distributions_values size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!colors") do
                 graph.data.distributions_colors = ["Red", "Oobleck"]
-                @test_throws "invalid data.distributions_colors[2]: Oobleck" graph_to_figure(graph)
+                @test_throws "invalid data.distributions_colors[2]: Oobleck" graph.figure
             end
 
             nested_test("~colors") do
@@ -401,17 +402,17 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.distributions_colors size: 1
                     is different from the data.distributions_values size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!distributions_gap") do
                 graph.configuration.distributions_gap = -1
-                @test_throws "non-positive configuration.distributions_gap: -1" graph_to_figure(graph)
+                @test_throws "non-positive configuration.distributions_gap: -1" graph.figure
             end
 
             nested_test("~distributions_gap") do
                 graph.configuration.distributions_gap = 1
-                @test_throws "too-large configuration.distributions_gap: 1" graph_to_figure(graph)
+                @test_throws "too-large configuration.distributions_gap: 1" graph.figure
             end
         end
 
@@ -588,14 +589,12 @@ nested_test("renderers") do
         nested_test("invalid") do
             nested_test("!line_width") do
                 graph.configuration.line.width = 0
-                @test_throws "non-positive configuration.line.width: 0" graph_to_figure(graph)
+                @test_throws "non-positive configuration.line.width: 0" graph.figure
             end
 
             nested_test("!line_is_filled") do
                 graph.configuration.line.width = nothing
-                @test_throws "either configuration.line.width or configuration.line.is_filled must be specified" graph_to_figure(
-                    graph,
-                )
+                @test_throws "either configuration.line.width or configuration.line.is_filled must be specified" graph.figure
             end
 
             nested_test("~ys") do
@@ -603,7 +602,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.points_xs size: 3
                     is different from the data.points_ys size: 4
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
         end
 
@@ -671,7 +670,7 @@ nested_test("renderers") do
                 graph.configuration.vertical_bands.low.color = "green"
                 graph.configuration.vertical_bands.middle.color = "oobleck"
                 graph.configuration.vertical_bands.high.color = "blue"
-                @test_throws "invalid configuration.vertical_bands.middle.color: oobleck" graph_to_figure(graph)
+                @test_throws "invalid configuration.vertical_bands.middle.color: oobleck" graph.figure
             end
 
             nested_test("legend") do
@@ -820,7 +819,7 @@ nested_test("renderers") do
             nested_test("!lines") do
                 empty!(graph.data.lines_xs)
                 empty!(graph.data.lines_ys)
-                @test_throws "empty data.lines_xs and data.lines_ys vectors" graph_to_figure(graph)
+                @test_throws "empty data.lines_xs and data.lines_ys vectors" graph.figure
             end
 
             nested_test("~ys") do
@@ -828,7 +827,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.lines_xs size: 2
                     is different from the data.lines_ys size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~points") do
@@ -836,13 +835,13 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.lines_xs[2] size: 4
                     is different from the data.lines_ys[2] size: 5
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~xs") do
                 empty!(graph.data.lines_xs[1])
                 empty!(graph.data.lines_ys[1])
-                @test_throws "too few points in data.lines_xs[1] and data.lines_ys[1]: 0" graph_to_figure(graph)
+                @test_throws "too few points in data.lines_xs[1] and data.lines_ys[1]: 0" graph.figure
             end
 
             nested_test("~names") do
@@ -850,12 +849,12 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.lines_names size: 1
                     is different from the data.lines_xs and data.lines_ys size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!colors") do
                 graph.data.lines_colors = ["red", "oobleck"]
-                @test_throws "invalid data.lines_colors[2]: oobleck" graph_to_figure(graph)
+                @test_throws "invalid data.lines_colors[2]: oobleck" graph.figure
             end
 
             nested_test("~colors") do
@@ -863,7 +862,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.lines_colors size: 1
                     is different from the data.lines_xs and data.lines_ys size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~sizes") do
@@ -871,19 +870,17 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.lines_widths size: 1
                     is different from the data.lines_xs and data.lines_ys size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!sizes") do
                 graph.data.lines_widths = [1, -1]
-                @test_throws "non-positive data.lines_widths[2]: -1" graph_to_figure(graph)
+                @test_throws "non-positive data.lines_widths[2]: -1" graph.figure
             end
 
             nested_test("!fill_below") do
                 graph.configuration.line.width = nothing
-                @test_throws "either configuration.line.width or configuration.line.is_filled must be specified" graph_to_figure(
-                    graph,
-                )
+                @test_throws "either configuration.line.width or configuration.line.is_filled must be specified" graph.figure
             end
 
             nested_test("~fills") do
@@ -891,7 +888,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.lines_are_filled size: 1
                     is different from the data.lines_xs and data.lines_ys size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~dashs") do
@@ -899,7 +896,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.lines_are_dashed size: 1
                     is different from the data.lines_xs and data.lines_ys size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
         end
 
@@ -1003,7 +1000,7 @@ nested_test("renderers") do
                 graph.configuration.vertical_bands.low.color = "green"
                 graph.configuration.vertical_bands.middle.color = "oobleck"
                 graph.configuration.vertical_bands.high.color = "blue"
-                @test_throws "invalid configuration.vertical_bands.middle.color: oobleck" graph_to_figure(graph)
+                @test_throws "invalid configuration.vertical_bands.middle.color: oobleck" graph.figure
             end
 
             nested_test("legend") do
@@ -1150,7 +1147,7 @@ nested_test("renderers") do
 
         nested_test("~values") do
             empty!(graph.data.cdf_values)
-            @test_throws "too few data.cdf_values: 0" graph_to_figure(graph)
+            @test_throws "too few data.cdf_values: 0" graph.figure
         end
 
         nested_test("vertical") do
@@ -1219,12 +1216,12 @@ nested_test("renderers") do
         nested_test("invalid") do
             nested_test("~values") do
                 empty!(graph.data.cdfs_values)
-                @test_throws "empty data.cdfs_values vector" graph_to_figure(graph)
+                @test_throws "empty data.cdfs_values vector" graph.figure
             end
 
             nested_test("!values") do
                 empty!(graph.data.cdfs_values[2])
-                @test_throws "too few data.cdfs_values[2]: 0" graph_to_figure(graph)
+                @test_throws "too few data.cdfs_values[2]: 0" graph.figure
             end
         end
 
@@ -1256,7 +1253,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.cdfs_values[2] size: 273
                     is different from the data.cdfs_values[1] size: 26
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("()") do
@@ -1292,17 +1289,17 @@ nested_test("renderers") do
         nested_test("invalid") do
             nested_test("!bars_gap") do
                 graph.configuration.bars_gap = -1
-                @test_throws "non-positive configuration.bars_gap: -1" graph_to_figure(graph)
+                @test_throws "non-positive configuration.bars_gap: -1" graph.figure
             end
 
             nested_test("~bars_gap") do
                 graph.configuration.bars_gap = 1
-                @test_throws "too-large configuration.bars_gap: 1" graph_to_figure(graph)
+                @test_throws "too-large configuration.bars_gap: 1" graph.figure
             end
 
             nested_test("~values") do
                 empty!(graph.data.bars_values)
-                @test_throws "empty data.bars_values vector" graph_to_figure(graph)
+                @test_throws "empty data.bars_values vector" graph.figure
             end
 
             nested_test("~names") do
@@ -1310,7 +1307,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.bars_names size: 1
                     is different from the data.bars_values size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~hovers") do
@@ -1318,7 +1315,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.bars_hovers size: 1
                     is different from the data.bars_values size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~colors") do
@@ -1326,12 +1323,12 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.bars_colors size: 1
                     is different from the data.bars_values size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!colors") do
                 graph.data.bars_colors = ["red", "oobleck", "blue"]
-                @test_throws "invalid data.bars_colors[2]: oobleck" graph_to_figure(graph)
+                @test_throws "invalid data.bars_colors[2]: oobleck" graph.figure
             end
         end
 
@@ -1408,13 +1405,13 @@ nested_test("renderers") do
         nested_test("invalid") do
             nested_test("!values") do
                 empty!(graph.data.series_values)
-                @test_throws "empty data.series_values vector" graph_to_figure(graph)
+                @test_throws "empty data.series_values vector" graph.figure
             end
 
             nested_test("!!values") do
                 empty!(graph.data.series_values[1])
                 empty!(graph.data.series_values[2])
-                @test_throws "empty data.series_values vectors" graph_to_figure(graph)
+                @test_throws "empty data.series_values vectors" graph.figure
             end
 
             nested_test("~values") do
@@ -1422,7 +1419,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.series_values[2] size: 3
                     is different from the data.series_values[1] size: 4
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~bars_names") do
@@ -1430,7 +1427,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.bars_names size: 1
                     is different from the data.series_values[:] size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~series_names") do
@@ -1438,7 +1435,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.series_names size: 1
                     is different from the data.series_values size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~series_hovers") do
@@ -1446,7 +1443,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.series_hovers size: 1
                     is different from the data.series_values size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~bars_hovers") do
@@ -1454,7 +1451,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.bars_hovers size: 1
                     is different from the data.series_values[:] size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~colors") do
@@ -1462,12 +1459,12 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.series_colors size: 1
                     is different from the data.series_values size: 2
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!colors") do
                 graph.data.series_colors = ["red", "oobleck"]
-                @test_throws "invalid data.series_colors[2]: oobleck" graph_to_figure(graph)
+                @test_throws "invalid data.series_colors[2]: oobleck" graph.figure
             end
         end
 
@@ -1604,12 +1601,12 @@ nested_test("renderers") do
         nested_test("invalid") do
             nested_test("!size") do
                 graph.configuration.points.size = 0
-                @test_throws "non-positive configuration.points.size: 0" graph_to_figure(graph)
+                @test_throws "non-positive configuration.points.size: 0" graph.figure
             end
 
             nested_test("!line-width") do
                 graph.configuration.diagonal_bands.middle.width = 0
-                @test_throws "non-positive configuration.diagonal_bands.middle.width: 0" graph_to_figure(graph)
+                @test_throws "non-positive configuration.diagonal_bands.middle.width: 0" graph.figure
             end
 
             nested_test("~ys") do
@@ -1617,14 +1614,12 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.points_xs size: 3
                     is different from the data.points_ys size: 4
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!colors") do
                 graph.configuration.points.show_color_scale = true
-                @test_throws "no data.points_colors specified for configuration.points.show_color_scale" graph_to_figure(
-                    graph,
-                )
+                @test_throws "no data.points_colors specified for configuration.points.show_color_scale" graph.figure
             end
 
             nested_test("~colors") do
@@ -1632,14 +1627,12 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.points_colors size: 1
                     is different from the data.points_xs and data.points_ys size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!borders_colors") do
                 graph.configuration.borders.show_color_scale = true
-                @test_throws "no data.borders_colors specified for configuration.borders.show_color_scale" graph_to_figure(
-                    graph,
-                )
+                @test_throws "no data.borders_colors specified for configuration.borders.show_color_scale" graph.figure
             end
 
             nested_test("~borders_colors") do
@@ -1647,7 +1640,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.borders_colors size: 1
                     is different from the data.points_xs and data.points_ys size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~sizes") do
@@ -1655,7 +1648,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.points_sizes size: 4
                     is different from the data.points_xs and data.points_ys size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~borders_sizes") do
@@ -1663,17 +1656,17 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.borders_sizes size: 4
                     is different from the data.points_xs and data.points_ys size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!sizes") do
                 graph.data.points_sizes = [1.0, -1.0, 3.0]
-                @test_throws "negative data.points_sizes[2]: -1.0" graph_to_figure(graph)
+                @test_throws "negative data.points_sizes[2]: -1.0" graph.figure
             end
 
             nested_test("!borders_sizes") do
                 graph.data.borders_sizes = [1.0, -1.0, 3.0]
-                @test_throws "negative data.borders_sizes[2]: -1.0" graph_to_figure(graph)
+                @test_throws "negative data.borders_sizes[2]: -1.0" graph.figure
             end
 
             nested_test("~hovers") do
@@ -1681,7 +1674,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.points_hovers size: 1
                     is different from the data.points_xs and data.points_ys size: 3
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
         end
 
@@ -1694,7 +1687,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     configuration.diagonal_bands.low.offset: 0.1
                     is not less than configuration.diagonal_bands.middle.offset: 0
-                """) graph_to_figure(graph)
+                """) graph.figure
                 return nothing
             end
 
@@ -1706,7 +1699,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     configuration.diagonal_bands.high.offset: -0.1
                     is not greater than configuration.diagonal_bands.middle.offset: 0
-                """) graph_to_figure(graph)
+                """) graph.figure
                 return nothing
             end
 
@@ -1717,7 +1710,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     configuration.diagonal_bands.low.offset: 0.3
                     is not less than configuration.diagonal_bands.high.offset: -0.3
-                """) graph_to_figure(graph)
+                """) graph.figure
                 return nothing
             end
         end
@@ -1856,23 +1849,23 @@ nested_test("renderers") do
             nested_test("invalid") do
                 nested_test("!minimum") do
                     graph.configuration.x_axis.minimum = 0.0
-                    @test_throws "log of non-positive configuration.x_axis.minimum: 0.0" graph_to_figure(graph)
+                    @test_throws "log of non-positive configuration.x_axis.minimum: 0.0" graph.figure
                 end
 
                 nested_test("!maximum") do
                     graph.configuration.y_axis.maximum = -1.0
-                    @test_throws "log of non-positive configuration.y_axis.maximum: -1.0" graph_to_figure(graph)
+                    @test_throws "log of non-positive configuration.y_axis.maximum: -1.0" graph.figure
                 end
 
                 nested_test("!xs") do
                     graph.data.points_xs[1] = 0
-                    @test_throws "log of non-positive data.points_xs[1]: 0.0" graph_to_figure(graph)
+                    @test_throws "log of non-positive data.points_xs[1]: 0.0" graph.figure
                 end
 
                 nested_test("!ys") do
                     graph.data.points_ys[1] = -0.2
                     graph.configuration.y_axis.log_regularization = 0
-                    @test_throws "log of non-positive data.points_ys[1]: -0.2" graph_to_figure(graph)
+                    @test_throws "log of non-positive data.points_ys[1]: -0.2" graph.figure
                 end
             end
 
@@ -1887,17 +1880,13 @@ nested_test("renderers") do
                         graph.configuration.x_axis.log_regularization = 0
                         graph.configuration.y_axis.log_regularization = 0
                         graph.configuration.diagonal_bands.low.offset = -1
-                        @test_throws "log of non-positive configuration.diagonal_bands.low.offset: -1" graph_to_figure(
-                            graph,
-                        )
+                        @test_throws "log of non-positive configuration.diagonal_bands.low.offset: -1" graph.figure
                     end
 
                     nested_test("!log") do
                         graph.configuration.y_axis.log_regularization = nothing
                         graph.configuration.diagonal_bands.middle.offset = 1
-                        @test_throws "configuration.diagonal_bands specified for a combination of linear and log scale axes" graph_to_figure(
-                            graph,
-                        )
+                        @test_throws "configuration.diagonal_bands specified for a combination of linear and log scale axes" graph.figure
                         return nothing
                     end
                 end
@@ -1978,7 +1967,7 @@ nested_test("renderers") do
 
             nested_test("!color") do
                 graph.configuration.points.color = "oobleck"
-                @test_throws "invalid configuration.points.color: oobleck" graph_to_figure(graph)
+                @test_throws "invalid configuration.points.color: oobleck" graph.figure
                 return nothing
             end
         end
@@ -1993,21 +1982,17 @@ nested_test("renderers") do
 
             nested_test("!color") do
                 graph.data.points_colors[2] = "oobleck"
-                @test_throws "invalid data.points_colors[2]: oobleck" graph_to_figure(graph)
+                @test_throws "invalid data.points_colors[2]: oobleck" graph.figure
             end
 
             nested_test("!log") do
                 graph.configuration.points.color_scale.log_regularization = 0
-                @test_throws "non-real data.points_colors with configuration.points.color_scale.log_regularization" graph_to_figure(
-                    graph,
-                )
+                @test_throws "non-real data.points_colors with configuration.points.color_scale.log_regularization" graph.figure
             end
 
             nested_test("!legend") do
                 graph.configuration.points.show_color_scale = true
-                @test_throws "explicit data.points_colors specified for configuration.points.show_color_scale" graph_to_figure(
-                    graph,
-                )
+                @test_throws "explicit data.points_colors specified for configuration.points.show_color_scale" graph.figure
             end
         end
 
@@ -2024,26 +2009,22 @@ nested_test("renderers") do
             nested_test("!log") do
                 graph.data.points_colors = [1.0, 2.0, 3.0]
                 graph.configuration.points.color_scale.log_regularization = 0
-                @test_throws "non-string data.points_colors for categorical configuration.points.color_palette" graph_to_figure(
-                    graph,
-                )
+                @test_throws "non-string data.points_colors for categorical configuration.points.color_palette" graph.figure
             end
 
             nested_test("~color") do
                 graph.configuration.points.color_palette[2] = ("Bar", "oobleck")
-                @test_throws "invalid configuration.points.color_palette[2] color: oobleck" graph_to_figure(graph)
+                @test_throws "invalid configuration.points.color_palette[2] color: oobleck" graph.figure
             end
 
             nested_test("!color") do
                 graph.data.points_colors = ["Foo", "Faz", "Baz"]
-                @test_throws "categorical configuration.points.color_palette does not contain data.points_colors[2]: Faz" graph_to_figure(
-                    graph,
-                )
+                @test_throws "categorical configuration.points.color_palette does not contain data.points_colors[2]: Faz" graph.figure
             end
 
             nested_test("!reversed") do
                 graph.configuration.points.reverse_color_scale = true
-                @test_throws "reversed categorical configuration.points.color_palette" graph_to_figure(graph)
+                @test_throws "reversed categorical configuration.points.color_palette" graph.figure
             end
 
             nested_test("legend") do
@@ -2068,13 +2049,13 @@ nested_test("renderers") do
                 nested_test("invalid") do
                     nested_test("!colorscale") do
                         graph.configuration.points.color_palette = Vector{Tuple{Real, String}}()
-                        @test_throws "empty configuration.points.color_palette" graph_to_figure(graph)
+                        @test_throws "empty configuration.points.color_palette" graph.figure
                         return nothing
                     end
 
                     nested_test("~colorscale") do
                         graph.configuration.points.color_palette = [(-1.0, "blue"), (-1.0, "red")]
-                        @test_throws "single configuration.points.color_palette value: -1.0" graph_to_figure(graph)
+                        @test_throws "single configuration.points.color_palette value: -1.0" graph.figure
                         return nothing
                     end
 
@@ -2084,7 +2065,7 @@ nested_test("renderers") do
                         @test_throws dedent("""
                             configuration.points.color_scale.maximum: 0.5
                             is not larger than configuration.points.color_scale.minimum: 1.5
-                        """) graph_to_figure(graph)
+                        """) graph.figure
                         return nothing
                     end
                 end
@@ -2150,36 +2131,28 @@ nested_test("renderers") do
                 nested_test("invalid") do
                     nested_test("!log_color_scale_regularization") do
                         graph.configuration.points.color_scale.log_regularization = -1.0
-                        @test_throws "negative configuration.points.color_scale.log_regularization: -1.0" graph_to_figure(
-                            graph,
-                        )
+                        @test_throws "negative configuration.points.color_scale.log_regularization: -1.0" graph.figure
                     end
 
                     nested_test("!cmin") do
                         graph.configuration.points.color_palette = [(-1.0, "blue"), (1.0, "red")]
-                        @test_throws "log of non-positive configuration.points.color_palette[1]: 0.0" graph_to_figure(
-                            graph,
-                        )
+                        @test_throws "log of non-positive configuration.points.color_palette[1]: 0.0" graph.figure
                     end
 
                     nested_test("!colors") do
                         graph.data.points_colors[1] = -2.0
-                        @test_throws "log of non-positive data.points_colors[1]: -1.0" graph_to_figure(graph)
+                        @test_throws "log of non-positive data.points_colors[1]: -1.0" graph.figure
                     end
 
                     nested_test("!minimum") do
                         graph.configuration.points.color_scale.minimum = -1.5
-                        @test_throws "log of non-positive configuration.points.color_scale.minimum: -0.5" graph_to_figure(
-                            graph,
-                        )
+                        @test_throws "log of non-positive configuration.points.color_scale.minimum: -0.5" graph.figure
                         return nothing
                     end
 
                     nested_test("!minimum") do
                         graph.configuration.points.color_scale.maximum = -1.5
-                        @test_throws "log of non-positive configuration.points.color_scale.maximum: -0.5" graph_to_figure(
-                            graph,
-                        )
+                        @test_throws "log of non-positive configuration.points.color_scale.maximum: -0.5" graph.figure
                         return nothing
                     end
                 end
@@ -2197,7 +2170,7 @@ nested_test("renderers") do
 
                 nested_test("!reversed") do
                     graph.configuration.points.reverse_color_scale = true
-                    @test_throws "reversed log configuration.points.color_scale" graph_to_figure(graph)
+                    @test_throws "reversed log configuration.points.color_scale" graph.figure
                 end
 
                 nested_test("legend") do
@@ -2277,7 +2250,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     configuration.points.size_range.largest: 2.0
                     is not larger than configuration.points.size_range.smallest: 10.0
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("linear") do
@@ -2385,9 +2358,7 @@ nested_test("renderers") do
 
                 nested_test("!legend") do
                     graph.configuration.borders.show_color_scale = true
-                    @test_throws "no data.borders_colors specified for configuration.borders.show_color_scale" graph_to_figure(
-                        graph,
-                    )
+                    @test_throws "no data.borders_colors specified for configuration.borders.show_color_scale" graph.figure
                 end
             end
 
@@ -2407,9 +2378,7 @@ nested_test("renderers") do
 
                 nested_test("!legend") do
                     graph.configuration.borders.show_color_scale = true
-                    @test_throws "explicit data.borders_colors specified for configuration.borders.show_color_scale" graph_to_figure(
-                        graph,
-                    )
+                    @test_throws "explicit data.borders_colors specified for configuration.borders.show_color_scale" graph.figure
                 end
             end
 
@@ -2561,17 +2530,17 @@ nested_test("renderers") do
             nested_test("invalid") do
                 nested_test("!from") do
                     graph.data.edges_points[1] = (-1, 2)
-                    @test_throws "data.edges_points[1] from invalid point: -1" graph_to_figure(graph)
+                    @test_throws "data.edges_points[1] from invalid point: -1" graph.figure
                 end
 
                 nested_test("!to") do
                     graph.data.edges_points[1] = (1, 4)
-                    @test_throws "data.edges_points[1] to invalid point: 4" graph_to_figure(graph)
+                    @test_throws "data.edges_points[1] to invalid point: 4" graph.figure
                 end
 
                 nested_test("self!") do
                     graph.data.edges_points[1] = (1, 1)
-                    @test_throws "data.edges_points[1] from point to itself: 1" graph_to_figure(graph)
+                    @test_throws "data.edges_points[1] from point to itself: 1" graph.figure
                 end
             end
 
@@ -2612,9 +2581,7 @@ nested_test("renderers") do
         nested_test("invalid") do
             nested_test("!sizes!colors") do
                 graph.data.points_colors = nothing
-                @test_throws "neither data.points_colors nor data.points_sizes specified for grid" graph_to_figure(
-                    graph,
-                )
+                @test_throws "neither data.points_colors nor data.points_sizes specified for grid" graph.figure
             end
         end
 
@@ -2633,14 +2600,12 @@ nested_test("renderers") do
 
         nested_test("!colors") do
             graph.data.points_colors = ["red" "oobleck" "blue"; "blue" "green" "red"]
-            @test_throws "invalid data.points_colors[1,2]: oobleck" graph_to_figure(graph)
+            @test_throws "invalid data.points_colors[1,2]: oobleck" graph.figure
         end
 
         nested_test("~colors") do
             graph.configuration.points.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
-            @test_throws "non-string data.points_colors for categorical configuration.points.color_palette" graph_to_figure(
-                graph,
-            )
+            @test_throws "non-string data.points_colors for categorical configuration.points.color_palette" graph.figure
         end
 
         nested_test("categorical") do
@@ -2653,9 +2618,7 @@ nested_test("renderers") do
 
             nested_test("!color") do
                 graph.data.points_colors[1, 2] = "D"
-                @test_throws "categorical configuration.points.color_palette does not contain data.points_colors[1,2)]: D" graph_to_figure(
-                    graph,
-                )
+                @test_throws "categorical configuration.points.color_palette does not contain data.points_colors[1,2)]: D" graph.figure
             end
 
             nested_test("legend") do
@@ -2675,20 +2638,18 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.points_colors size: (2, 3)
                     is different from the data.points_sizes size: (3, 2)
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("!scale") do
                 graph.data.points_colors = nothing
                 graph.configuration.points.show_color_scale = true
-                @test_throws "no data.points_colors specified for configuration.points.show_color_scale" graph_to_figure(
-                    graph,
-                )
+                @test_throws "no data.points_colors specified for configuration.points.show_color_scale" graph.figure
             end
 
             nested_test("~sizes") do
                 graph.data.points_sizes[1, 2] = -1.5
-                @test_throws "negative data.points_sizes[1,2]: -1.5" graph_to_figure(graph)
+                @test_throws "negative data.points_sizes[1,2]: -1.5" graph.figure
             end
 
             nested_test("!colors") do
@@ -2719,9 +2680,7 @@ nested_test("renderers") do
 
                 nested_test("!log") do
                     graph.configuration.points.color_scale.log_regularization = 0
-                    @test_throws "non-real data.points_colors with configuration.points.color_scale.log_regularization" graph_to_figure(
-                        graph,
-                    )
+                    @test_throws "non-real data.points_colors with configuration.points.color_scale.log_regularization" graph.figure
                 end
             end
 
@@ -2777,7 +2736,7 @@ nested_test("renderers") do
             @test_throws dedent("""
                 the data.points_hovers size: (3, 2)
                 is different from the data.points_colors and/or data.points_sizes size: (2, 3)
-            """) graph_to_figure(graph)
+            """) graph.figure
         end
 
         nested_test("border") do
@@ -2788,12 +2747,12 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.borders_sizes size: (3, 2)
                     is different from the data.points_colors and/or data.points_sizes size: (2, 3)
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("~sizes") do
                 graph.data.borders_sizes[1, 2] = -1.5
-                @test_throws "negative data.borders_sizes[1,2]: -1.5" graph_to_figure(graph)
+                @test_throws "negative data.borders_sizes[1,2]: -1.5" graph.figure
             end
 
             nested_test("sizes") do
@@ -2847,7 +2806,7 @@ nested_test("renderers") do
                 @test_throws dedent("""
                     the data.borders_colors size: (3, 2)
                     is different from the data.points_colors and/or data.points_sizes size: (2, 3)
-                """) graph_to_figure(graph)
+                """) graph.figure
             end
 
             nested_test("colors") do
@@ -2860,9 +2819,7 @@ nested_test("renderers") do
 
                 nested_test("!scale") do
                     graph.configuration.borders.show_color_scale = true
-                    @test_throws "explicit data.borders_colors specified for configuration.borders.show_color_scale" graph_to_figure(
-                        graph,
-                    )
+                    @test_throws "explicit data.borders_colors specified for configuration.borders.show_color_scale" graph.figure
                 end
             end
 
@@ -2935,7 +2892,7 @@ nested_test("renderers") do
 
                 nested_test("log") do
                     graph.configuration.borders.color_scale.log_regularization = 0.0
-                    @test_throws "log of non-positive data.borders_colors[2,3]: -6.0" graph_to_figure(graph)
+                    @test_throws "log of non-positive data.borders_colors[2,3]: -6.0" graph.figure
                 end
 
                 nested_test("legend") do

@@ -107,8 +107,9 @@ The type of a figure we can display. This is a combination of some [`AbstractGra
 [`AbstractGraphConfiguration`](@ref), which we can pass to [`graph_to_figure`](@ref) to obtain a [`PlotlyFigure`](@ref)
 which Julia knows how to display for us.
 
-You can `display` the `Graph` inside interactive environments (Julia REPL and/or Jupyter notebooks), and/or use
-`save_graph` to write it to a file.
+Accessing the `.figure` property of the graph will return it as a `PlotlyFigure`, which can be displayed in interactive
+environments (Julia REPL and/or Jupyter notebooks). You should call [`save_graph`](@ref) to save the graph to a file
+(instead of calling `savefig` on the `.figure`).
 
 The valid combinations of concrete data and configuration which we can render are:
 
@@ -129,6 +130,19 @@ The valid combinations of concrete data and configuration which we can render ar
                       ObjectWithValidation where {D <: AbstractGraphData, C <: AbstractGraphConfiguration}
     data::D = D()
     configuration::C = C()
+end
+
+function Base.show(io::IO, graph::Graph)::Nothing
+    print(io, "$(typeof(graph)) (use .figure to show the graph)")
+    return nothing
+end
+
+function Base.getproperty(graph::Graph, property::Symbol)::Any
+    if property == :figure
+        return graph_to_figure(graph)
+    else
+        return getfield(graph, property)
+    end
 end
 
 function Validations.validate_object(graph::Graph)::Maybe{AbstractString}
@@ -169,6 +183,8 @@ Render a graph given its data and configuration. Technically this just converts 
 which Julia knows how display for us, rather than actually display the graph. The implementation depends on the specific
 graph type.
 
+You can just write `graph.figure` instead of `graph_to_figure(graph)`.
+
 !!! note
 
     When saving a figure to a file, Plotly in its infinite wisdom ignores the graph `width` and `height` specified
@@ -176,36 +192,6 @@ graph type.
     `savefig` on the result of `graph_to_figure`.
 """
 function graph_to_figure end
-
-function Base.show(io::IO, mime::AbstractString, graph::Graph)::Nothing  # untested
-    show(io, mime, graph_to_figure(graph))
-    return nothing
-end
-
-function Base.show(io::IO, mime::MIME, graph::Graph)::Nothing  # untested
-    show(io, mime, graph_to_figure(graph))
-    return nothing
-end
-
-function Base.show(io::IO, mime::MIME{Symbol}, graph::Graph)::Nothing  # untested
-    show(io, mime, graph_to_figure(graph))
-    return nothing
-end
-
-function Base.show(io::IO, mime::MIME{Symbol("text/plain")}, graph::Graph)::Nothing  # untested
-    show(io, mime, graph_to_figure(graph))
-    return nothing
-end
-
-function Base.show(io::IO, mime::MIME{Symbol("text/csv")}, graph::Graph)::Nothing  # untested
-    show(io, mime, graph_to_figure(graph))
-    return nothing
-end
-
-function Base.show(io::IO, mime::MIME{Symbol("text/tab-separated-values")}, graph::Graph)::Nothing  # untested
-    show(io, mime, graph_to_figure(graph))
-    return nothing
-end
 
 """
 The orientation of the values axis in a distribution or bars graph:
