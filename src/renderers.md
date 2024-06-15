@@ -65,6 +65,8 @@ MCGraphs.Renderers.HeatmapGraph
 MCGraphs.Renderers.HeatmapGraphData
 MCGraphs.Renderers.HeatmapGraphConfiguration
 MCGraphs.Renderers.EntriesConfiguration
+MCGraphs.Renderers.AnnotationsConfiguration
+MCGraphs.Renderers.AnnotationsData
 ```
 
 ## Bars

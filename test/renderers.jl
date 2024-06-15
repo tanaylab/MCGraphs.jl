@@ -3034,5 +3034,41 @@ nested_test("renderers") do
             test_html(graph, "heatmap.titles.html")
             return nothing
         end
+
+        nested_test("annotations") do
+            nested_test("()") do
+                graph.data.graph_title = "Graph"
+                graph.configuration.annotations["Foo"] = AnnotationsConfiguration(; color_palette = "Viridis")
+                graph.data.rows_annotations =
+                    [AnnotationsData(; values = [1, 2], hovers = ["A", "B"], title = "Bar", name = "Foo")]
+                graph.data.columns_annotations = [AnnotationsData(; values = [3, 2, 1], hovers = ["X", "Y", "Z"])]
+                test_html(graph, "heatmap.annotations.html")
+                return nothing
+            end
+
+            nested_test("!values") do
+                graph.data.columns_annotations = [AnnotationsData(; values = [2, 1])]
+                @test_throws dedent("""
+                    the data.columns_annotations[1].values size: 2
+                    is different from the number of columns of the data.entries_colors: 3
+                """) graph.figure
+            end
+
+            nested_test("!hovers") do
+                graph.data.columns_annotations = [AnnotationsData(; values = [3, 2, 1], hovers = ["X", "Y"])]
+                @test_throws dedent("""
+                    the data.columns_annotations[1].hovers size: 2
+                    is different from the number of columns of the data.entries_colors: 3
+                """) graph.figure
+            end
+
+            nested_test("!name") do
+                graph.data.columns_annotations = [AnnotationsData(; values = [3, 2, 1], name = "Foo")]
+                @test_throws dedent("""
+                    the data.columns_annotations[1].name: Foo
+                    does not exist in the configuration.annotations
+                """) graph.figure
+            end
+        end
     end
 end

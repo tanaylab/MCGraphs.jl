@@ -885,7 +885,7 @@ end
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct PointsConfiguration
     color::Maybe{AbstractString} = nothing
-    color_scale::AxisScale = AxisScale()
+    color_scale::AxisConfiguration = AxisConfiguration()
     show_color_scale::Bool = false,
     reverse_color_scale::Bool = false,
     color_palette::Maybe{Union{
@@ -894,7 +894,7 @@ end
         AbstractVector{&lt;:Tuple{&lt;:AbstractString, &lt;:AbstractString}}
     }} = nothing
     size::Maybe{Real} = nothing
-    size_scale::AxisScale = AxisScale()
+    size_scale::AxisConfiguration = AxisConfiguration()
     size_range::SizeRangeConfiguration = SizeRangeConfiguration()
 end
 </code>
@@ -1822,6 +1822,8 @@ end
     rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
     entries_colors::AbstractMatrix{&lt;:Union{AbstractString, Real}} = Float32[;;],
     entries_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing],
+    columns_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing,
+    rows_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing,
 )::HeatmapGraph
 </code>
 </pre>
@@ -1889,6 +1891,8 @@ end
     rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     entries_colors::Maybe{AbstractMatrix{&lt;:Union{AbstractString, Real}}} = Float32[;;]
     entries_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
+    columns_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
+    rows_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
 end
 </code>
 </pre>
@@ -1916,12 +1920,23 @@ end
 <code class="language-julia hljs">@kwdef mutable struct HeatmapGraphConfiguration &lt;: AbstractGraphConfiguration
     graph::GraphConfiguration = GraphConfiguration()
     entries::EntriesConfiguration = EntriesConfiguration()
+    annotations::Dict{&lt;:AbstractString,AnnotationsConfiguration} = Dict{String,AnnotationsConfiguration}()
 end
 </code>
 </pre>
 <p>Configure a graph showing a heatmap.
 </p>
 <p>This displays a matrix of values using a rectangle at each position. The only control we have is setting the color of each rectangle. An advantage of this over a grid is that it can handle large amount of data. Due to Plotly&#39;s limitations, you still need to manually tweak the graph size for best results.
+</p>
+<p>The 
+<code>annotations
+</code> specify the colors for any annotations attached to the rows and/or columns axes. The key is the 
+<code>color_scale
+</code> of the 
+<a href="renderers.html#MCGraphs.Renderers.AnnotationsData">
+<code>AnnotationsData
+</code>
+</a>.
 </p>
 </div>
 </section>
@@ -1941,7 +1956,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct EntriesConfiguration
-    color_scale::AxisScale = AxisScale()
+    color_scale::AxisConfiguration = AxisConfiguration()
     show_color_scale::Bool = false,
     reverse_color_scale::Bool = false,
     color_palette::Maybe{Union{
@@ -1956,6 +1971,85 @@ end
 <code>PointsConfiguration
 </code>
 </a>, except that there are no sizes to deal with, and a fixed single color makes no sense. In addition, due to Plotly limitation, categorical colors are not supported.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.AnnotationsConfiguration" href="#MCGraphs.Renderers.AnnotationsConfiguration">
+<code>MCGraphs.Renderers.AnnotationsConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct AnnotationsConfiguration
+    size::AbstractFloat = 0.05
+    color_scale::AxisConfiguration = AxisConfiguration()
+    reverse_color_scale::Bool = false
+    color_palette::Maybe{Union{
+        AbstractString,
+        AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}},
+    }} = nothing
+end
+</code>
+</pre>
+<p>Configure how to show some annotations. Due to Plotly limitations, the 
+<code>size
+</code> is a fraction of the total size of the graph, instead of an absolute size.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.AnnotationsData" href="#MCGraphs.Renderers.AnnotationsData">
+<code>MCGraphs.Renderers.AnnotationsData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct AnnotationsData
+    name::Maybe{AbstractString} = nothing
+    title::Maybe{AbstractString} = nothing
+    values::AbstractVector{&lt;:Real} = Float32[]
+    hovers::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+end
+</code>
+</pre>
+<p>An annotation to attach to an axis. This applies to discrete axes (bars axis for a 
+<a href="renderers.html#MCGraphs.Renderers.BarGraph">
+<code>BarGraph
+</code>
+</a> or the rows and/or columns of a 
+<a href="renderers.html#MCGraphs.Renderers.HeatmapGraph">
+<code>HeatmapGraph
+</code>
+</a>). The number of the 
+<code>values
+</code> and the optional 
+<code>hovers
+</code> must be the same as the number of entries in the axis.
+</p>
+<p>The 
+<code>name
+</code> is used as a key to look up the annotations colors in the graph&#39;s configuration. If it is not specified, the defaults 
+<a href="renderers.html#MCGraphs.Renderers.AnnotationsConfiguration">
+<code>AnnotationsConfiguration
+</code>
+</a> is used.
 </p>
 </div>
 </section>
@@ -2980,6 +3074,18 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.AbstractGraphData">
 <code>MCGraphs.Renderers.AbstractGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.AnnotationsConfiguration">
+<code>MCGraphs.Renderers.AnnotationsConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.AnnotationsData">
+<code>MCGraphs.Renderers.AnnotationsData
 </code>
 </a>
 </li>

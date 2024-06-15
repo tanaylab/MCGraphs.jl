@@ -10,6 +10,8 @@ module Renderers
 
 export AbstractGraphConfiguration
 export AbstractGraphData
+export AnnotationsConfiguration
+export AnnotationsData
 export AxisConfiguration
 export BandConfiguration
 export BandsConfiguration
@@ -2761,7 +2763,7 @@ end
 """
     @kwdef mutable struct PointsConfiguration
         color::Maybe{AbstractString} = nothing
-        color_scale::AxisScale = AxisScale()
+        color_scale::AxisConfiguration = AxisConfiguration()
         show_color_scale::Bool = false,
         reverse_color_scale::Bool = false,
         color_palette::Maybe{Union{
@@ -2770,7 +2772,7 @@ end
             AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
         }} = nothing
         size::Maybe{Real} = nothing
-        size_scale::AxisScale = AxisScale()
+        size_scale::AxisConfiguration = AxisConfiguration()
         size_range::SizeRangeConfiguration = SizeRangeConfiguration()
     end
 
@@ -4964,7 +4966,7 @@ end
 
 """
     @kwdef mutable struct EntriesConfiguration
-        color_scale::AxisScale = AxisScale()
+        color_scale::AxisConfiguration = AxisConfiguration()
         show_color_scale::Bool = false,
         reverse_color_scale::Bool = false,
         color_palette::Maybe{Union{
@@ -4997,9 +4999,81 @@ function validate_entries_configuration(
     return message
 end
 
+"""
+    @kwdef mutable struct AnnotationsConfiguration
+        size::AbstractFloat = 0.05
+        color_scale::AxisConfiguration = AxisConfiguration()
+        reverse_color_scale::Bool = false
+        color_palette::Maybe{Union{
+            AbstractString,
+            AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+        }} = nothing
+    end
+
+Configure how to show some annotations. Due to Plotly limitations, the `size` is a fraction of the total size of the
+graph, instead of an absolute size.
+"""
+@kwdef mutable struct AnnotationsConfiguration
+    size::AbstractFloat = 0.05
+    color_scale::AxisConfiguration = AxisConfiguration()
+    reverse_color_scale::Bool = false
+    color_palette::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:Real, <:AbstractString}}}} = nothing
+end
+
+function validate_annotations_configuration(
+    of_what::AbstractString,
+    annotations_configuration::AnnotationsConfiguration,
+)::Maybe{AbstractString}
+    message = validate_axis_configuration(of_what, ".color_scale", annotations_configuration.color_scale)
+
+    if message === nothing
+        message = validate_color_palette(of_what, annotations_configuration)
+    end
+
+    return message
+end
+
+"""
+    @kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        entries::EntriesConfiguration = EntriesConfiguration()
+        annotations::Dict{<:AbstractString,AnnotationsConfiguration} = Dict{String,AnnotationsConfiguration}()
+    end
+
+Configure a graph showing a heatmap.
+
+This displays a matrix of values using a rectangle at each position. The only control we have is setting the color of
+each rectangle. An advantage of this over a grid is that it can handle large amount of data. Due to Plotly's
+limitations, you still need to manually tweak the graph size for best results.
+
+The `annotations` specify the colors for any annotations attached to the rows and/or columns axes. The key is the
+`color_scale` of the [`AnnotationsData`](@ref).
+"""
+@kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    entries::EntriesConfiguration = EntriesConfiguration()
+    annotations::Dict{<:AbstractString, AnnotationsConfiguration} = Dict{String, AnnotationsConfiguration}()
+end
+
+function Validations.validate_object(configuration::HeatmapGraphConfiguration)::Maybe{AbstractString}
+    message = validate_graph_configuration(configuration.graph)
+    if message === nothing
+        message = validate_entries_configuration("entries", configuration.entries)
+    end
+    if message === nothing
+        for (annotations_name, annotations_configuration) in configuration.annotations
+            message = validate_annotations_configuration("annotations[$(annotations_name)]", annotations_configuration)
+            if message !== nothing
+                break  # untested
+            end
+        end
+    end
+    return message
+end
+
 function validate_color_palette(
     of_what::AbstractString,
-    configuration::Union{PointsConfiguration, EntriesConfiguration},
+    configuration::Union{PointsConfiguration, EntriesConfiguration, AnnotationsConfiguration},
 )::Maybe{AbstractString}
     color_palette = configuration.color_palette
     if color_palette isa AbstractVector
@@ -5031,28 +5105,25 @@ function validate_color_palette(
 end
 
 """
-    @kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
-        entries::EntriesConfiguration = EntriesConfiguration()
+    @kwdef mutable struct AnnotationsData
+        name::Maybe{AbstractString} = nothing
+        title::Maybe{AbstractString} = nothing
+        values::AbstractVector{<:Real} = Float32[]
+        hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
     end
 
-Configure a graph showing a heatmap.
+An annotation to attach to an axis. This applies to discrete axes (bars axis for a [`BarGraph`](@ref) or the rows and/or
+columns of a [`HeatmapGraph`](@ref)). The number of the `values` and the optional `hovers` must be the same as the
+number of entries in the axis.
 
-This displays a matrix of values using a rectangle at each position. The only control we have is setting the color of
-each rectangle. An advantage of this over a grid is that it can handle large amount of data. Due to Plotly's
-limitations, you still need to manually tweak the graph size for best results.
+The `name` is used as a key to look up the annotations colors in the graph's configuration. If it is not specified, the
+defaults [`AnnotationsConfiguration`](@ref) is used.
 """
-@kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    entries::EntriesConfiguration = EntriesConfiguration()
-end
-
-function Validations.validate_object(configuration::HeatmapGraphConfiguration)::Maybe{AbstractString}
-    message = validate_graph_configuration(configuration.graph)
-    if message === nothing
-        message = validate_entries_configuration("entries", configuration.entries)
-    end
-    return message
+@kwdef mutable struct AnnotationsData
+    name::Maybe{AbstractString} = nothing
+    title::Maybe{AbstractString} = nothing
+    values::AbstractVector{<:Real} = Float32[]
+    hovers::Maybe{AbstractVector{<:AbstractString}} = nothing
 end
 
 """
@@ -5065,6 +5136,8 @@ end
         rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         entries_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = Float32[;;]
         entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
+        columns_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
+        rows_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
     end
 
 The data for a graph showing a heatmap (matrix) of entries.
@@ -5081,6 +5154,8 @@ colors can't be categorical (or explicit color names).
     rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     entries_colors::AbstractMatrix{<:Real} = Float32[;;]
     entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
+    columns_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
+    rows_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
 end
 
 function Validations.validate_object(data::HeatmapGraphData)::Maybe{AbstractString}
@@ -5098,6 +5173,42 @@ function Validations.validate_object(data::HeatmapGraphData)::Maybe{AbstractStri
     if hovers !== nothing && size(hovers) != matrix_size
         return "the data.entries_hovers size: $(size(hovers))\n" *
                "is different from the data.entries_colors size: $(matrix_size)"
+    end
+
+    message =
+        validate_axis_annotations_configuration(n_columns, "data.entries_colors", "columns", data.columns_annotations)
+    if message === nothing
+        message = validate_axis_annotations_configuration(n_rows, "data.entries_colors", "rows", data.rows_annotations)
+    end
+
+    return message
+end
+
+function validate_axis_annotations_configuration(
+    size::Integer,
+    of_what::AbstractString,
+    axis::AbstractString,
+    configurations::Maybe{AbstractVector{AnnotationsData}},
+)::Maybe{AbstractString}
+    if configurations === nothing
+        return nothing
+    end
+
+    for (annotations_index, annotations_data) in enumerate(configurations)
+        if length(annotations_data.values) != size
+            return (
+                "the data.$(axis)_annotations[$(annotations_index)].values size: $(length(annotations_data.values))\n" *
+                "is different from the number of $(axis) of the $(of_what): $(size)"
+            )
+        end
+
+        hovers = annotations_data.hovers
+        if hovers !== nothing && length(hovers) != size
+            return (
+                "the data.$(axis)_annotations[$(annotations_index)].hovers size: $(length(annotations_data.hovers))\n" *
+                "is different from the number of $(axis) of the $(of_what): $(size)"
+            )
+        end
     end
 
     return nothing
@@ -5121,6 +5232,8 @@ HeatmapGraph = Graph{HeatmapGraphData, HeatmapGraphConfiguration}
         rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
         entries_colors::AbstractMatrix{<:Union{AbstractString, Real}} = Float32[;;],
         entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing],
+        columns_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing,
+        rows_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing,
     )::HeatmapGraph
 
 Create a [`GridGraph`](@ref) by initializing only the [`GridGraphData`](@ref) fields.
@@ -5134,6 +5247,8 @@ function heatmap_graph(;
     rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
     entries_colors::AbstractMatrix{<:Union{AbstractString, Real}} = Float32[;;],
     entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing,
+    columns_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing,
+    rows_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing,
 )::HeatmapGraph
     return HeatmapGraph(
         HeatmapGraphData(;
@@ -5145,18 +5260,52 @@ function heatmap_graph(;
             rows_names = rows_names,
             entries_colors = entries_colors,
             entries_hovers = entries_hovers,
+            columns_annotations = columns_annotations,
+            rows_annotations = rows_annotations,
         ),
         HeatmapGraphConfiguration(),
     )
 end
 
 function validate_graph(graph::HeatmapGraph)::Maybe{AbstractString}
-    return validate_matrix_colors(
+    message = validate_matrix_colors(
         "data.entries_colors",
         graph.data.entries_colors,
         "configuration.entries",
         graph.configuration.entries,
     )
+    if message === nothing
+        message = validate_annotations_data(graph.data.columns_annotations, "columns", graph.configuration.annotations)
+    end
+    if message === nothing
+        message = validate_annotations_data(graph.data.rows_annotations, "rows", graph.configuration.annotations)
+    end
+    return message
+end
+
+function validate_annotations_data(
+    ::Nothing,
+    ::AbstractString,
+    ::Dict{<:AbstractString, AnnotationsConfiguration},
+)::Nothing
+    return nothing
+end
+
+function validate_annotations_data(
+    annotations::Vector{AnnotationsData},
+    axis::AbstractString,
+    configurations::Dict{<:AbstractString, AnnotationsConfiguration},
+)::Maybe{AbstractString}
+    for (annotations_index, annotations_data) in enumerate(annotations)
+        annotations_name = annotations_data.name
+        if annotations_name !== nothing && !haskey(configurations, annotations_name)
+            return (
+                "the data.$(axis)_annotations[$(annotations_index)].name: $(annotations_name)\n" *
+                "does not exist in the configuration.annotations"
+            )
+        end
+    end
+    return nothing
 end
 
 function validate_matrix_colors(
@@ -5219,33 +5368,113 @@ end
 function graph_to_figure(graph::HeatmapGraph)::PlotlyFigure
     assert_valid_object(graph)
 
-    trace = heatmap_trace(graph)
+    traces = [heatmap_trace(graph)]
+
+    coloraxis_index = [1]
+    columns_annotations = graph.data.columns_annotations
+    if columns_annotations !== nothing
+        for (annotations_index, annotations_data) in enumerate(columns_annotations)
+            push!(traces, annotation_trace(annotations_data, coloraxis_index; y_axis_index = annotations_index + 1))
+        end
+    end
+
+    rows_annotations = graph.data.rows_annotations
+    if rows_annotations !== nothing
+        for (annotations_index, annotations_data) in enumerate(rows_annotations)
+            push!(traces, annotation_trace(annotations_data, coloraxis_index; x_axis_index = annotations_index + 1))
+        end
+    end
+
     layout = heatmap_layout(graph)
-    return plot(trace, layout)
+    return plot(traces, layout)
 end
 
 function heatmap_trace(graph::HeatmapGraph)::GenericTrace
-    return heatmap(; z = graph.data.entries_colors, text = graph.data.entries_hovers, coloraxis = "coloraxis")
+    return heatmap(;
+        name = "",
+        z = graph.data.entries_colors,
+        text = graph.data.entries_hovers !== nothing ? permutedims(graph.data.entries_hovers) : nothing,
+        coloraxis = "coloraxis",
+    )
+end
+
+function annotation_trace(
+    data::AnnotationsData,
+    coloraxis_index::Vector{Int};
+    x_axis_index::Maybe{Integer} = nothing,
+    y_axis_index::Maybe{Integer} = nothing,
+)::GenericTrace
+    if x_axis_index === nothing
+        x_axis = nothing
+        transpose = false
+    else
+        x_axis = "x$(x_axis_index)"
+        transpose = true
+    end
+
+    if y_axis_index === nothing
+        y_axis = nothing
+    else
+        y_axis = "y$(y_axis_index)"
+    end
+
+    coloraxis_index[1] += 1
+    return heatmap(;
+        name = "",
+        z = [data.values],
+        text = !transpose ? [data.hovers] : data.hovers !== nothing ? permutedims(data.hovers) : nothing,
+        xaxis = x_axis,
+        yaxis = y_axis,
+        coloraxis = "coloraxis$(coloraxis_index[1])",
+        transpose = transpose,
+    )
 end
 
 function heatmap_layout(graph::HeatmapGraph)::Layout
     n_rows, n_columns = size(graph.data.entries_colors)
     color_tickvals, color_ticktext = log_color_scale_ticks(graph.data.entries_colors, graph.configuration.entries)
-    return graph_layout(
+
+    columns_annotations = graph.data.columns_annotations
+    if columns_annotations === nothing
+        y_axis_domain = nothing
+    else
+        total_size = sum([
+            annotations_data.name === nothing ? 0.05 : graph.configuration.annotations[annotations_data.name].size
+            for annotations_data in columns_annotations
+        ])
+        y_axis_domain = [0, 1 - total_size]
+    end
+
+    rows_annotations = graph.data.rows_annotations
+    if rows_annotations === nothing
+        n_rows_annotations = 0
+        x_axis_domain = nothing
+    else
+        n_rows_annotations = length(rows_annotations)
+        total_size = sum([
+            annotations_data.name === nothing ? 0.05 : graph.configuration.annotations[annotations_data.name].size
+            for annotations_data in rows_annotations
+        ])
+        x_axis_domain = [0, 1 - total_size]
+    end
+
+    layout = graph_layout(
         graph.configuration.graph,
         Layout(;  # NOJET
             title = graph.data.graph_title,
             xaxis_showgrid = graph.configuration.graph.show_grid,
-            xaxis_showticklabels = graph.configuration.graph.show_ticks,
+            xaxis_showticklabels = graph.configuration.graph.show_ticks && graph.data.columns_names !== nothing,
             xaxis_title = graph.data.x_axis_title,
             xaxis_tickvals = graph.data.columns_names === nothing ? nothing : collect(0:(n_columns - 1)),
             xaxis_tickangle = graph.data.columns_names === nothing ? nothing : -90,
             xaxis_ticktext = graph.data.columns_names,
+            xaxis_domain = x_axis_domain,
             yaxis_showgrid = graph.configuration.graph.show_grid,
-            yaxis_showticklabels = graph.configuration.graph.show_ticks,
+            yaxis_showticklabels = graph.configuration.graph.show_ticks && graph.data.rows_names !== nothing,
             yaxis_title = graph.data.y_axis_title,
             yaxis_ticktext = graph.data.rows_names,
             yaxis_tickvals = graph.data.rows_names === nothing ? nothing : collect(0:(n_rows - 1)),
+            yaxis_domain = y_axis_domain,
             coloraxis_showscale = graph.configuration.entries.show_color_scale,
             coloraxis_reversescale = graph.configuration.entries.reverse_color_scale,
             coloraxis_colorscale = normalized_color_palette(
@@ -5267,6 +5496,57 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
             coloraxis_colorbar_ticktext = color_ticktext,
         ),
     )
+
+    coloraxis_index = 1
+
+    if columns_annotations !== nothing
+        top_size = 1.0
+        for (annotations_index, annotations_data) in enumerate(columns_annotations)
+            annotations_configuration =
+                get(graph.configuration.annotations, annotations_data.name, AnnotationsConfiguration())
+            coloraxis_index += 1
+            layout[Symbol("coloraxis$(coloraxis_index)")] = Dict(
+                :colorscale => normalized_color_palette(
+                    annotations_configuration.color_palette,
+                    annotations_configuration.color_scale,
+                ),
+                :showscale => false,
+                :reversescale => annotations_configuration.reverse_color_scale,
+            )
+            bottom_size = top_size - annotations_configuration.size
+            layout[Symbol("yaxis$(annotations_index + 1)")] = Dict(
+                :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
+                :tickvals => [0],
+                :domain => [bottom_size, top_size],
+            )
+            top_size = bottom_size
+        end
+    end
+
+    if rows_annotations !== nothing
+        top_size = 1.0
+        for (annotations_index, annotations_data) in enumerate(rows_annotations)
+            annotations_configuration = graph.configuration.annotations[annotations_data.name]
+            coloraxis_index += 1
+            layout[Symbol("coloraxis$(coloraxis_index)")] = Dict(
+                :colorscale => normalized_color_palette(
+                    annotations_configuration.color_palette,
+                    annotations_configuration.color_scale,
+                ),
+                :showscale => false,
+                :reversescale => annotations_configuration.reverse_color_scale,
+            )
+            bottom_size = top_size - annotations_configuration.size
+            layout[Symbol("xaxis$(annotations_index + 1)")] = Dict(
+                :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
+                :tickvals => [0],
+                :domain => [bottom_size, top_size],
+            )
+            top_size = bottom_size
+        end
+    end
+
+    return layout
 end
 
 function log_color_scale_ticks(
