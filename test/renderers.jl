@@ -663,7 +663,8 @@ nested_test("renderers") do
                 graph.configuration.vertical_bands.low.color = "green"
                 graph.configuration.vertical_bands.middle.color = "red"
                 graph.configuration.vertical_bands.high.color = "blue"
-                return test_html(graph, "line.vertical_lines.colors.html")
+                test_html(graph, "line.vertical_lines.colors.html")
+                return nothing
             end
 
             nested_test("!colors") do
@@ -702,7 +703,8 @@ nested_test("renderers") do
             graph.configuration.vertical_bands.high.offset = 1.5
 
             nested_test("()") do
-                return test_html(graph, "line.vertical_fills.html")
+                test_html(graph, "line.vertical_fills.html")
+                return nothing
             end
 
             nested_test("legend") do
@@ -723,7 +725,8 @@ nested_test("renderers") do
             graph.configuration.horizontal_bands.high.offset = 1.5
 
             nested_test("()") do
-                return test_html(graph, "line.horizontal_lines.html")
+                test_html(graph, "line.horizontal_lines.html")
+                return nothing
             end
 
             nested_test("legend") do
@@ -751,7 +754,8 @@ nested_test("renderers") do
             graph.configuration.horizontal_bands.high.offset = 1.5
 
             nested_test("()") do
-                return test_html(graph, "line.horizontal_fills.html")
+                test_html(graph, "line.horizontal_fills.html")
+                return nothing
             end
 
             nested_test("legend") do
@@ -993,7 +997,8 @@ nested_test("renderers") do
                 graph.configuration.vertical_bands.low.color = "green"
                 graph.configuration.vertical_bands.middle.color = "red"
                 graph.configuration.vertical_bands.high.color = "blue"
-                return test_html(graph, "lines.vertical_lines.colors.html")
+                test_html(graph, "lines.vertical_lines.colors.html")
+                return nothing
             end
 
             nested_test("!colors") do
@@ -1032,7 +1037,8 @@ nested_test("renderers") do
             graph.configuration.vertical_bands.high.offset = 1.5
 
             nested_test("()") do
-                return test_html(graph, "lines.vertical_fills.html")
+                test_html(graph, "lines.vertical_fills.html")
+                return nothing
             end
 
             nested_test("legend") do
@@ -1052,7 +1058,8 @@ nested_test("renderers") do
             graph.configuration.horizontal_bands.middle.offset = 1.25
             graph.configuration.horizontal_bands.high.offset = 1.5
             nested_test("()") do
-                return test_html(graph, "lines.horizontal_lines.html")
+                test_html(graph, "lines.horizontal_lines.html")
+                return nothing
             end
 
             nested_test("legend") do
@@ -1084,7 +1091,8 @@ nested_test("renderers") do
             graph.configuration.horizontal_bands.high.offset = 1.5
 
             nested_test("()") do
-                return test_html(graph, "lines.horizontal_fills.html")
+                test_html(graph, "lines.horizontal_fills.html")
+                return nothing
             end
 
             nested_test("legend") do
@@ -1258,7 +1266,8 @@ nested_test("renderers") do
 
             nested_test("()") do
                 resize!(graph.data.cdfs_values[2], length(graph.data.cdfs_values[1]))
-                return test_html(graph, "cdfs.values.html")
+                test_html(graph, "cdfs.values.html")
+                return nothing
             end
         end
 
@@ -2578,6 +2587,16 @@ nested_test("renderers") do
             return nothing
         end
 
+        nested_test("!rows") do
+            graph.data.points_colors = zeros(Float32, 0, 3)
+            @test_throws "no rows in data.points_colors" graph.figure
+        end
+
+        nested_test("!columns") do
+            graph.data.points_colors = zeros(Float32, 2, 0)
+            @test_throws "no columns in data.points_colors" graph.figure
+        end
+
         nested_test("invalid") do
             nested_test("!sizes!colors") do
                 graph.data.points_colors = nothing
@@ -2595,7 +2614,8 @@ nested_test("renderers") do
 
         nested_test("colors") do
             graph.data.points_colors = ["red" "green" "blue"; "blue" "green" "red"]
-            return test_html(graph, "grid.colors.html")
+            test_html(graph, "grid.colors.html")
+            return nothing
         end
 
         nested_test("!colors") do
@@ -2613,7 +2633,8 @@ nested_test("renderers") do
             graph.configuration.points.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
 
             nested_test("!scale") do
-                return test_html(graph, "grid.categorical.html")
+                test_html(graph, "grid.categorical.html")
+                return nothing
             end
 
             nested_test("!color") do
@@ -2654,13 +2675,15 @@ nested_test("renderers") do
 
             nested_test("!colors") do
                 graph.data.points_colors = nothing
-                return test_html(graph, "grid.sizes.!colors.html")
+                test_html(graph, "grid.sizes.!colors.html")
+                return nothing
             end
 
             nested_test("color") do
                 graph.data.points_colors = nothing
                 graph.configuration.points.color = "red"
-                return test_html(graph, "grid.sizes.color.html")
+                test_html(graph, "grid.sizes.color.html")
+                return nothing
             end
 
             nested_test("colors") do
@@ -2814,7 +2837,8 @@ nested_test("renderers") do
                 graph.data.borders_colors = ["red" "green" "blue"; "red" "green" "blue"]
 
                 nested_test("()") do
-                    return test_html(graph, "grid.border.colors.html")
+                    test_html(graph, "grid.border.colors.html")
+                    return nothing
                 end
 
                 nested_test("!scale") do
@@ -2828,7 +2852,8 @@ nested_test("renderers") do
                 graph.configuration.borders.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
 
                 nested_test("()") do
-                    return test_html(graph, "grid.border.categorical.html")
+                    test_html(graph, "grid.border.categorical.html")
+                    return nothing
                 end
 
                 nested_test("legend") do
@@ -2887,7 +2912,8 @@ nested_test("renderers") do
             nested_test("continuous") do
                 graph.data.borders_colors = 0 .- graph.data.points_colors
                 nested_test("()") do
-                    return test_html(graph, "grid.border.continuous.html")
+                    test_html(graph, "grid.border.continuous.html")
+                    return nothing
                 end
 
                 nested_test("log") do
@@ -2945,6 +2971,68 @@ nested_test("renderers") do
                     end
                 end
             end
+        end
+    end
+
+    nested_test("heatmap") do
+        graph = heatmap_graph(; entries_colors = [1.0 2.0 3.0; 4.0 5.0 6.0])
+        nested_test("()") do
+            test_html(graph, "heatmap.html")
+            return nothing
+        end
+
+        nested_test("!rows") do
+            graph.data.entries_colors = zeros(Float32, 0, 3)
+            @test_throws "no rows in data.entries_colors" graph.figure
+        end
+
+        nested_test("!columns") do
+            graph.data.entries_colors = zeros(Float32, 2, 0)
+            @test_throws "no columns in data.entries_colors" graph.figure
+        end
+
+        nested_test("!hovers") do
+            graph.data.entries_hovers = ["A" "B"; "C" "D"; "E" "F"]
+            @test_throws dedent("""
+                the data.entries_hovers size: (3, 2)
+                is different from the data.entries_colors size: (2, 3)
+            """) graph.figure
+        end
+
+        nested_test("hovers") do
+            graph.data.entries_hovers = ["A" "B" "C"; "D" "E" "F"]
+            test_html(graph, "heatmap.hovers.html")
+            return nothing
+        end
+
+        nested_test("ticks") do
+            graph.data.rows_names = ["Foo", "Bar"]
+            graph.data.columns_names = ["Baz", "Vaz", "Faz"]
+            test_html(graph, "heatmap.ticks.html")
+            return nothing
+        end
+
+        nested_test("!ticks") do
+            graph.configuration.graph.show_ticks = false
+            test_html(graph, "heatmap.!ticks.html")
+            return nothing
+        end
+
+        nested_test("legend") do
+            graph.configuration.entries.show_color_scale = true
+
+            test_legend(graph, "heatmap") do
+                graph.data.entries_colors_title = "Entries"
+                return nothing
+            end
+        end
+
+        nested_test("titles") do
+            graph.data.graph_title = "Graph"
+            graph.data.x_axis_title = "Columns"
+            graph.data.y_axis_title = "Rows"
+            test_html(graph, "heatmap.titles.html")
+            return nothing
         end
     end
 end

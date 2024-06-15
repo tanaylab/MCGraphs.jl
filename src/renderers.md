@@ -20,15 +20,6 @@ MCGraphs.Renderers.PointsGraphConfiguration
 MCGraphs.Renderers.PointsConfiguration
 ```
 
-## Grid
-
-```@docs
-MCGraphs.Renderers.grid_graph
-MCGraphs.Renderers.GridGraph
-MCGraphs.Renderers.GridGraphData
-MCGraphs.Renderers.GridGraphConfiguration
-```
-
 ## Lines
 
 ```@docs
@@ -55,6 +46,25 @@ MCGraphs.Renderers.CdfsGraphData
 MCGraphs.Renderers.CdfsGraphConfiguration
 MCGraphs.Renderers.CdfGraphConfiguration
 MCGraphs.Renderers.CdfDirection
+```
+
+## Grid
+
+```@docs
+MCGraphs.Renderers.grid_graph
+MCGraphs.Renderers.GridGraph
+MCGraphs.Renderers.GridGraphData
+MCGraphs.Renderers.GridGraphConfiguration
+```
+
+## Heatmap
+
+```@docs
+MCGraphs.Renderers.heatmap_graph
+MCGraphs.Renderers.HeatmapGraph
+MCGraphs.Renderers.HeatmapGraphData
+MCGraphs.Renderers.HeatmapGraphConfiguration
+MCGraphs.Renderers.EntriesConfiguration
 ```
 
 ## Bars

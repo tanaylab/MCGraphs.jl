@@ -35,12 +35,16 @@ export DistributionGraphData
 export DistributionsGraph
 export DistributionsGraphConfiguration
 export DistributionsGraphData
+export EntriesConfiguration
 export Graph
 export GraphConfiguration
 export GraphNormalization
 export GridGraph
 export GridGraphConfiguration
 export GridGraphData
+export HeatmapGraph
+export HeatmapGraphConfiguration
+export HeatmapGraphData
 export HorizontalValues
 export LineConfiguration
 export LineGraph
@@ -68,6 +72,7 @@ export distribution_graph
 export distributions_graph
 export graph_to_figure
 export grid_graph
+export heatmap_graph
 export line_graph
 export lines_graph
 export points_graph
@@ -2809,6 +2814,9 @@ function validate_points_configuration(
     if message === nothing
         message = validate_size_range(of_what, points_configuration.size_range)
     end
+    if message === nothing
+        message = validate_color_palette(of_what, points_configuration)
+    end
     if message !== nothing
         return message
     end
@@ -2816,34 +2824,6 @@ function validate_points_configuration(
     size = points_configuration.size
     if size !== nothing && size <= 0
         return "non-positive configuration.$(of_what).size: $(size)"
-    end
-
-    color_palette = points_configuration.color_palette
-    if color_palette isa AbstractVector
-        if length(color_palette) == 0
-            return "empty configuration.$(of_what).color_palette"
-        end
-        for (index, (_, color)) in enumerate(color_palette)
-            if color != "" && !is_valid_color(color)
-                return "invalid configuration.$(of_what).color_palette[$(index)] color: $(color)"
-            end
-        end
-        if eltype(color_palette) <: Tuple{<:Real, <:AbstractString}
-            cmin = minimum([value for (value, _) in color_palette])
-            cmax = maximum([value for (value, _) in color_palette])
-            if cmin == cmax
-                return "single configuration.$(of_what).color_palette value: $(cmax)"
-            end
-            log_color_scale_regularization = points_configuration.color_scale.log_regularization
-            if log_color_scale_regularization !== nothing && cmin + log_color_scale_regularization <= 0
-                index = argmin(color_palette)
-                return "log of non-positive configuration.$(of_what).color_palette[$(index)]: $(cmin + log_color_scale_regularization)"
-            end
-        elseif points_configuration.reverse_color_scale
-            return "reversed categorical configuration.$(of_what).color_palette"
-        end
-    elseif points_configuration.color_scale.log_regularization !== nothing && points_configuration.reverse_color_scale
-        return "reversed log configuration.$(of_what).color_scale"
     end
 
     if !is_valid_color(points_configuration.color)
@@ -4104,57 +4084,6 @@ function xy_ticks(names::AbstractVector{<:AbstractString})::Tuple{Vector{<:Integ
     return (collect(1:length(names)), names)
 end
 
-function log_color_scale_ticks(
-    colors::Maybe{Union{AbstractVector{<:Union{Real, AbstractString}}, AbstractMatrix{<:Union{Real, AbstractString}}}},
-    points_configuration::PointsConfiguration,
-)::Tuple{Maybe{Vector{Float32}}, Maybe{Vector{String}}}
-    log_color_scale_regularization = points_configuration.color_scale.log_regularization
-    if log_color_scale_regularization === nothing || !points_configuration.show_color_scale
-        return nothing, nothing
-    else
-        @assert colors isa AbstractVector{<:Real}
-        cmin = lowest_color(
-            points_configuration.color_palette,
-            points_configuration.color_scale.minimum,
-            log_color_scale_regularization,
-        )  # NOJET
-        if cmin === nothing
-            cmin = log10(minimum(colors) + log_color_scale_regularization)
-        end
-        cmax = highest_color(
-            points_configuration.color_palette,
-            points_configuration.color_scale.maximum,
-            log_color_scale_regularization,
-        )  # NOJET
-        if cmax === nothing
-            cmax = log10(maximum(colors) + log_color_scale_regularization)
-        end
-        int_cmin = Int(floor(cmin))
-        int_cmax = Int(ceil(cmax))
-        if int_cmin == int_cmax
-            return nothing, nothing  # untested
-        end
-        tickvals = Vector{Float32}(undef, (int_cmax - int_cmin) * 3 + 1)
-        tick_index = 1
-        for at in int_cmin:(int_cmax - 1)
-            tickvals[tick_index] = at
-            tickvals[tick_index + 1] = at + log10(2.0)
-            tickvals[tick_index + 2] = at + log10(5.0)
-            tick_index += 3
-        end
-        first_int_index = 1
-        tickvals[tick_index] = int_cmax
-        while length(tickvals) > 1 && tickvals[1] < cmin
-            @views tickvals = tickvals[2:end]
-            first_int_index = (first_int_index + 2) % 3
-        end
-        while length(tickvals) > 1 && tickvals[end] > cmax
-            @views tickvals = tickvals[1:(end - 1)]
-        end
-        return tickvals, log_tick_text_for_vals(tickvals, first_int_index)
-    end
-end
-
 function log_tick_text_for_vals(tickvals::AbstractVector{Float32}, first_int_index::Int)::Vector{String}
     show_middle_ticks = length(tickvals) <= 7
     ticktext = fill("", length(tickvals))
@@ -4294,10 +4223,10 @@ end
         borders_colors_title::Maybe{AbstractString} = nothing
         columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+        points_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = nothing
         points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
         points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
-        borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+        borders_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = nothing
         borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
     end
 
@@ -4314,10 +4243,10 @@ and Y coordinates are given. Instead each matrix entry is plotted as a point at 
     borders_colors_title::Maybe{AbstractString} = nothing
     columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
     rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
-    points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+    points_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = nothing
     points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
     points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
-    borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing
+    borders_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = nothing
     borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing
 end
 
@@ -4342,6 +4271,13 @@ function Validations.validate_object(data::GridGraphData)::Maybe{AbstractString}
     end
 
     n_rows, n_columns = grid_size
+    if n_rows == 0
+        return "no rows in data.points_colors and/or data.points_sizes"
+    end
+    if n_columns == 0
+        return "no columns in data.points_colors and/or data.points_sizes"
+    end
+
     if sizes !== nothing
         for row_index in 1:n_rows
             for column_index in 1:n_columns
@@ -4404,10 +4340,10 @@ GridGraph = Graph{GridGraphData, GridGraphConfiguration}
         borders_colors_title::Maybe{AbstractString} = nothing,
         columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
         rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
-        points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
+        points_colors::Maybe{AbstractMatrix<:Union{AbstractString, <:Real}}}} = nothing,
         points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
         points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing,
-        borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
+        borders_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = nothing,
         borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing],
     )::GridGraph
 
@@ -4421,10 +4357,10 @@ function grid_graph(;
     borders_colors_title::Maybe{AbstractString} = nothing,
     columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
     rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
-    points_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
+    points_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = nothing,
     points_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
     points_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing,
-    borders_colors::Maybe{Union{AbstractMatrix{<:Union{AbstractString, <:Real}}}} = nothing,
+    borders_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = nothing,
     borders_sizes::Maybe{AbstractMatrix{<:Real}} = nothing,
 )::GridGraph
     return GridGraph(
@@ -4738,68 +4674,11 @@ function validate_vector_colors(
     return nothing
 end
 
-function validate_matrix_colors(
-    what_colors::AbstractString,
-    colors::Maybe{Union{AbstractMatrix{<:AbstractString}, AbstractMatrix{<:Real}}},
-    what_configuration::AbstractString,
-    configuration::PointsConfiguration,
-)::Maybe{AbstractString}
-    color_palette = configuration.color_palette
-    if colors isa AbstractMatrix{<:AbstractString}
-        n_rows, n_columns = size(colors)
-        if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-            scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
-            for row_index in 1:n_rows
-                for column_index in 1:n_columns
-                    color = colors[row_index, column_index]
-                    if color != "" && !(color in scale_colors)
-                        return "categorical $(what_configuration).color_palette does not contain $(what_colors)[$(row_index),$(column_index))]: $(color)"
-                    end
-                end
-            end
-        else
-            for row_index in 1:n_rows
-                for column_index in 1:n_columns
-                    color = colors[row_index, column_index]
-                    if color != "" && !is_valid_color(color)
-                        return "invalid $(what_colors)[$(row_index),$(column_index)]: $(color)"
-                    end
-                end
-            end
-        end
-    elseif colors !== nothing && color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
-        return "non-string $(what_colors) for categorical $(what_configuration).color_palette"
-    end
-
-    if configuration.show_color_scale
-        if colors === nothing
-            return "no $(what_colors) specified for $(what_configuration).show_color_scale"
-        end
-        if colors isa AbstractMatrix{<:AbstractString} &&
-           !(configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}})
-            return "explicit $(what_colors) specified for $(what_configuration).show_color_scale"
-        end
-    end
-
-    if configuration.color_scale.log_regularization !== nothing
-        if !(colors isa AbstractMatrix{<:Real})
-            return "non-real $(what_colors) with $(what_configuration).color_scale.log_regularization"
-        end
-        row_index, column_index = argmin(colors).I  # NOJET
-        minimal_color = colors[row_index, column_index] + configuration.color_scale.log_regularization
-        if minimal_color <= 0
-            return "log of non-positive $(what_colors)[$(row_index),$(column_index)]: $(minimal_color)"
-        end
-    end
-
-    return nothing
-end
-
 function grid_trace(;
     data::GridGraphData,
     n_rows::Integer,
     n_columns::Integer,
-    color::Maybe{Union{AbstractString, AbstractMatrix{<:Union{<:AbstractString, Real}}}},
+    color::Maybe{Union{AbstractString, AbstractMatrix{<:Union{AbstractString, Real}}}},
     marker_size::Maybe{Union{Real, AbstractVector{<:Real}}},
     coloraxis::Maybe{AbstractString},
     points_configuration::PointsConfiguration,
@@ -5081,6 +4960,361 @@ function range_of(;
         maximum_value = 10^maximum_value
     end
     return (minimum_value, maximum_value)
+end
+
+"""
+    @kwdef mutable struct EntriesConfiguration
+        color_scale::AxisScale = AxisScale()
+        show_color_scale::Bool = false,
+        reverse_color_scale::Bool = false,
+        color_palette::Maybe{Union{
+            AbstractString,
+            AbstractVector{<:Tuple{<:Real, <:AbstractString}},
+        }} = nothing
+    end
+
+Configure entries in a heatmap. This is similar to [`PointsConfiguration`](@ref), except that there are no sizes to deal
+with, and a fixed single color makes no sense. In addition, due to Plotly limitation, categorical colors are not
+supported.
+"""
+@kwdef mutable struct EntriesConfiguration
+    color_scale::AxisConfiguration = AxisConfiguration()
+    show_color_scale::Bool = false
+    reverse_color_scale::Bool = false
+    color_palette::Maybe{Union{AbstractString, AbstractVector{<:Tuple{<:Real, <:AbstractString}}}} = nothing
+end
+
+function validate_entries_configuration(
+    of_what::AbstractString,
+    entries_configuration::EntriesConfiguration,
+)::Maybe{AbstractString}
+    message = validate_axis_configuration(of_what, ".color_scale", entries_configuration.color_scale)
+
+    if message === nothing
+        message = validate_color_palette(of_what, entries_configuration)
+    end
+
+    return message
+end
+
+function validate_color_palette(
+    of_what::AbstractString,
+    configuration::Union{PointsConfiguration, EntriesConfiguration},
+)::Maybe{AbstractString}
+    color_palette = configuration.color_palette
+    if color_palette isa AbstractVector
+        if length(color_palette) == 0
+            return "empty configuration.$(of_what).color_palette"
+        end
+        for (index, (_, color)) in enumerate(color_palette)
+            if color != "" && !is_valid_color(color)
+                return "invalid configuration.$(of_what).color_palette[$(index)] color: $(color)"
+            end
+        end
+        if eltype(color_palette) <: Tuple{<:Real, <:AbstractString}
+            cmin = minimum([value for (value, _) in color_palette])
+            cmax = maximum([value for (value, _) in color_palette])
+            if cmin == cmax
+                return "single configuration.$(of_what).color_palette value: $(cmax)"
+            end
+            log_color_scale_regularization = configuration.color_scale.log_regularization
+            if log_color_scale_regularization !== nothing && cmin + log_color_scale_regularization <= 0
+                index = argmin(color_palette)
+                return "log of non-positive configuration.$(of_what).color_palette[$(index)]: $(cmin + log_color_scale_regularization)"
+            end
+        elseif configuration.reverse_color_scale
+            return "reversed categorical configuration.$(of_what).color_palette"
+        end
+    elseif configuration.color_scale.log_regularization !== nothing && configuration.reverse_color_scale
+        return "reversed log configuration.$(of_what).color_scale"
+    end
+end
+
+"""
+    @kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
+        graph::GraphConfiguration = GraphConfiguration()
+        entries::EntriesConfiguration = EntriesConfiguration()
+    end
+
+Configure a graph showing a heatmap.
+
+This displays a matrix of values using a rectangle at each position. The only control we have is setting the color of
+each rectangle. An advantage of this over a grid is that it can handle large amount of data. Due to Plotly's
+limitations, you still need to manually tweak the graph size for best results.
+"""
+@kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    entries::EntriesConfiguration = EntriesConfiguration()
+end
+
+function Validations.validate_object(configuration::HeatmapGraphConfiguration)::Maybe{AbstractString}
+    message = validate_graph_configuration(configuration.graph)
+    if message === nothing
+        message = validate_entries_configuration("entries", configuration.entries)
+    end
+    return message
+end
+
+"""
+    @kwdef mutable struct HeatmapGraphData <: AbstractGraphData
+        graph_title::Maybe{AbstractString} = nothing
+        x_axis_title::Maybe{AbstractString} = nothing
+        y_axis_title::Maybe{AbstractString} = nothing
+        entries_colors_title::Maybe{AbstractString} = nothing
+        columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+        entries_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = Float32[;;]
+        entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
+    end
+
+The data for a graph showing a heatmap (matrix) of entries.
+
+This is shown as a 2D image where each matrix entry is a small rectangle with some color. Due to Plotly limitation,
+colors can't be categorical (or explicit color names).
+"""
+@kwdef mutable struct HeatmapGraphData <: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    entries_colors_title::Maybe{AbstractString} = nothing
+    columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
+    entries_colors::AbstractMatrix{<:Real} = Float32[;;]
+    entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
+end
+
+function Validations.validate_object(data::HeatmapGraphData)::Maybe{AbstractString}
+    matrix_size = size(data.entries_colors)
+
+    n_rows, n_columns = matrix_size
+    if n_rows == 0
+        return "no rows in data.entries_colors"
+    end
+    if n_columns == 0
+        return "no columns in data.entries_colors"
+    end
+
+    hovers = data.entries_hovers
+    if hovers !== nothing && size(hovers) != matrix_size
+        return "the data.entries_hovers size: $(size(hovers))\n" *
+               "is different from the data.entries_colors size: $(matrix_size)"
+    end
+
+    return nothing
+end
+
+"""
+A graph visualizing a matrix of entries.. See [`HeatmapGraphData`](@ref) and [`HeatmapGraphConfiguration`](@ref).
+
+An advantage of this over a grid is that it can handle large amount of data. Due to Plotly's limitations, you still need
+to manually tweak the graph size for best results.
+"""
+HeatmapGraph = Graph{HeatmapGraphData, HeatmapGraphConfiguration}
+
+"""
+    function heatmap_graph(;
+        [graph_title::Maybe{AbstractString} = nothing,
+        x_axis_title::Maybe{AbstractString} = nothing,
+        y_axis_title::Maybe{AbstractString} = nothing,
+        entries_colors_title::Maybe{AbstractString} = nothing,
+        columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+        entries_colors::AbstractMatrix{<:Union{AbstractString, Real}} = Float32[;;],
+        entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing],
+    )::HeatmapGraph
+
+Create a [`GridGraph`](@ref) by initializing only the [`GridGraphData`](@ref) fields.
+"""
+function heatmap_graph(;
+    graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    entries_colors_title::Maybe{AbstractString} = nothing,
+    columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
+    entries_colors::AbstractMatrix{<:Union{AbstractString, Real}} = Float32[;;],
+    entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing,
+)::HeatmapGraph
+    return HeatmapGraph(
+        HeatmapGraphData(;
+            graph_title = graph_title,
+            x_axis_title = x_axis_title,
+            y_axis_title = y_axis_title,
+            entries_colors_title = entries_colors_title,
+            columns_names = columns_names,
+            rows_names = rows_names,
+            entries_colors = entries_colors,
+            entries_hovers = entries_hovers,
+        ),
+        HeatmapGraphConfiguration(),
+    )
+end
+
+function validate_graph(graph::HeatmapGraph)::Maybe{AbstractString}
+    return validate_matrix_colors(
+        "data.entries_colors",
+        graph.data.entries_colors,
+        "configuration.entries",
+        graph.configuration.entries,
+    )
+end
+
+function validate_matrix_colors(
+    what_colors::AbstractString,
+    colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}},
+    what_configuration::AbstractString,
+    configuration::Union{EntriesConfiguration, PointsConfiguration},
+)::Maybe{AbstractString}
+    color_palette = configuration.color_palette
+    if colors isa AbstractMatrix{<:AbstractString}
+        n_rows, n_columns = size(colors)
+        if color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+            scale_colors = Set{AbstractString}([value for (value, _) in color_palette])
+            for row_index in 1:n_rows
+                for column_index in 1:n_columns
+                    color = colors[row_index, column_index]
+                    if color != "" && !(color in scale_colors)
+                        return "categorical $(what_configuration).color_palette does not contain $(what_colors)[$(row_index),$(column_index))]: $(color)"
+                    end
+                end
+            end
+        else
+            for row_index in 1:n_rows
+                for column_index in 1:n_columns
+                    color = colors[row_index, column_index]
+                    if color != "" && !is_valid_color(color)
+                        return "invalid $(what_colors)[$(row_index),$(column_index)]: $(color)"
+                    end
+                end
+            end
+        end
+    elseif colors !== nothing && color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}}
+        return "non-string $(what_colors) for categorical $(what_configuration).color_palette"
+    end
+
+    if configuration.show_color_scale
+        if colors === nothing
+            return "no $(what_colors) specified for $(what_configuration).show_color_scale"
+        end
+        if colors isa AbstractMatrix{<:AbstractString} &&
+           !(configuration.color_palette isa AbstractVector{<:Tuple{<:AbstractString, <:AbstractString}})
+            return "explicit $(what_colors) specified for $(what_configuration).show_color_scale"
+        end
+    end
+
+    if configuration.color_scale.log_regularization !== nothing
+        if !(colors isa AbstractMatrix{<:Real})
+            return "non-real $(what_colors) with $(what_configuration).color_scale.log_regularization"
+        end
+        row_index, column_index = argmin(colors).I  # NOJET
+        minimal_color = colors[row_index, column_index] + configuration.color_scale.log_regularization
+        if minimal_color <= 0
+            return "log of non-positive $(what_colors)[$(row_index),$(column_index)]: $(minimal_color)"
+        end
+    end
+
+    return nothing
+end
+
+function graph_to_figure(graph::HeatmapGraph)::PlotlyFigure
+    assert_valid_object(graph)
+
+    trace = heatmap_trace(graph)
+    layout = heatmap_layout(graph)
+    return plot(trace, layout)
+end
+
+function heatmap_trace(graph::HeatmapGraph)::GenericTrace
+    return heatmap(; z = graph.data.entries_colors, text = graph.data.entries_hovers, coloraxis = "coloraxis")
+end
+
+function heatmap_layout(graph::HeatmapGraph)::Layout
+    n_rows, n_columns = size(graph.data.entries_colors)
+    color_tickvals, color_ticktext = log_color_scale_ticks(graph.data.entries_colors, graph.configuration.entries)
+    return graph_layout(
+        graph.configuration.graph,
+        Layout(;  # NOJET
+            title = graph.data.graph_title,
+            xaxis_showgrid = graph.configuration.graph.show_grid,
+            xaxis_showticklabels = graph.configuration.graph.show_ticks,
+            xaxis_title = graph.data.x_axis_title,
+            xaxis_tickvals = graph.data.columns_names === nothing ? nothing : collect(0:(n_columns - 1)),
+            xaxis_tickangle = graph.data.columns_names === nothing ? nothing : -90,
+            xaxis_ticktext = graph.data.columns_names,
+            yaxis_showgrid = graph.configuration.graph.show_grid,
+            yaxis_showticklabels = graph.configuration.graph.show_ticks,
+            yaxis_title = graph.data.y_axis_title,
+            yaxis_ticktext = graph.data.rows_names,
+            yaxis_tickvals = graph.data.rows_names === nothing ? nothing : collect(0:(n_rows - 1)),
+            coloraxis_showscale = graph.configuration.entries.show_color_scale,
+            coloraxis_reversescale = graph.configuration.entries.reverse_color_scale,
+            coloraxis_colorscale = normalized_color_palette(
+                graph.configuration.entries.color_palette,
+                graph.configuration.entries.color_scale,
+            ),
+            coloraxis_cmin = lowest_color(
+                graph.configuration.entries.color_palette,
+                graph.configuration.entries.color_scale.minimum,
+                graph.configuration.entries.color_scale.log_regularization,
+            ),
+            coloraxis_cmax = highest_color(
+                graph.configuration.entries.color_palette,
+                graph.configuration.entries.color_scale.maximum,
+                graph.configuration.entries.color_scale.log_regularization,
+            ),
+            coloraxis_colorbar_title_text = graph.data.entries_colors_title,
+            coloraxis_colorbar_tickvals = color_tickvals,
+            coloraxis_colorbar_ticktext = color_ticktext,
+        ),
+    )
+end
+
+function log_color_scale_ticks(
+    colors::Maybe{Union{AbstractVector{<:Union{Real, AbstractString}}, AbstractMatrix{<:Union{Real, AbstractString}}}},
+    configuration::Union{PointsConfiguration, EntriesConfiguration},
+)::Tuple{Maybe{Vector{Float32}}, Maybe{Vector{String}}}
+    log_color_scale_regularization = configuration.color_scale.log_regularization
+    if log_color_scale_regularization === nothing || !configuration.show_color_scale
+        return nothing, nothing
+    else
+        @assert colors isa AbstractVector{<:Real}
+        cmin =
+            lowest_color(configuration.color_palette, configuration.color_scale.minimum, log_color_scale_regularization)  # NOJET
+        if cmin === nothing
+            cmin = log10(minimum(colors) + log_color_scale_regularization)
+        end
+        cmax = highest_color(
+            configuration.color_palette,
+            configuration.color_scale.maximum,
+            log_color_scale_regularization,
+        )  # NOJET
+        if cmax === nothing
+            cmax = log10(maximum(colors) + log_color_scale_regularization)
+        end
+        int_cmin = Int(floor(cmin))
+        int_cmax = Int(ceil(cmax))
+        if int_cmin == int_cmax
+            return nothing, nothing  # untested
+        end
+        tickvals = Vector{Float32}(undef, (int_cmax - int_cmin) * 3 + 1)
+        tick_index = 1
+        for at in int_cmin:(int_cmax - 1)
+            tickvals[tick_index] = at
+            tickvals[tick_index + 1] = at + log10(2.0)
+            tickvals[tick_index + 2] = at + log10(5.0)
+            tick_index += 3
+        end
+        first_int_index = 1
+        tickvals[tick_index] = int_cmax
+        while length(tickvals) > 1 && tickvals[1] < cmin
+            @views tickvals = tickvals[2:end]
+            first_int_index = (first_int_index + 2) % 3
+        end
+        while length(tickvals) > 1 && tickvals[end] > cmax
+            @views tickvals = tickvals[1:(end - 1)]
+        end
+        return tickvals, log_tick_text_for_vals(tickvals, first_int_index)
+    end
 end
 
 function graph_layout(configuration::GraphConfiguration, layout::Layout)::Layout

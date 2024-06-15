@@ -67,12 +67,6 @@
 </a>
 </li>
 <li>
-<a class="tocitem" href="#Grid">
-<span>Grid
-</span>
-</a>
-</li>
-<li>
 <a class="tocitem" href="#Lines">
 <span>Lines
 </span>
@@ -81,6 +75,18 @@
 <li>
 <a class="tocitem" href="#CDFs">
 <span>CDFs
+</span>
+</a>
+</li>
+<li>
+<a class="tocitem" href="#Grid">
+<span>Grid
+</span>
+</a>
+</li>
+<li>
+<a class="tocitem" href="#Heatmap">
+<span>Heatmap
 </span>
 </a>
 </li>
@@ -926,154 +932,6 @@ end
 </div>
 </section>
 </article>
-<h2 id="Grid">
-<a class="docs-heading-anchor" href="#Grid">Grid
-</a>
-<a id="Grid-1">
-</a>
-<a class="docs-heading-anchor-permalink" href="#Grid" title="Permalink">
-</a>
-</h2>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.grid_graph" href="#MCGraphs.Renderers.grid_graph">
-<code>MCGraphs.Renderers.grid_graph
-</code>
-</a> — 
-<span class="docstring-category">Function
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">function grid_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
-    x_axis_title::Maybe{AbstractString} = nothing,
-    y_axis_title::Maybe{AbstractString} = nothing,
-    points_colors_title::Maybe{AbstractString} = nothing,
-    borders_colors_title::Maybe{AbstractString} = nothing,
-    columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
-    rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
-    points_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing,
-    points_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing,
-    points_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing,
-    borders_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing,
-    borders_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing],
-)::GridGraph
-</code>
-</pre>
-<p>Create a 
-<a href="renderers.html#MCGraphs.Renderers.GridGraph">
-<code>GridGraph
-</code>
-</a> by initializing only the 
-<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
-<code>GridGraphData
-</code>
-</a> fields.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.GridGraph" href="#MCGraphs.Renderers.GridGraph">
-<code>MCGraphs.Renderers.GridGraph
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<p>A graph visualizing points along a grid. See 
-<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
-<code>GridGraphData
-</code>
-</a> and 
-<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
-<code>GridGraphConfiguration
-</code>
-</a>.
-</p>
-<p>An advantage of this over a heatmap is that you can control the color, size, and border color and size of the points to show more than one value per point. A disadvantage of this plot compared to a heatmap is that it only works for &quot;small&quot; amount of data. Also, you will need to manually tweak the graph size vs. the point sizes for best results, as Plotly&#39;s defaults aren&#39;t very good here.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphData" href="#MCGraphs.Renderers.GridGraphData">
-<code>MCGraphs.Renderers.GridGraphData
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct GridGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
-    x_axis_title::Maybe{AbstractString} = nothing
-    y_axis_title::Maybe{AbstractString} = nothing
-    points_colors_title::Maybe{AbstractString} = nothing
-    borders_colors_title::Maybe{AbstractString} = nothing
-    columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    points_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
-    points_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
-    points_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
-    borders_colors::Maybe{Union{AbstractMatrix{&lt;:Union{AbstractString, &lt;:Real}}}} = nothing
-    borders_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
-end
-</code>
-</pre>
-<p>The data for a graph showing a grid of points (e.g. for correlations).
-</p>
-<p>This is similar to a 
-<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
-<code>PointsGraphData
-</code>
-</a>, except that the data is given as a matrix instead of a vector, and no X and Y coordinates are given. Instead each matrix entry is plotted as a point at the matching grid location.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
-<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphConfiguration" href="#MCGraphs.Renderers.GridGraphConfiguration">
-<code>MCGraphs.Renderers.GridGraphConfiguration
-</code>
-</a> — 
-<span class="docstring-category">Type
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
-    points::PointsConfiguration = PointsConfiguration()
-    borders::PointsConfiguration = PointsConfiguration()
-end
-</code>
-</pre>
-<p>Configure a graph showing a grid of points (e.g. for correlations).
-</p>
-<p>This displays a matrix of values using a point at each grid position. This is often used to show correlations between two sets of discrete variables. For large amounts of data, use a heatmap instead. An advantage of this over a heatmap is that you can control the color, size, and border color and size of the points to show more than one value per point. A disadvantage of this plot is that it only works for &quot;small&quot; amount of data. Also, you will need to manually tweak the graph size vs. the point sizes for best results, as Plotly&#39;s defaults aren&#39;t very good here.
-</p>
-</div>
-</section>
-</article>
 <h2 id="Lines">
 <a class="docs-heading-anchor" href="#Lines">Lines
 </a>
@@ -1781,6 +1639,323 @@ end
 <p>
 <code>CdfDownToValue
 </code> - Show the fraction of values down to each value.
+</p>
+</div>
+</section>
+</article>
+<h2 id="Grid">
+<a class="docs-heading-anchor" href="#Grid">Grid
+</a>
+<a id="Grid-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Grid" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.grid_graph" href="#MCGraphs.Renderers.grid_graph">
+<code>MCGraphs.Renderers.grid_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function grid_graph(;
+    [graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    points_colors_title::Maybe{AbstractString} = nothing,
+    borders_colors_title::Maybe{AbstractString} = nothing,
+    columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    points_colors::Maybe{AbstractMatrix&lt;:Union{AbstractString, &lt;:Real}}}} = nothing,
+    points_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing,
+    points_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing,
+    borders_colors::Maybe{AbstractMatrix{&lt;:Union{AbstractString, Real}}} = nothing,
+    borders_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing],
+)::GridGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.GridGraph">
+<code>GridGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>GridGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GridGraph" href="#MCGraphs.Renderers.GridGraph">
+<code>MCGraphs.Renderers.GridGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing points along a grid. See 
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>GridGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.GridGraphConfiguration">
+<code>GridGraphConfiguration
+</code>
+</a>.
+</p>
+<p>An advantage of this over a heatmap is that you can control the color, size, and border color and size of the points to show more than one value per point. A disadvantage of this plot compared to a heatmap is that it only works for &quot;small&quot; amount of data. Also, you will need to manually tweak the graph size vs. the point sizes for best results, as Plotly&#39;s defaults aren&#39;t very good here.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphData" href="#MCGraphs.Renderers.GridGraphData">
+<code>MCGraphs.Renderers.GridGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct GridGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    points_colors_title::Maybe{AbstractString} = nothing
+    borders_colors_title::Maybe{AbstractString} = nothing
+    columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    points_colors::Maybe{AbstractMatrix{&lt;:Union{AbstractString, Real}}} = nothing
+    points_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
+    points_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
+    borders_colors::Maybe{AbstractMatrix{&lt;:Union{AbstractString, Real}}} = nothing
+    borders_sizes::Maybe{AbstractMatrix{&lt;:Real}} = nothing
+end
+</code>
+</pre>
+<p>The data for a graph showing a grid of points (e.g. for correlations).
+</p>
+<p>This is similar to a 
+<a href="renderers.html#MCGraphs.Renderers.PointsGraphData">
+<code>PointsGraphData
+</code>
+</a>, except that the data is given as a matrix instead of a vector, and no X and Y coordinates are given. Instead each matrix entry is plotted as a point at the matching grid location.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.GridGraphConfiguration" href="#MCGraphs.Renderers.GridGraphConfiguration">
+<code>MCGraphs.Renderers.GridGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    points::PointsConfiguration = PointsConfiguration()
+    borders::PointsConfiguration = PointsConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph showing a grid of points (e.g. for correlations).
+</p>
+<p>This displays a matrix of values using a point at each grid position. This is often used to show correlations between two sets of discrete variables. For large amounts of data, use a heatmap instead. An advantage of this over a heatmap is that you can control the color, size, and border color and size of the points to show more than one value per point. A disadvantage of this plot is that it only works for &quot;small&quot; amount of data. Also, you will need to manually tweak the graph size vs. the point sizes for best results, as Plotly&#39;s defaults aren&#39;t very good here.
+</p>
+</div>
+</section>
+</article>
+<h2 id="Heatmap">
+<a class="docs-heading-anchor" href="#Heatmap">Heatmap
+</a>
+<a id="Heatmap-1">
+</a>
+<a class="docs-heading-anchor-permalink" href="#Heatmap" title="Permalink">
+</a>
+</h2>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.heatmap_graph" href="#MCGraphs.Renderers.heatmap_graph">
+<code>MCGraphs.Renderers.heatmap_graph
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function heatmap_graph(;
+    [graph_title::Maybe{AbstractString} = nothing,
+    x_axis_title::Maybe{AbstractString} = nothing,
+    y_axis_title::Maybe{AbstractString} = nothing,
+    entries_colors_title::Maybe{AbstractString} = nothing,
+    columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing,
+    entries_colors::AbstractMatrix{&lt;:Union{AbstractString, Real}} = Float32[;;],
+    entries_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing],
+)::HeatmapGraph
+</code>
+</pre>
+<p>Create a 
+<a href="renderers.html#MCGraphs.Renderers.GridGraph">
+<code>GridGraph
+</code>
+</a> by initializing only the 
+<a href="renderers.html#MCGraphs.Renderers.GridGraphData">
+<code>GridGraphData
+</code>
+</a> fields.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.HeatmapGraph" href="#MCGraphs.Renderers.HeatmapGraph">
+<code>MCGraphs.Renderers.HeatmapGraph
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<p>A graph visualizing a matrix of entries.. See 
+<a href="renderers.html#MCGraphs.Renderers.HeatmapGraphData">
+<code>HeatmapGraphData
+</code>
+</a> and 
+<a href="renderers.html#MCGraphs.Renderers.HeatmapGraphConfiguration">
+<code>HeatmapGraphConfiguration
+</code>
+</a>.
+</p>
+<p>An advantage of this over a grid is that it can handle large amount of data. Due to Plotly&#39;s limitations, you still need to manually tweak the graph size for best results.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.HeatmapGraphData" href="#MCGraphs.Renderers.HeatmapGraphData">
+<code>MCGraphs.Renderers.HeatmapGraphData
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct HeatmapGraphData &lt;: AbstractGraphData
+    graph_title::Maybe{AbstractString} = nothing
+    x_axis_title::Maybe{AbstractString} = nothing
+    y_axis_title::Maybe{AbstractString} = nothing
+    entries_colors_title::Maybe{AbstractString} = nothing
+    columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
+    entries_colors::Maybe{AbstractMatrix{&lt;:Union{AbstractString, Real}}} = Float32[;;]
+    entries_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
+end
+</code>
+</pre>
+<p>The data for a graph showing a heatmap (matrix) of entries.
+</p>
+<p>This is shown as a 2D image where each matrix entry is a small rectangle with some color. Due to Plotly limitation, colors can&#39;t be categorical (or explicit color names).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.HeatmapGraphConfiguration" href="#MCGraphs.Renderers.HeatmapGraphConfiguration">
+<code>MCGraphs.Renderers.HeatmapGraphConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct HeatmapGraphConfiguration &lt;: AbstractGraphConfiguration
+    graph::GraphConfiguration = GraphConfiguration()
+    entries::EntriesConfiguration = EntriesConfiguration()
+end
+</code>
+</pre>
+<p>Configure a graph showing a heatmap.
+</p>
+<p>This displays a matrix of values using a rectangle at each position. The only control we have is setting the color of each rectangle. An advantage of this over a grid is that it can handle large amount of data. Due to Plotly&#39;s limitations, you still need to manually tweak the graph size for best results.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.EntriesConfiguration" href="#MCGraphs.Renderers.EntriesConfiguration">
+<code>MCGraphs.Renderers.EntriesConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct EntriesConfiguration
+    color_scale::AxisScale = AxisScale()
+    show_color_scale::Bool = false,
+    reverse_color_scale::Bool = false,
+    color_palette::Maybe{Union{
+        AbstractString,
+        AbstractVector{&lt;:Tuple{&lt;:Real, &lt;:AbstractString}},
+    }} = nothing
+end
+</code>
+</pre>
+<p>Configure entries in a heatmap. This is similar to 
+<a href="renderers.html#MCGraphs.Renderers.PointsConfiguration">
+<code>PointsConfiguration
+</code>
+</a>, except that there are no sizes to deal with, and a fixed single color makes no sense. In addition, due to Plotly limitation, categorical colors are not supported.
 </p>
 </div>
 </section>
@@ -2953,6 +3128,12 @@ end
 </a>
 </li>
 <li>
+<a href="renderers.html#MCGraphs.Renderers.EntriesConfiguration">
+<code>MCGraphs.Renderers.EntriesConfiguration
+</code>
+</a>
+</li>
+<li>
 <a href="renderers.html#MCGraphs.Renderers.Graph">
 <code>MCGraphs.Renderers.Graph
 </code>
@@ -2985,6 +3166,24 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.GridGraphData">
 <code>MCGraphs.Renderers.GridGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.HeatmapGraph">
+<code>MCGraphs.Renderers.HeatmapGraph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.HeatmapGraphConfiguration">
+<code>MCGraphs.Renderers.HeatmapGraphConfiguration
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.HeatmapGraphData">
+<code>MCGraphs.Renderers.HeatmapGraphData
 </code>
 </a>
 </li>
@@ -3117,6 +3316,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.grid_graph">
 <code>MCGraphs.Renderers.grid_graph
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.heatmap_graph">
+<code>MCGraphs.Renderers.heatmap_graph
 </code>
 </a>
 </li>
