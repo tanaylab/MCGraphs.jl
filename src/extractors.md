@@ -9,6 +9,7 @@ MCGraphs.Extractors
 ```@docs
 MCGraphs.Extractors.extract_gene_gene_data
 MCGraphs.Extractors.extract_sphere_sphere_data
+MCGraphs.Extractors.extract_marker_genes_data
 ```
 
 ## Configuration
@@ -17,6 +18,7 @@ MCGraphs.Extractors.extract_sphere_sphere_data
 MCGraphs.Extractors.extract_categorical_color_palette
 MCGraphs.Extractors.default_gene_gene_configuration
 MCGraphs.Extractors.default_sphere_sphere_configuration
+MCGraphs.Extractors.default_marker_genes_configuration
 ```
 
 ## Index

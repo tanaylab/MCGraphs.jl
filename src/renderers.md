@@ -99,7 +99,8 @@ MCGraphs.Renderers.DistributionConfiguration
 ## Common
 
 ```@docs
-MCGraphs.Renderers.GraphConfiguration
+MCGraphs.Renderers.FigureConfiguration
+MCGraphs.Renderers.MarginsConfiguration
 MCGraphs.Renderers.AxisConfiguration
 MCGraphs.Renderers.ValuesOrientation
 MCGraphs.Renderers.GraphNormalization

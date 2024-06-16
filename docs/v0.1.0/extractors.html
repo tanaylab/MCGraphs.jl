@@ -191,8 +191,8 @@
     axis::QueryString,
     [min_significant_gene_UMIs::Integer = 40,
     color::Maybe{QueryString} = nothing,
-    entries_hovers::Maybe{QueryColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
-    genes_hovers::Maybe{QueryColumns} = nothing],
+    entries_hovers::Maybe{FrameColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
+    genes_hovers::Maybe{FrameColumns} = nothing],
 )::PointsGraphData
 </code>
 </pre>
@@ -250,6 +250,56 @@
 </code>
 </pre>
 <p>Extract the data for a sphere-sphere graph. This shows why two spheres were not merged (or, if given the same sphere name twice, why the sphere was merged).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Extractors.extract_marker_genes_data" href="#MCGraphs.Extractors.extract_marker_genes_data">
+<code>MCGraphs.Extractors.extract_marker_genes_data
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function extract_marker_genes_data(
+    daf::DafReader;
+    [axis::AbstractString = &quot;metacell&quot;,
+    min_marker_genes::Integer = 100,
+    type_property::Maybe{AbstractString} = &quot;type&quot;,
+    expression_annotations::Maybe{FrameColumns} = nothing,
+    gene_annotations::Maybe{FrameColumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
+    gene_names::Maybe{Vector{AbstractString}} = nothing],
+)::HeatmapGraphData
+</code>
+</pre>
+<p>Extract the data for a marker genes graph. This shows the genes that most distinguish between metacells (or profiles using another axis). Type annotations are added based on the 
+<code>type_property
+</code> (which should name an axis with a 
+<code>color
+</code> property), and optional 
+<code>expression_annotations
+</code> and 
+<code>gene_annotations
+</code>.
+</p>
+<p>If 
+<code>gene_names
+</code> is specified, these genes will always appear in the graph. This list is supplemented with additional 
+<code>is_marker
+</code> genes to show at least 
+<code>min_marker_genes
+</code>. A number of strongest such genes is chosen from each profile, such that the total number of these genes together with the forced 
+<code>gene_names
+</code> is at least 
+<code>min_marker_genes
+</code>.
 </p>
 </div>
 </section>
@@ -349,6 +399,42 @@
 </div>
 </section>
 </article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Extractors.default_marker_genes_configuration" href="#MCGraphs.Extractors.default_marker_genes_configuration">
+<code>MCGraphs.Extractors.default_marker_genes_configuration
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">default_marker_genes_configuration(
+    daf::DafReader,
+    [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
+    type_property::Maybe{AbstractString},
+    min_significant_fold::Real = 0.5,
+    max_significant_fold::Real = 3.0],
+)::HeatmapGraphConfiguration
+</code>
+</pre>
+<p>Return a default configuration for a markers heatmap graph. Will modify 
+<code>configuration
+</code> in-place and return it.
+</p>
+<p>Genes whose (absolute) fold factor (log base 2 of the ratio between the expression level and the median of the population) is less than 
+<code>min_significant_fold
+</code> are colored in white. The color scale continues until 
+<code>max_significant_fold
+</code>.
+</p>
+</div>
+</section>
+</article>
 <h2 id="Index">
 <a class="docs-heading-anchor" href="#Index">Index
 </a>
@@ -371,6 +457,12 @@
 </a>
 </li>
 <li>
+<a href="extractors.html#MCGraphs.Extractors.default_marker_genes_configuration">
+<code>MCGraphs.Extractors.default_marker_genes_configuration
+</code>
+</a>
+</li>
+<li>
 <a href="extractors.html#MCGraphs.Extractors.default_sphere_sphere_configuration">
 <code>MCGraphs.Extractors.default_sphere_sphere_configuration
 </code>
@@ -385,6 +477,12 @@
 <li>
 <a href="extractors.html#MCGraphs.Extractors.extract_gene_gene_data">
 <code>MCGraphs.Extractors.extract_gene_gene_data
+</code>
+</a>
+</li>
+<li>
+<a href="extractors.html#MCGraphs.Extractors.extract_marker_genes_data">
+<code>MCGraphs.Extractors.extract_marker_genes_data
 </code>
 </a>
 </li>

@@ -3,16 +3,16 @@
 <defs id="id-1">
 <g class="clips">
 <clipPath id="id-2" class="plotclip">
-<rect width="92" height="82"/>
+<rect width="92" height="92"/>
 </clipPath>
 <clipPath class="axesclip" id="id-3">
 <rect x="50" y="0" width="92" height="192"/>
 </clipPath>
 <clipPath class="axesclip" id="id-4">
-<rect x="0" y="60" width="192" height="82"/>
+<rect x="0" y="50" width="192" height="92"/>
 </clipPath>
 <clipPath class="axesclip" id="id-5">
-<rect x="50" y="60" width="92" height="82"/>
+<rect x="50" y="50" width="92" height="92"/>
 </clipPath>
 </g>
 <g class="gradients"/>
@@ -30,9 +30,9 @@
 </g>
 <g class="gridlayer">
 <g class="x">
-<path class="xgrid crisp" transform="translate(60.019999999999996,0)" d="M0,60v82" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="xgrid crisp" transform="translate(98.71000000000001,0)" d="M0,60v82" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
-<path class="xgrid crisp" transform="translate(137.4,0)" d="M0,60v82" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
+<path class="xgrid crisp" transform="translate(60.019999999999996,0)" d="M0,50v92" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
+<path class="xgrid crisp" transform="translate(98.71000000000001,0)" d="M0,50v92" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
+<path class="xgrid crisp" transform="translate(137.4,0)" d="M0,50v92" style="stroke: rgb(238, 238, 238); stroke-opacity: 1; stroke-width: 1px;"/>
 </g>
 <g class="y"/>
 </g>
@@ -43,10 +43,10 @@
 <g class="xaxislayer-below"/>
 <g class="yaxislayer-below"/>
 <g class="overaxes-below"/>
-<g class="plot" transform="translate(50,60)" clip-path="url('#id-2')">
+<g class="plot" transform="translate(50,50)" clip-path="url('#id-2')">
 <g class="boxlayer mlayer">
 <g class="trace boxes" style="opacity: 1;">
-<path class="box" d="M30.14,61.09V20.91M16.21,61.09V20.91H34.78V61.09ZM16.21,41H4.6M34.78,41H87.4M4.6,51.05V30.96M87.4,51.05V30.96" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(31, 119, 180); stroke-opacity: 1; fill: rgb(31, 119, 180); fill-opacity: 0.5;"/>
+<path class="box" d="M30.14,68.54V23.46M16.21,68.54V23.46H34.78V68.54ZM16.21,46H4.6M34.78,46H87.4M4.6,57.27V34.73M87.4,57.27V34.73" style="vector-effect: non-scaling-stroke; stroke-width: 2px; stroke: rgb(31, 119, 180); stroke-opacity: 1; fill: rgb(31, 119, 180); fill-opacity: 0.5;"/>
 </g>
 </g>
 </g>

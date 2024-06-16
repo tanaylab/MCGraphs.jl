@@ -4,9 +4,11 @@ Extract data from a metacells `Daf` for standard graphs.
 module Extractors
 
 export default_gene_gene_configuration
+export default_marker_genes_configuration
 export default_sphere_sphere_configuration
 export extract_categorical_color_palette
 export extract_gene_gene_data
+export extract_marker_genes_data
 export extract_sphere_sphere_data
 
 using Base.Threads
@@ -16,6 +18,7 @@ using Daf.GenericTypes
 using DataFrames
 using LinearAlgebra
 using NamedArrays
+using Statistics
 using ..Renderers
 
 import Printf
@@ -36,8 +39,8 @@ end
         axis::QueryString,
         [min_significant_gene_UMIs::Integer = 40,
         color::Maybe{QueryString} = nothing,
-        entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
-        genes_hovers::Maybe{QueryColumns} = nothing],
+        entries_hovers::Maybe{FrameColumns} = ["total_UMIs" => "=", "type" => "="],
+        genes_hovers::Maybe{FrameColumns} = nothing],
     )::PointsGraphData
 
 Extract the data for a gene-gene graph from the `daf` data. The X coordinate of each point is the fraction of the
@@ -58,8 +61,8 @@ function extract_gene_gene_data(  # untested
     axis::QueryString = "metacell",
     min_significant_gene_UMIs::Integer = 40,
     color::Maybe{QueryString} = "type",
-    entries_hovers::Maybe{QueryColumns} = ["total_UMIs" => "=", "type" => "="],
-    genes_hovers::Maybe{QueryColumns} = nothing,
+    entries_hovers::Maybe{FrameColumns} = ["total_UMIs" => "=", "type" => "="],
+    genes_hovers::Maybe{FrameColumns} = nothing,
 )::PointsGraphData
     axis_query = Query(axis, Axis)  # NOJET
     axis_name = query_axis_name(axis_query)
@@ -149,7 +152,7 @@ function extract_gene_gene_data(  # untested
     end
 
     return PointsGraphData(;
-        graph_title = "$(uppercasefirst(axis_name))s Gene-Gene",
+        figure_title = "$(uppercasefirst(axis_name))s Gene-Gene",
         x_axis_title = x_gene,
         y_axis_title = y_gene,
         points_colors_title = string(color),
@@ -218,34 +221,7 @@ end
 Extract the data for a sphere-sphere graph. This shows why two spheres were not merged (or, if given the same sphere
 name twice, why the sphere was merged).
 """
-@computation Contract(;
-    axes = [
-        "metacell" => (RequiredInput, "The metacells to compare group(s) of."),
-        "gene" => (RequiredInput, "The genes to consider (typically, only marker genes)."),
-    ],
-    data = [
-        ("gene", "divergence") => (RequiredInput, AbstractFloat, "How to scale fold factors for this gene."),
-        ("gene", "is_lateral") => (RequiredInput, Bool, "A mask of genes of behaviors we want to ignore."),
-        ("gene", "neighborhood", "is_correlated") =>
-            (RequiredInput, Bool, "Which genes are correlated in each neighborhood."),
-        ("metacell", "sphere") => (RequiredInput, AbstractString, "The sphere each metacell belongs to."),
-        ("metacell", "gene", "fraction") =>
-            (RequiredInput, AbstractFloat, "The fraction of the UMIs of each gene in each metacell."),
-        ("metacell", "total_UMIs") => (
-            RequiredInput,
-            Unsigned,
-            "The total number of UMIs used to estimate the fraction of all the genes in each metacell.",
-        ),
-        ("metacell", "gene", "total_UMIs") => (
-            RequiredInput,
-            Unsigned,
-            "The total number of UMIs used to estimate the fraction of each gene in each metacell.",
-        ),
-        ("sphere", "neighborhood.main") => (RequiredInput, AbstractString, "The main neighborhood of each sphere."),
-        ("sphere", "neighborhood", "is_member") =>
-            (GuaranteedOutput, Bool, "Membership matrix for spheres and neighborhoods."),
-    ],
-) function extract_sphere_sphere_data(
+function extract_sphere_sphere_data(
     daf::DafReader;
     x_sphere::AbstractString,
     y_sphere::AbstractString,
@@ -505,7 +481,7 @@ name twice, why the sphere was merged).
     resize!(edges_points, edge_index)
 
     return PointsGraphData(;
-        graph_title = "Spheres Genes Difference",
+        figure_title = "Spheres Genes Difference",
         x_axis_title = x_axis_title,
         y_axis_title = y_axis_title,
         points_colors_title = "Genes",
@@ -671,6 +647,251 @@ function default_sphere_sphere_configuration(  # untested
         ("certificate for $(x_sphere) sphere", "mediumpurple"),
         ("certificate for $(x_sphere) neighborhood", "mediumorchid"),
     ]
+    return configuration
+end
+
+"""
+    function extract_marker_genes_data(
+        daf::DafReader;
+        [axis::AbstractString = "metacell",
+        min_marker_genes::Integer = 100,
+        type_property::Maybe{AbstractString} = "type",
+        expression_annotations::Maybe{FrameColumns} = nothing,
+        gene_annotations::Maybe{FrameColumns} = ["is_lateral", "divergence"],
+        gene_names::Maybe{Vector{AbstractString}} = nothing],
+    )::HeatmapGraphData
+
+Extract the data for a marker genes graph. This shows the genes that most distinguish between metacells (or profiles
+using another axis). Type annotations are added based on the `type_property` (which should name an axis with a `color`
+property), and optional `expression_annotations` and `gene_annotations`.
+
+If `gene_names` is specified, these genes will always appear in the graph. This list is supplemented with additional
+`is_marker` genes to show at least `min_marker_genes`. A number of strongest such genes is chosen from each profile,
+such that the total number of these genes together with the forced `gene_names` is at least `min_marker_genes`.
+"""
+function extract_marker_genes_data(  # untested
+    daf::DafReader;
+    axis::AbstractString = "metacell",
+    gene_names::Maybe{Vector{AbstractString}} = nothing,
+    max_marker_genes::Integer = 100,
+    gene_fraction_regularization::AbstractFloat = 1e-5,
+    type_property::Maybe{AbstractString} = "type",
+    expression_annotations::Maybe{FrameColumns} = nothing,
+    gene_annotations::Maybe{FrameColumns} = ["is_lateral", "divergence"],
+)::HeatmapGraphData
+    @assert max_marker_genes > 0
+    @assert type_property !== nothing || expression_annotations === nothing
+    power_of_selected_genes_of_profiles, names_of_selected_genes, indices_of_selected_genes =
+        compute_marker_genes(daf, axis, gene_names, max_marker_genes, gene_fraction_regularization)
+    columns_annotations = marker_genes_columns_annotations(daf, axis, type_property, expression_annotations)
+    rows_annotations = marker_genes_rows_annotations(daf, gene_annotations, indices_of_selected_genes)
+    return HeatmapGraphData(;
+        figure_title = "$(uppercasefirst(axis))s Marker Genes",
+        x_axis_title = uppercasefirst(axis),
+        y_axis_title = "Genes",
+        entries_colors_title = "Fold Factor",
+        rows_names = names_of_selected_genes,
+        entries_colors = power_of_selected_genes_of_profiles,
+        columns_annotations = columns_annotations,
+        rows_annotations = rows_annotations,
+    )
+end
+
+function compute_marker_genes(  # untested
+    daf::DafReader,
+    axis::AbstractString,
+    gene_names::Maybe{AbstractVector{<:AbstractString}},
+    min_marker_genes::Integer,
+    gene_fraction_regularization::AbstractFloat = 1e-5,
+)::Tuple{AbstractMatrix{<:Real}, AbstractVector{<:AbstractString}, AbstractVector{<:Integer}}
+    if gene_names === nothing
+        gene_names = AbstractString[]
+    else
+        gene_names = copy_array(gene_names)
+    end
+
+    n_genes = axis_length(daf, "gene")
+    n_profiles = axis_length(daf, axis)
+
+    fractions_of_profiles_of_genes = get_matrix(daf, axis, "gene", "fraction").array
+    @assert size(fractions_of_profiles_of_genes) == (n_profiles, n_genes)
+
+    divergence_of_genes = get_vector(daf, "gene", "divergence")
+
+    indices_of_named_genes = axis_indices(daf, "gene", gene_names)  # NOJET
+    n_named_genes = length(indices_of_named_genes)
+
+    if length(gene_names) >= min_marker_genes
+        fractions_of_profiles_of_named_genes = fractions_of_profiles_of_genes[:, indices_of_named_genes]
+        @assert size(fractions_of_profiles_of_genes) == (n_profiles, n_named_genes)
+
+        fractions_of_named_genes_of_profiles = transposer!(fractions_of_profiles_of_named_genes)
+        @assert size(fractions_of_named_genes_of_profiles) == (n_named_genes, n_profiles)
+
+        median_fractions_of_named_genes = median(fractions_of_named_genes_of_profiles; dims = 2)
+        @assert length(median_fractions_of_named_genes) == n_named_genes
+
+        divergence_of_named_genes = divergence_of_genes[indices_of_named_genes]
+        power_of_named_genes_of_profiles =
+            log2.(
+                (fractions_of_named_genes_of_profiles .+ gene_fraction_regularization) ./
+                transpose(median_fractions_of_named_genes .+ gene_fraction_regularization)
+            ) .* (1 .- transpose(divergence_of_named_genes))
+        @assert size(power_of_named_genes_of_profiles) == (n_named_genes, n_profiles)
+
+        power_of_selected_genes_of_profiles = power_of_named_genes_of_profiles
+        names_of_selected_genes = gene_names
+        indices_of_selected_genes = indices_of_named_genes
+    else
+        mask_of_candidate_genes = copy_array(get_vector(daf, "gene", "is_marker").array)
+        mask_of_candidate_genes[indices_of_named_genes] .= true
+        indices_of_candidate_genes = findall(mask_of_candidate_genes)
+        names_of_candidate_genes = axis_array(daf, "gene")[indices_of_candidate_genes]
+        n_candidate_genes = length(indices_of_candidate_genes)
+
+        fractions_of_profiles_of_candidate_genes = fractions_of_profiles_of_genes[:, indices_of_candidate_genes]
+        @assert size(fractions_of_profiles_of_candidate_genes) == (n_profiles, n_candidate_genes)
+
+        median_fractions_of_candidate_genes = median(fractions_of_profiles_of_candidate_genes; dims = 1)  # NOJET
+        @assert length(median_fractions_of_candidate_genes) == n_candidate_genes
+
+        fractions_of_candidate_genes_of_profiles = transposer!(fractions_of_profiles_of_candidate_genes)
+        @assert size(fractions_of_candidate_genes_of_profiles) == (n_candidate_genes, n_profiles)
+
+        divergence_of_candidate_genes = divergence_of_genes[indices_of_candidate_genes]
+        power_of_candidate_genes_of_profiles =
+            log2.(
+                (fractions_of_candidate_genes_of_profiles .+ gene_fraction_regularization) ./
+                transpose(median_fractions_of_candidate_genes .+ gene_fraction_regularization)
+            ) .* (1 .- divergence_of_candidate_genes)
+        @assert size(power_of_candidate_genes_of_profiles) == (n_candidate_genes, n_profiles)
+
+        if n_candidate_genes <= min_marker_genes
+            selected_genes_mask = ones(Bool, n_candidate_genes)
+        else
+            rank_of_candidate_genes_of_profiles = Matrix{Int32}(undef, n_candidate_genes, n_profiles)
+            @threads for profile_index in 1:n_profiles
+                @views power_of_candidate_genes_of_profile = power_of_candidate_genes_of_profiles[:, profile_index]
+                rank_of_candidate_genes_of_profiles[:, profile_index] =
+                    sortperm(abs.(power_of_candidate_genes_of_profile); rev = true)
+                rank_of_candidate_genes_of_profiles[indices_of_named_genes, profile_index] .= 0
+            end
+
+            threshold = 1
+            votes_of_candidate_genes = nothing
+            while true
+                votes_of_candidate_genes = vec(sum(rank_of_candidate_genes_of_profiles .<= threshold; dims = 2))
+                @assert length(votes_of_candidate_genes) == n_candidate_genes
+                if sum(votes_of_candidate_genes .> 0) >= min_marker_genes
+                    break
+                end
+                threshold += 1
+            end
+            order_of_candidate_genes = sortperm(votes_of_candidate_genes; rev = true)
+            selected_genes_mask = zeros(Bool, n_candidate_genes)
+            selected_genes_mask[order_of_candidate_genes[1:min_marker_genes]] .= true
+        end
+
+        power_of_selected_genes_of_profiles = power_of_candidate_genes_of_profiles[selected_genes_mask, :]
+        names_of_selected_genes = names_of_candidate_genes[selected_genes_mask]
+        indices_of_selected_genes = axis_indices(daf, "gene", names_of_selected_genes)
+    end
+
+    return power_of_selected_genes_of_profiles, names_of_selected_genes, indices_of_selected_genes
+end
+
+function marker_genes_columns_annotations(::DafReader, ::AbstractString, ::Nothing, ::Maybe{FrameColumns})::Nothing  # untested
+    return nothing
+end
+
+function marker_genes_columns_annotations(  # untested
+    daf::DafReader,
+    axis::AbstractString,
+    type_property::AbstractString,
+    expression_annotations::Maybe{FrameColumns},
+)::Maybe{Vector{AnnotationsData}}
+    annotations = AnnotationsData[]
+    type_of_profiles = get_vector(daf, axis, type_property)
+    push!(
+        annotations,
+        AnnotationsData(;
+            name = "type",
+            title = type_property,
+            values = axis_indices(daf, type_property, type_of_profiles.array),
+            hovers = names(type_of_profiles, 1),
+        ),
+    )
+    if expression_annotations !== nothing
+        data_frame = get_frame(daf, type_property, expression_annotations)
+        for (name, values) in pairs(eachcol(data_frame))
+            push!(annotations, AnnotationsData(; title = string(name), values = Float32.(values)))
+        end
+    end
+    return annotations
+end
+
+function marker_genes_rows_annotations(::DafReader, ::Nothing, ::AbstractVector{<:Integer})::Nothing  # untested
+    return nothing
+end
+
+function marker_genes_rows_annotations(
+    daf::DafReader,
+    gene_annotations::FrameColumns,
+    indices_of_selected_genes::AbstractVector{<:Integer},
+)::Vector{AnnotationsData}  # untested
+    data_frame = get_frame(daf, "gene", gene_annotations)
+    return [
+        AnnotationsData(;
+            title = string(name),
+            name = eltype(values) <: Bool ? "bool" : nothing,
+            values = Float32.(values[indices_of_selected_genes]),
+        ) for (name, values) in pairs(eachcol(data_frame))
+    ]
+end
+
+"""
+    default_marker_genes_configuration(
+        daf::DafReader,
+        [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
+        type_property::Maybe{AbstractString},
+        min_significant_fold::Real = 0.5,
+        max_significant_fold::Real = 3.0],
+    )::HeatmapGraphConfiguration
+
+Return a default configuration for a markers heatmap graph. Will modify `configuration` in-place and return it.
+
+Genes whose (absolute) fold factor (log base 2 of the ratio between the expression level and the median of the
+population) is less than `min_significant_fold` are colored in white. The color scale continues until
+`max_significant_fold`.
+"""
+function default_marker_genes_configuration(  # untested
+    daf::DafReader,
+    configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
+    type_property::Maybe{AbstractString},
+    min_significant_fold::Real = 0.5,
+    max_significant_fold::Real = 3.0,
+)::HeatmapGraphConfiguration
+    configuration.figure.margins.left = 100
+    configuration.figure.margins.bottom = 100
+    configuration.entries.show_color_scale = true
+    configuration.entries.color_palette = [
+        (-max_significant_fold - 0.05, "#0000FF"),
+        (-max_significant_fold - 1e-6, "#0000FF"),
+        (-max_significant_fold, "#2222B2FF"),
+        (-min_significant_fold, "#ffffff"),
+        (min_significant_fold, "#ffffff"),
+        (max_significant_fold, "#B22222FF"),
+        (max_significant_fold + 1e-6, "#FF0000"),
+        (max_significant_fold + 0.05, "#FF0000"),
+    ]
+    configuration.entries.color_scale.minimum = -max_significant_fold - 0.05
+    configuration.entries.color_scale.maximum = max_significant_fold + 0.05
+    if type_property !== nothing
+        configuration.annotations["type"] = AnnotationsConfiguration(;
+            color_palette = collect(enumerate(get_vector(daf, type_property, "color").array)),
+        )
+    end
+    configuration.annotations["bool"] = AnnotationsConfiguration(; color_palette = [(0.0, "#ffffff"), (1.0, "#000000")])
     return configuration
 end
 

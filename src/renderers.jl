@@ -38,8 +38,8 @@ export DistributionsGraph
 export DistributionsGraphConfiguration
 export DistributionsGraphData
 export EntriesConfiguration
+export FigureConfiguration
 export Graph
-export GraphConfiguration
 export GraphNormalization
 export GridGraph
 export GridGraphConfiguration
@@ -177,8 +177,8 @@ function save_graph(graph::Graph, output_file::AbstractString)::Nothing
     savefig(  # NOJET
         graph_to_figure(graph),
         output_file;
-        width = graph.configuration.graph.width,
-        height = graph.configuration.graph.height,
+        width = graph.configuration.figure.width,
+        height = graph.configuration.figure.height,
     )
     return nothing
 end
@@ -210,7 +210,40 @@ The orientation of the values axis in a distribution or bars graph:
 @enum ValuesOrientation HorizontalValues VerticalValues
 
 """
-    @kwdef mutable struct GraphConfiguration
+    @kwdef mutable struct MarginsConfiguration
+        left::Int = 50
+        bottom::Int = 50
+        right::Int = 50
+        top::Int = 50
+    end
+
+Configure the margins of the graph. Sizes are in pixels (1/96th of an inch).
+"""
+@kwdef mutable struct MarginsConfiguration
+    left::Int = 50
+    bottom::Int = 50
+    right::Int = 50
+    top::Int = 50
+end
+
+function validate_margins_configuration(margins_configuration::MarginsConfiguration)::Maybe{AbstractString}
+    if margins_configuration.left < 0
+        return "negative configuration.figure.margins.left: $(margins_configuration.left)"
+    end
+    if margins_configuration.right < 0
+        return "negative configuration.figure.margins.right: $(margins_configuration.right)"
+    end
+    if margins_configuration.bottom < 0
+        return "negative configuration.figure.margins.bottom: $(margins_configuration.bottom)"
+    end
+    if margins_configuration.top < 0
+        return "negative configuration.figure.margins.top: $(margins_configuration.top)"
+    end
+    return nothing
+end
+
+"""
+    @kwdef mutable struct FigureConfiguration
         width::Maybe{Int} = nothing
         height::Maybe{Int} = nothing
         template::AbstractString = "simple_white"
@@ -218,17 +251,19 @@ The orientation of the values axis in a distribution or bars graph:
         show_ticks::Bool = true
     end
 
-Generic configuration that applies to any graph. Each complete [`AbstractGraphConfiguration`](@ref) contains a `graph`
-field of this type.
+Generic configuration that applies to the whole figure. Each complete [`AbstractGraphConfiguration`](@ref) contains a
+`figure` field of this type.
 
-The optional `width` and `height` are in pixels, that is, 1/96 of an inch.
+The optional `width` and `height` are in pixels, that is, 1/96 of an inch. Due to Plotly limitations, you may have to
+adjust the `margins` to ensure tick labels will fit inside the graph.
 
 By default, `show_grid` and `show_ticks` are set.
 
 The default `template` is "simple_white" which is the cleanest. The `show_grid` and `show_ticks` can be used to disable
 the grid and/or ticks for an even cleaner (but less informative) look.
 """
-@kwdef mutable struct GraphConfiguration
+@kwdef mutable struct FigureConfiguration
+    margins::MarginsConfiguration = MarginsConfiguration()
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
     template::AbstractString = "simple_white"
@@ -236,15 +271,20 @@ the grid and/or ticks for an even cleaner (but less informative) look.
     show_ticks::Bool = true
 end
 
-function validate_graph_configuration(graph_configuration::GraphConfiguration)::Maybe{AbstractString}
+function validate_graph_configuration(graph_configuration::FigureConfiguration)::Maybe{AbstractString}
+    message = validate_margins_configuration(graph_configuration.margins)
+    if message !== nothing
+        return message
+    end
+
     width = graph_configuration.width
     if width !== nothing && width <= 0
-        return "non-positive configuration.graph.width: $(width)"
+        return "non-positive configuration.figure.width: $(width)"
     end
 
     height = graph_configuration.height
     if height !== nothing && height <= 0
-        return "non-positive configuration.graph.height: $(height)"
+        return "non-positive configuration.figure.height: $(height)"
     end
 
     return nothing
@@ -378,7 +418,7 @@ end
 
 """
     @kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         distribution::DistributionConfiguration = DistributionConfiguration(show_curve = false, show_box = true)
         value_axis::AxisConfiguration = AxisConfiguration()
     end
@@ -390,13 +430,13 @@ The optional `color` will be chosen automatically if not specified. When showing
 possible to specify the color of each one in the [`DistributionsGraphData`](@ref).
 """
 @kwdef mutable struct DistributionGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     distribution::DistributionConfiguration = DistributionConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
 end
 
 function Validations.validate_object(configuration::DistributionGraphConfiguration)::Maybe{AbstractString}
-    message = validate_graph_configuration(configuration.graph)
+    message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_distribution_configuration(configuration.distribution)
     end
@@ -408,7 +448,7 @@ end
 
 """
     @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         distribution::DistributionConfiguration = DistributionConfiguration(show_curve = false, show_box = true)
         value_axis::AxisConfiguration = AxisConfiguration()
         show_legend::Bool = false
@@ -429,7 +469,7 @@ the fraction of white space between the distributions.
     Specifying a `distributions_gap` will end badly if using `show_curve` because Plotly.
 """
 @kwdef mutable struct DistributionsGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     distribution::DistributionConfiguration = DistributionConfiguration(; show_curve = false, show_box = true)
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
@@ -438,7 +478,7 @@ the fraction of white space between the distributions.
 end
 
 function Validations.validate_object(configuration::DistributionsGraphConfiguration)::Maybe{AbstractString}
-    message = validate_graph_configuration(configuration.graph)
+    message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_distribution_configuration(configuration.distribution)
     end
@@ -460,18 +500,18 @@ end
 
 """
     @kwdef mutable struct DistributionGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
         distribution_values::AbstractVector{<:Real} = Float32[]
         distribution_name::Maybe{AbstractString} = nothing
     end
 
-By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
+By default, all the titles are empty. You can specify the overall `figure_title` as well as the `value_axis_title` and
 the `trace_axis_title`. The optional `distribution_name` is used as the tick value for the distribution.
 """
 @kwdef mutable struct DistributionGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     distribution_values::AbstractVector{<:Real} = Float32[]
@@ -488,7 +528,7 @@ end
 
 """
     @kwdef mutable struct DistributionsGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         trace_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
@@ -498,12 +538,12 @@ end
     end
 
 The data for a multiple distributions graph. By default, all the titles are empty. You can specify the overall
-`graph_title` as well as the `value_axis_title`, the `trace_axis_title` and the `legend_title` (if `show_legend` is
+`figure_title` as well as the `value_axis_title`, the `trace_axis_title` and the `legend_title` (if `show_legend` is
 set). If specified, the `distributions_names` and/or the `distributions_colors` vectors must contain the same number of
 elements as the number of vectors in the `distributions_values`.
 """
 @kwdef mutable struct DistributionsGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
@@ -554,7 +594,7 @@ DistributionGraph = Graph{DistributionGraphData, DistributionGraphConfiguration}
 
 """
     function distribution_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         trace_axis_title::Maybe{AbstractString} = nothing,
         distribution_values::AbstractVector{<:Real} = Float32[],
@@ -564,7 +604,7 @@ DistributionGraph = Graph{DistributionGraphData, DistributionGraphConfiguration}
 Create a [`DistributionGraph`](@ref) by initializing only the [`DistributionGraphData`](@ref) fields.
 """
 function distribution_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     trace_axis_title::Maybe{AbstractString} = nothing,
     distribution_values::AbstractVector{<:Real} = Float32[],
@@ -572,7 +612,7 @@ function distribution_graph(;
 )::DistributionGraph
     return DistributionGraph(
         DistributionGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             value_axis_title = value_axis_title,
             trace_axis_title = trace_axis_title,
             distribution_values = distribution_values,
@@ -590,7 +630,7 @@ DistributionsGraph = Graph{DistributionsGraphData, DistributionsGraphConfigurati
 
 """
     function distributions_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         trace_axis_title::Maybe{AbstractString} = nothing,
         legend_title::Maybe{AbstractString} = nothing,
@@ -602,7 +642,7 @@ DistributionsGraph = Graph{DistributionsGraphData, DistributionsGraphConfigurati
 Create a [`DistributionsGraph`](@ref) by initializing only the [`DistributionsGraphData`](@ref) fields.
 """
 function distributions_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     trace_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -612,7 +652,7 @@ function distributions_graph(;
 )::DistributionsGraph
     return DistributionsGraph(
         DistributionsGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             value_axis_title = value_axis_title,
             trace_axis_title = trace_axis_title,
             legend_title = legend_title,
@@ -647,7 +687,7 @@ function graph_to_figure(graph::DistributionGraph)::PlotlyFigure
         distributions_gap = nothing,
     )
 
-    return plot(trace, layout)
+    return plotly_figure(trace, layout)
 end
 
 function graph_to_figure(graph::DistributionsGraph)::PlotlyFigure
@@ -685,7 +725,7 @@ function graph_to_figure(graph::DistributionsGraph)::PlotlyFigure
         distributions_gap = graph.configuration.distributions_gap,
     )
 
-    return plot(traces, layout)
+    return plotly_figure(traces, layout)
 end
 
 function distribution_trace(;
@@ -748,14 +788,14 @@ function distribution_layout(;
         xaxis_title = graph.data.trace_axis_title
         xaxis_range = (nothing, nothing)
         xaxis_type = nothing
-        yaxis_showticklabels = graph.configuration.graph.show_ticks
-        yaxis_showgrid = graph.configuration.graph.show_grid
+        yaxis_showticklabels = graph.configuration.figure.show_ticks
+        yaxis_showgrid = graph.configuration.figure.show_grid
         yaxis_title = graph.data.value_axis_title
         yaxis_range = (graph.configuration.value_axis.minimum, graph.configuration.value_axis.maximum)
         yaxis_type = graph.configuration.value_axis.log_regularization !== nothing ? "log" : nothing
     elseif graph.configuration.distribution.values_orientation == HorizontalValues
-        xaxis_showticklabels = graph.configuration.graph.show_ticks
-        xaxis_showgrid = graph.configuration.graph.show_grid
+        xaxis_showticklabels = graph.configuration.figure.show_ticks
+        xaxis_showgrid = graph.configuration.figure.show_grid
         xaxis_title = graph.data.value_axis_title
         xaxis_range = (graph.configuration.value_axis.minimum, graph.configuration.value_axis.maximum)
         xaxis_type = graph.configuration.value_axis.log_regularization !== nothing ? "log" : nothing
@@ -769,9 +809,9 @@ function distribution_layout(;
     end
 
     return graph_layout(
-        graph.configuration.graph,
+        graph.configuration.figure,
         Layout(;  # NOJET
-            title = graph.data.graph_title,
+            title = graph.data.figure_title,
             xaxis_showgrid = xaxis_showgrid,
             xaxis_showticklabels = xaxis_showticklabels,
             xaxis_title = xaxis_title,
@@ -945,7 +985,7 @@ end
 
 """
     @kwdef mutable struct LineGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
         line::LineConfiguration = LineConfiguration()
@@ -956,7 +996,7 @@ end
 Configure a graph for showing line plots.
 """
 @kwdef mutable struct LineGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     line::LineConfiguration = LineConfiguration()
@@ -966,7 +1006,7 @@ end
 
 """
     @kwdef mutable struct LineGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
         vertical_bands::BandsData = BandsData()
@@ -977,14 +1017,14 @@ end
 
 The data for a line graph.
 
-By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
+By default, all the titles are empty. You can specify the overall `figure_title` as well as the `x_axis_title` and
 `y_axis_title` for the axes.
 
 The `points_xs` and `points_ys` vectors must be of the same size. A line will be drawn through all the points, and the
 area under the line may be filled.
 """
 @kwdef mutable struct LineGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
@@ -1009,7 +1049,7 @@ LineGraph = Graph{LineGraphData, LineGraphConfiguration}
 
 """
     function line_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         vertical_bands::BandsData = BandsData(),
@@ -1021,7 +1061,7 @@ LineGraph = Graph{LineGraphData, LineGraphConfiguration}
 Create a [`LineGraph`](@ref) by initializing only the [`LineGraphData`](@ref) fields.
 """
 function line_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     vertical_bands::BandsData = BandsData(),
@@ -1031,7 +1071,7 @@ function line_graph(;
 )::LineGraph
     return LineGraph(
         LineGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             x_axis_title = x_axis_title,
             y_axis_title = y_axis_title,
             vertical_bands = vertical_bands,
@@ -1159,7 +1199,7 @@ function graph_to_figure(graph::LineGraph)::PlotlyFigure
                       graph.configuration.vertical_bands.show_legend,
     )
 
-    return plot(traces, layout)
+    return plotly_figure(traces, layout)
 end
 
 function line_trace(data::LineGraphData, line::LineConfiguration)::GenericTrace
@@ -1189,7 +1229,7 @@ If normalizing the data of a graphs, how:
 
 """
     @kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
         line::LineConfiguration = LineConfiguration()
@@ -1204,7 +1244,7 @@ lines, and `stacking_normalization` to stack instead of overlay the lines. If `s
 then `is_filled` is implied, regardless of what its actual setting is.
 """
 @kwdef mutable struct LinesGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     line::LineConfiguration = LineConfiguration()
@@ -1217,7 +1257,7 @@ end
 function Validations.validate_object(
     configuration::Union{LineGraphConfiguration, LinesGraphConfiguration},
 )::Maybe{AbstractString}
-    message = validate_graph_configuration(configuration.graph)
+    message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_axis_configuration("x", "_axis", configuration.x_axis)
     end
@@ -1246,7 +1286,7 @@ end
 
 """
     @kwdef mutable struct LinesGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
@@ -1263,7 +1303,7 @@ end
 
 The data for multiple lines graph.
 
-By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
+By default, all the titles are empty. You can specify the overall `figure_title` as well as the `x_axis_title` and
 `y_axis_title` for the axes.
 
 The `lines_xs` and `lines_ys` vectors must be of the same size (one per line). For each line, its points `xs` and `ys`
@@ -1276,7 +1316,7 @@ number of entries (one per line). The `lines_colors` are restricted to explicit 
 options of the `line` must not be used.
 """
 @kwdef mutable struct LinesGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
@@ -1363,7 +1403,7 @@ LinesGraph = Graph{LinesGraphData, LinesGraphConfiguration}
 
 """
     function lines_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         legend_title::Maybe{AbstractString} = nothing,
@@ -1381,7 +1421,7 @@ LinesGraph = Graph{LinesGraphData, LinesGraphConfiguration}
 Create a [`LinesGraph`](@ref) by initializing only the [`LinesGraphData`](@ref) fields.
 """
 function lines_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -1397,7 +1437,7 @@ function lines_graph(;
 )::LinesGraph
     return LinesGraph(
         LinesGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             x_axis_title = x_axis_title,
             y_axis_title = y_axis_title,
             legend_title = legend_title,
@@ -1569,7 +1609,7 @@ function graph_to_figure(graph::LinesGraph)::PlotlyFigure
                       graph.configuration.horizontal_bands.show_legend,
     )
 
-    return plot(traces, layout)
+    return plotly_figure(traces, layout)
 end
 
 function unify_xs(
@@ -1726,19 +1766,19 @@ function lines_layout(;
     y_axis = graph.configuration.y_axis
 
     return graph_layout(
-        graph.configuration.graph,
+        graph.configuration.figure,
         Layout(;  # NOJET
-            title = graph.data.graph_title,
-            xaxis_showgrid = graph.configuration.graph.show_grid,
-            xaxis_showticklabels = graph.configuration.graph.show_ticks,
+            title = graph.data.figure_title,
+            xaxis_showgrid = graph.configuration.figure.show_grid,
+            xaxis_showticklabels = graph.configuration.figure.show_ticks,
             xaxis_title = graph.data.x_axis_title,
             xaxis_range = (
                 x_axis.minimum !== nothing ? x_axis.minimum : minimum_x,
                 x_axis.maximum !== nothing ? x_axis.maximum : maximum_x,
             ),
             xaxis_type = x_axis.log_regularization !== nothing ? "log" : nothing,
-            yaxis_showgrid = graph.configuration.graph.show_grid,
-            yaxis_showticklabels = graph.configuration.graph.show_ticks,
+            yaxis_showgrid = graph.configuration.figure.show_grid,
+            yaxis_showticklabels = graph.configuration.figure.show_ticks,
             yaxis_title = graph.data.y_axis_title,
             yaxis_range = (
                 y_axis.minimum !== nothing ? y_axis.minimum : minimum_y,
@@ -1763,7 +1803,7 @@ The direction of the CDF graph:
 
 """
     @kwdef mutable struct CdfGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         fraction_axis::AxisConfiguration = AxisConfiguration()
         fractions_normalization::GraphNormalization = NormalizeToFractions,
@@ -1785,7 +1825,7 @@ offset.
 CDF graphs are internally converted to line graphs for rendering.
 """
 @kwdef mutable struct CdfGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
     fractions_normalization::GraphNormalization = NormalizeToFractions
@@ -1798,7 +1838,7 @@ end
 
 """
     @kwdef mutable struct CdfGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         fraction_axis_title::Maybe{AbstractString} = nothing
         cdf_values::AbstractVector{<:Real} = Float32[]
@@ -1806,13 +1846,13 @@ end
 
 The data for a CDF (Cumulative Distribution Function) graph.
 
-By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
+By default, all the titles are empty. You can specify the overall `figure_title` as well as the `value_axis_title` and
 `fraction_axis_title` for the axes.
 
 The order of the `line_values` does not matter.
 """
 @kwdef mutable struct CdfGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
     value_bands::BandsData = BandsData()
@@ -1836,7 +1876,7 @@ CdfGraph = Graph{CdfGraphData, CdfGraphConfiguration}
 
 """
     function cdf_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         fraction_axis_title::Maybe{AbstractString} = nothing,
         value_bands::BandsData = BandsData(),
@@ -1847,7 +1887,7 @@ CdfGraph = Graph{CdfGraphData, CdfGraphConfiguration}
 Create a [`CdfGraph`](@ref) by initializing only the [`CdfGraphData`](@ref) fields.
 """
 function cdf_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     fraction_axis_title::Maybe{AbstractString} = nothing,
     value_bands::BandsData = BandsData(),
@@ -1856,7 +1896,7 @@ function cdf_graph(;
 )::CdfGraph
     return CdfGraph(
         CdfGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             value_axis_title = value_axis_title,
             fraction_axis_title = fraction_axis_title,
             value_bands = value_bands,
@@ -1878,7 +1918,7 @@ function cdf_data_as_line_data(graph::CdfGraph)::LineGraphData
     values, fractions = collect_cdf_data(graph.data.cdf_values, graph.configuration)
     if graph.configuration.values_orientation == HorizontalValues
         return LineGraphData(;
-            graph_title = graph.data.graph_title,
+            figure_title = graph.data.figure_title,
             x_axis_title = graph.data.value_axis_title,
             y_axis_title = graph.data.fraction_axis_title,
             vertical_bands = graph.data.value_bands,
@@ -1888,7 +1928,7 @@ function cdf_data_as_line_data(graph::CdfGraph)::LineGraphData
         )
     else
         return LineGraphData(;
-            graph_title = graph.data.graph_title,
+            figure_title = graph.data.figure_title,
             x_axis_title = graph.data.fraction_axis_title,
             y_axis_title = graph.data.value_axis_title,
             vertical_bands = graph.data.fraction_bands,
@@ -1902,7 +1942,7 @@ end
 function cdf_configuration_as_line_configuration(graph::CdfGraph)::LineGraphConfiguration
     if graph.configuration.values_orientation == HorizontalValues
         return LineGraphConfiguration(;
-            graph = graph.configuration.graph,
+            figure = graph.configuration.figure,
             x_axis = graph.configuration.value_axis,
             y_axis = graph.configuration.fraction_axis,
             line = graph.configuration.line,
@@ -1915,7 +1955,7 @@ function cdf_configuration_as_line_configuration(graph::CdfGraph)::LineGraphConf
         )
     else
         return LineGraphConfiguration(;
-            graph = graph.configuration.graph,
+            figure = graph.configuration.figure,
             x_axis = graph.configuration.fraction_axis,
             y_axis = graph.configuration.value_axis,
             line = graph.configuration.line,
@@ -1970,7 +2010,7 @@ end
 
 """
     @kwdef mutable struct CdfsGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         fraction_axis::AxisConfiguration = AxisConfiguration()
         fractions_normalization::GraphNormalization = NormalizeToFractions
@@ -1991,7 +2031,7 @@ the same.
 CDF graphs are internally converted to line graphs for rendering.
 """
 @kwdef mutable struct CdfsGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
     fractions_normalization::GraphNormalization = NormalizeToFractions
@@ -2006,7 +2046,7 @@ end
 function Validations.validate_object(
     configuration::Union{CdfGraphConfiguration, CdfsGraphConfiguration},
 )::Maybe{AbstractString}
-    message = validate_graph_configuration(configuration.graph)
+    message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_axis_configuration("value", "_axis", configuration.value_axis)
     end
@@ -2035,7 +2075,7 @@ end
 
 """
     @kwdef mutable struct CdfsGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         fraction_axis_title::Maybe{AbstractString} = nothing
         cdfs_values::AbstractVector{<:AbstractVector{<:Real}} = Vector{Float32}[]
@@ -2048,13 +2088,13 @@ end
 
 The data for multiple CDFs (Cumulative Distribution Functions) graph.
 
-By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
+By default, all the titles are empty. You can specify the overall `figure_title` as well as the `value_axis_title` and
 `fraction_axis_title` for the axes.
 
 The order of the entries inside each of the `cdfs_values` does not matter.
 """
 @kwdef mutable struct CdfsGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
@@ -2087,7 +2127,7 @@ CdfsGraph = Graph{CdfsGraphData, CdfsGraphConfiguration}
 
 """
     function cdfs_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         fraction_axis_title::Maybe{AbstractString} = nothing,
         legend_title::Maybe{AbstractString} = nothing,
@@ -2102,7 +2142,7 @@ CdfsGraph = Graph{CdfsGraphData, CdfsGraphConfiguration}
 Create a [`CdfsGraph`](@ref) by initializing only the [`CdfsGraphData`](@ref) fields.
 """
 function cdfs_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     fraction_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -2115,7 +2155,7 @@ function cdfs_graph(;
 )::CdfsGraph
     return CdfsGraph(
         CdfsGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             value_axis_title = value_axis_title,
             fraction_axis_title = fraction_axis_title,
             legend_title = legend_title,
@@ -2161,7 +2201,7 @@ function cdfs_data_as_lines_data(graph::CdfsGraph)::LinesGraphData
     end
     if graph.configuration.values_orientation == HorizontalValues
         return LinesGraphData(;
-            graph_title = graph.data.graph_title,
+            figure_title = graph.data.figure_title,
             x_axis_title = graph.data.value_axis_title,
             y_axis_title = graph.data.fraction_axis_title,
             legend_title = graph.data.legend_title,
@@ -2175,7 +2215,7 @@ function cdfs_data_as_lines_data(graph::CdfsGraph)::LinesGraphData
         )
     else
         return LinesGraphData(;
-            graph_title = graph.data.graph_title,
+            figure_title = graph.data.figure_title,
             x_axis_title = graph.data.fraction_axis_title,
             y_axis_title = graph.data.value_axis_title,
             legend_title = graph.data.legend_title,
@@ -2216,7 +2256,7 @@ end
 function cdfs_configuration_as_lines_configuration(graph::CdfsGraph)::LinesGraphConfiguration
     if graph.configuration.values_orientation == HorizontalValues
         return LinesGraphConfiguration(;
-            graph = graph.configuration.graph,
+            figure = graph.configuration.figure,
             x_axis = graph.configuration.value_axis,
             y_axis = graph.configuration.fraction_axis,
             line = graph.configuration.line,
@@ -2230,7 +2270,7 @@ function cdfs_configuration_as_lines_configuration(graph::CdfsGraph)::LinesGraph
         )
     else
         return LinesGraphConfiguration(;
-            graph = graph.configuration.graph,
+            figure = graph.configuration.figure,
             x_axis = graph.configuration.fraction_axis,
             y_axis = graph.configuration.value_axis,
             line = graph.configuration.line,
@@ -2247,7 +2287,7 @@ end
 
 """
     @kwdef mutable struct BarGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         values_orientation::ValuesOrientation = VerticalValues
         bars_color::Maybe{AbstractString} = nothing
@@ -2260,7 +2300,7 @@ the values; this can be switched using the `values_orientation`. The `bars_gap` 
 bars.
 """
 @kwdef mutable struct BarGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     values_orientation::ValuesOrientation = VerticalValues
     bars_color::Maybe{AbstractString} = nothing
@@ -2269,7 +2309,7 @@ end
 
 """
     @kwdef mutable struct BarGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         bar_axis_title::Maybe{AbstractString} = nothing
         bars_values::AbstractVector{<:Real} = Float32[]
@@ -2280,14 +2320,14 @@ end
 
 The data for a single bar (histogram) graph.
 
-By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title` and
+By default, all the titles are empty. You can specify the overall `figure_title` as well as the `value_axis_title` and
 `bar_axis_title` for the axes.
 
 If specified, the `bars_names` and/or `bars_colors` and/or `bars_hovers` vectors must contain the same number of
 elements as the number of `bars_values`.
 """
 @kwdef mutable struct BarGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     bars_values::AbstractVector{<:Real} = Float32[]
@@ -2332,7 +2372,7 @@ BarGraph = Graph{BarGraphData, BarGraphConfiguration}
 
 """
     function bar_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         bar_axis_title::Maybe{AbstractString} = nothing,
         bars_values::AbstractVector{<:Real} = Float32[],
@@ -2344,7 +2384,7 @@ BarGraph = Graph{BarGraphData, BarGraphConfiguration}
 Create a [`BarGraph`](@ref) by initializing only the [`BarGraphData`](@ref) fields.
 """
 function bar_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     bar_axis_title::Maybe{AbstractString} = nothing,
     bars_values::AbstractVector{<:Real} = Float32[],
@@ -2354,7 +2394,7 @@ function bar_graph(;
 )::BarGraph
     return BarGraph(
         BarGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             value_axis_title = value_axis_title,
             bar_axis_title = bar_axis_title,
             bars_values = bars_values,
@@ -2379,12 +2419,12 @@ function graph_to_figure(graph::BarGraph)::PlotlyFigure
 
     layout = bar_layout(; graph = graph, has_tick_names = graph.data.bars_names !== nothing, show_legend = false)
 
-    return plot(trace, layout)
+    return plotly_figure(trace, layout)
 end
 
 """
     @kwdef mutable struct BarsGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         value_axis::AxisConfiguration = AxisConfiguration()
         values_orientation::ValuesOrientation = VerticalValues
         bars_gap::Maybe{Real} = nothing
@@ -2398,7 +2438,7 @@ without the `color` field (which makes no sense when multiple series are shown),
 are just grouped.
 """
 @kwdef mutable struct BarsGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
@@ -2409,7 +2449,7 @@ end
 function Validations.validate_object(
     configuration::Union{BarGraphConfiguration, BarsGraphConfiguration},
 )::Maybe{AbstractString}
-    message = validate_graph_configuration(configuration.graph)
+    message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_axis_configuration("value", "_axis", configuration.value_axis)
     end
@@ -2431,7 +2471,7 @@ end
 
 """
     @kwdef mutable struct BarsGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         value_axis_title::Maybe{AbstractString} = nothing
         bar_axis_title::Maybe{AbstractString} = nothing
         legend_title::Maybe{AbstractString} = nothing
@@ -2445,7 +2485,7 @@ end
 
 The data for a multiple bars (histograms) graph.
 
-By default, all the titles are empty. You can specify the overall `graph_title` as well as the `value_axis_title`,
+By default, all the titles are empty. You can specify the overall `figure_title` as well as the `value_axis_title`,
 `bar_axis_title` for the axes, and the `legend_title` (if `show_legend` is set in [`BarsGraphConfiguration`](@ref).
 
 All the `series_values` vectors must be of the same size. If specified, the `series_names` and `series_colors` vectors
@@ -2453,7 +2493,7 @@ must contain the same number of elements. If specified, the `bars_names` and/or 
 same number of elements in the each of the `series_values` vectors.
 """
 @kwdef mutable struct BarsGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
@@ -2522,7 +2562,7 @@ BarsGraph = Graph{BarsGraphData, BarsGraphConfiguration}
 
 """
     function bars_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         value_axis_title::Maybe{AbstractString} = nothing,
         bar_axis_title::Maybe{AbstractString} = nothing,
         legend_title::Maybe{AbstractString} = nothing,
@@ -2537,7 +2577,7 @@ BarsGraph = Graph{BarsGraphData, BarsGraphConfiguration}
 Create a [`BarsGraph`](@ref) by initializing only the [`BarsGraphData`](@ref) fields.
 """
 function bars_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     bar_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -2550,7 +2590,7 @@ function bars_graph(;
 )::BarsGraph
     return BarsGraph(
         BarsGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             value_axis_title = value_axis_title,
             bar_axis_title = bar_axis_title,
             legend_title = legend_title,
@@ -2616,7 +2656,7 @@ function graph_to_figure(graph::BarsGraph)::PlotlyFigure
         stacked = graph.configuration.stacking_normalization !== nothing,
     )
 
-    return plot(traces, layout)
+    return plotly_figure(traces, layout)
 end
 
 function stacked_values(
@@ -2682,8 +2722,8 @@ function bar_layout(;
     stacked::Bool = false,
 )::Layout
     if graph.configuration.values_orientation == HorizontalValues
-        xaxis_showgrid = graph.configuration.graph.show_grid
-        xaxis_showticklabels = graph.configuration.graph.show_ticks
+        xaxis_showgrid = graph.configuration.figure.show_grid
+        xaxis_showticklabels = graph.configuration.figure.show_ticks
         xaxis_title = graph.data.value_axis_title
         xaxis_range = (graph.configuration.value_axis.minimum, graph.configuration.value_axis.maximum)
         xaxis_type = graph.configuration.value_axis.log_regularization !== nothing ? "log" : nothing
@@ -2700,8 +2740,8 @@ function bar_layout(;
         xaxis_range = nothing
         xaxis_type = nothing
 
-        yaxis_showgrid = graph.configuration.graph.show_grid
-        yaxis_showticklabels = graph.configuration.graph.show_ticks
+        yaxis_showgrid = graph.configuration.figure.show_grid
+        yaxis_showticklabels = graph.configuration.figure.show_ticks
         yaxis_title = graph.data.value_axis_title
         yaxis_range = (graph.configuration.value_axis.minimum, graph.configuration.value_axis.maximum)
         yaxis_type = graph.configuration.value_axis.log_regularization !== nothing ? "log" : nothing
@@ -2710,9 +2750,9 @@ function bar_layout(;
     end
 
     return graph_layout(
-        graph.configuration.graph,
+        graph.configuration.figure,
         Layout(;  # NOJET
-            title = graph.data.graph_title,
+            title = graph.data.figure_title,
             xaxis_showgrid = xaxis_showgrid,
             xaxis_showticklabels = xaxis_showticklabels,
             xaxis_title = xaxis_title,
@@ -2837,7 +2877,7 @@ end
 
 """
     @kwdef mutable struct PointsGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         x_axis::AxisConfiguration = AxisConfiguration()
         y_axis::AxisConfiguration = AxisConfiguration()
         points::PointsConfiguration = PointsConfiguration()
@@ -2864,12 +2904,12 @@ This allows displaying some additional data per point.
 
 !!! note
 
-    There is no `show_legend` for a [`GraphConfiguration`](@ref) of a points graph. Instead you probably want to set the
-    `show_color_scale` of the `points` (and/or of the `borders`). In addition, the color scale options of the `edges`
-    must not be set, as the `edges_colors` of [`PointsGraphData`](@ref) is restricted to explicit colors.
+    There is no `show_legend` here. Instead you probably want to set the `show_color_scale` of the `points` (and/or of the
+    `borders`). In addition, the color scale options of the `edges` must not be set, as the `edges_colors` of
+    [`PointsGraphData`](@ref) is restricted to explicit colors.
 """
 @kwdef mutable struct PointsGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     points::PointsConfiguration = PointsConfiguration()
@@ -2885,7 +2925,7 @@ function Validations.validate_object(configuration::PointsGraphConfiguration)::M
     @assert configuration.edges.color_palette === nothing "not implemented: points edges color_palette"
     @assert !configuration.edges.reverse_color_scale "not implemented: points edges.reverse_color_scale"
 
-    message = validate_graph_configuration(configuration.graph)
+    message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_axis_configuration("x", "_axis", configuration.x_axis)
     end
@@ -2936,7 +2976,7 @@ end
 
 """
     @kwdef mutable struct PointsGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
         vertical_bands::BandsData = BandsData()
@@ -2962,7 +3002,7 @@ end
 
 The data for a scatter graph of points.
 
-By default, all the titles are empty. You can specify the overall `graph_title` as well as the `x_axis_title` and
+By default, all the titles are empty. You can specify the overall `figure_title` as well as the `x_axis_title` and
 `y_axis_title` for the axes.
 
 The `points_xs` and `points_ys` vectors must be of the same size. If specified, the `points_colors` `sizes` and/or `hovers`
@@ -2985,7 +3025,7 @@ A point (or a point border, or an edge) with a zero size and/or an empty string 
 categorical `color_palette`) will not be shown.
 """
 @kwdef mutable struct PointsGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
@@ -3087,7 +3127,7 @@ PointsGraph = Graph{PointsGraphData, PointsGraphConfiguration}
 
 """
     function points_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         vertical_bands::BandsData = BandsData(),
@@ -3114,7 +3154,7 @@ PointsGraph = Graph{PointsGraphData, PointsGraphConfiguration}
 Create a [`PointsGraph`](@ref) by initializing only the [`PointsGraphData`](@ref) fields.
 """
 function points_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     vertical_bands::BandsData = BandsData(),
@@ -3139,7 +3179,7 @@ function points_graph(;
 )::PointsGraph
     return PointsGraph(
         PointsGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             x_axis_title = x_axis_title,
             y_axis_title = y_axis_title,
             vertical_bands = vertical_bands,
@@ -3508,7 +3548,7 @@ function graph_to_figure(graph::PointsGraph)::PlotlyFigure
         y_axis_configuration = graph.configuration.y_axis,
     )
 
-    return plot(traces, layout)
+    return plotly_figure(traces, layout)
 end
 
 function push_fill_vertical_bands_traces(;
@@ -4186,7 +4226,7 @@ end
 
 """
     @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         points::PointsConfiguration = PointsConfiguration()
         borders::PointsConfiguration = PointsConfiguration()
     end
@@ -4200,13 +4240,13 @@ disadvantage of this plot is that it only works for "small" amount of data. Also
 graph size vs. the point sizes for best results, as Plotly's defaults aren't very good here.
 """
 @kwdef mutable struct GridGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     points::PointsConfiguration = PointsConfiguration()
     borders::PointsConfiguration = PointsConfiguration()
 end
 
 function Validations.validate_object(configuration::GridGraphConfiguration)::Maybe{AbstractString}
-    message = validate_graph_configuration(configuration.graph)
+    message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_points_configuration("points", configuration.points)
     end
@@ -4218,7 +4258,7 @@ end
 
 """
     @kwdef mutable struct GridGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
         points_colors_title::Maybe{AbstractString} = nothing
@@ -4238,7 +4278,7 @@ This is similar to a [`PointsGraphData`](@ref), except that the data is given as
 and Y coordinates are given. Instead each matrix entry is plotted as a point at the matching grid location.
 """
 @kwdef mutable struct GridGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     points_colors_title::Maybe{AbstractString} = nothing
@@ -4335,7 +4375,7 @@ GridGraph = Graph{GridGraphData, GridGraphConfiguration}
 
 """
     function grid_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         points_colors_title::Maybe{AbstractString} = nothing,
@@ -4352,7 +4392,7 @@ GridGraph = Graph{GridGraphData, GridGraphConfiguration}
 Create a [`GridGraph`](@ref) by initializing only the [`GridGraphData`](@ref) fields.
 """
 function grid_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     points_colors_title::Maybe{AbstractString} = nothing,
@@ -4367,7 +4407,7 @@ function grid_graph(;
 )::GridGraph
     return GridGraph(
         GridGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             x_axis_title = x_axis_title,
             y_axis_title = y_axis_title,
             points_colors_title = points_colors_title,
@@ -4568,7 +4608,7 @@ function graph_to_figure(graph::GridGraph)::PlotlyFigure
         rows_names = rows_names,
         columns_names = columns_names,
     )
-    return plot(traces, layout)
+    return plotly_figure(traces, layout)
 end
 
 function validate_graph(graph::PointsGraph)::Maybe{AbstractString}
@@ -4782,11 +4822,11 @@ function points_layout(;
     end
 
     return graph_layout(
-        configuration.graph,
+        configuration.figure,
         Layout(;  # NOJET
-            title = data.graph_title,
-            xaxis_showgrid = configuration.graph.show_grid,
-            xaxis_showticklabels = configuration.graph.show_ticks,
+            title = data.figure_title,
+            xaxis_showgrid = configuration.figure.show_grid,
+            xaxis_showticklabels = configuration.figure.show_ticks,
             xaxis_title = data.x_axis_title,
             xaxis_range = (
                 x_axis_configuration.minimum !== nothing ? x_axis_configuration.minimum : minimum_x,
@@ -4795,8 +4835,8 @@ function points_layout(;
             xaxis_type = x_axis_configuration.log_regularization !== nothing ? "log" : nothing,
             xaxis_tickvals = x_tickvals,
             xaxis_ticktext = x_ticknames,
-            yaxis_showgrid = configuration.graph.show_grid,
-            yaxis_showticklabels = configuration.graph.show_ticks,
+            yaxis_showgrid = configuration.figure.show_grid,
+            yaxis_showticklabels = configuration.figure.show_ticks,
             yaxis_title = data.y_axis_title,
             yaxis_range = (
                 y_axis_configuration.minimum !== nothing ? y_axis_configuration.minimum : minimum_y,
@@ -5035,7 +5075,7 @@ end
 
 """
     @kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
-        graph::GraphConfiguration = GraphConfiguration()
+        figure::FigureConfiguration = FigureConfiguration()
         entries::EntriesConfiguration = EntriesConfiguration()
         annotations::Dict{<:AbstractString,AnnotationsConfiguration} = Dict{String,AnnotationsConfiguration}()
     end
@@ -5050,13 +5090,13 @@ The `annotations` specify the colors for any annotations attached to the rows an
 `color_scale` of the [`AnnotationsData`](@ref).
 """
 @kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     entries::EntriesConfiguration = EntriesConfiguration()
     annotations::Dict{<:AbstractString, AnnotationsConfiguration} = Dict{String, AnnotationsConfiguration}()
 end
 
 function Validations.validate_object(configuration::HeatmapGraphConfiguration)::Maybe{AbstractString}
-    message = validate_graph_configuration(configuration.graph)
+    message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_entries_configuration("entries", configuration.entries)
     end
@@ -5128,13 +5168,13 @@ end
 
 """
     @kwdef mutable struct HeatmapGraphData <: AbstractGraphData
-        graph_title::Maybe{AbstractString} = nothing
+        figure_title::Maybe{AbstractString} = nothing
         x_axis_title::Maybe{AbstractString} = nothing
         y_axis_title::Maybe{AbstractString} = nothing
         entries_colors_title::Maybe{AbstractString} = nothing
         columns_names::Maybe{AbstractVector{<:AbstractString}} = nothing
         rows_names::Maybe{AbstractVector{<:AbstractString}} = nothing
-        entries_colors::Maybe{AbstractMatrix{<:Union{AbstractString, Real}}} = Float32[;;]
+        entries_colors::Maybe{AbstractMatrix{<:Real}} = Float32[;;]
         entries_hovers::Maybe{AbstractMatrix{<:AbstractString}} = nothing
         columns_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
         rows_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
@@ -5146,7 +5186,7 @@ This is shown as a 2D image where each matrix entry is a small rectangle with so
 colors can't be categorical (or explicit color names).
 """
 @kwdef mutable struct HeatmapGraphData <: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     entries_colors_title::Maybe{AbstractString} = nothing
@@ -5224,7 +5264,7 @@ HeatmapGraph = Graph{HeatmapGraphData, HeatmapGraphConfiguration}
 
 """
     function heatmap_graph(;
-        [graph_title::Maybe{AbstractString} = nothing,
+        [figure_title::Maybe{AbstractString} = nothing,
         x_axis_title::Maybe{AbstractString} = nothing,
         y_axis_title::Maybe{AbstractString} = nothing,
         entries_colors_title::Maybe{AbstractString} = nothing,
@@ -5239,7 +5279,7 @@ HeatmapGraph = Graph{HeatmapGraphData, HeatmapGraphConfiguration}
 Create a [`GridGraph`](@ref) by initializing only the [`GridGraphData`](@ref) fields.
 """
 function heatmap_graph(;
-    graph_title::Maybe{AbstractString} = nothing,
+    figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     entries_colors_title::Maybe{AbstractString} = nothing,
@@ -5252,7 +5292,7 @@ function heatmap_graph(;
 )::HeatmapGraph
     return HeatmapGraph(
         HeatmapGraphData(;
-            graph_title = graph_title,
+            figure_title = figure_title,
             x_axis_title = x_axis_title,
             y_axis_title = y_axis_title,
             entries_colors_title = entries_colors_title,
@@ -5386,7 +5426,7 @@ function graph_to_figure(graph::HeatmapGraph)::PlotlyFigure
     end
 
     layout = heatmap_layout(graph)
-    return plot(traces, layout)
+    return plotly_figure(traces, layout)
 end
 
 function heatmap_trace(graph::HeatmapGraph)::GenericTrace
@@ -5459,18 +5499,18 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
     end
 
     layout = graph_layout(
-        graph.configuration.graph,
+        graph.configuration.figure,
         Layout(;  # NOJET
-            title = graph.data.graph_title,
-            xaxis_showgrid = graph.configuration.graph.show_grid,
-            xaxis_showticklabels = graph.configuration.graph.show_ticks && graph.data.columns_names !== nothing,
+            title = graph.data.figure_title,
+            xaxis_showgrid = graph.configuration.figure.show_grid,
+            xaxis_showticklabels = graph.configuration.figure.show_ticks && graph.data.columns_names !== nothing,
             xaxis_title = graph.data.x_axis_title,
             xaxis_tickvals = graph.data.columns_names === nothing ? nothing : collect(0:(n_columns - 1)),
             xaxis_tickangle = graph.data.columns_names === nothing ? nothing : -90,
             xaxis_ticktext = graph.data.columns_names,
             xaxis_domain = x_axis_domain,
-            yaxis_showgrid = graph.configuration.graph.show_grid,
-            yaxis_showticklabels = graph.configuration.graph.show_ticks && graph.data.rows_names !== nothing,
+            yaxis_showgrid = graph.configuration.figure.show_grid,
+            yaxis_showticklabels = graph.configuration.figure.show_ticks && graph.data.rows_names !== nothing,
             yaxis_title = graph.data.y_axis_title,
             yaxis_ticktext = graph.data.rows_names,
             yaxis_tickvals = graph.data.rows_names === nothing ? nothing : collect(0:(n_rows - 1)),
@@ -5526,7 +5566,8 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
     if rows_annotations !== nothing
         top_size = 1.0
         for (annotations_index, annotations_data) in enumerate(rows_annotations)
-            annotations_configuration = graph.configuration.annotations[annotations_data.name]
+            annotations_configuration =
+                get(graph.configuration.annotations, annotations_data.name, AnnotationsConfiguration())
             coloraxis_index += 1
             layout[Symbol("coloraxis$(coloraxis_index)")] = Dict(
                 :colorscale => normalized_color_palette(
@@ -5540,6 +5581,7 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
             layout[Symbol("xaxis$(annotations_index + 1)")] = Dict(
                 :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
                 :tickvals => [0],
+                :tickangle => -90,
                 :domain => [bottom_size, top_size],
             )
             top_size = bottom_size
@@ -5597,7 +5639,13 @@ function log_color_scale_ticks(
     end
 end
 
-function graph_layout(configuration::GraphConfiguration, layout::Layout)::Layout
+function graph_layout(configuration::FigureConfiguration, layout::Layout)::Layout
+    layout["margin"] = Dict(
+        :l => configuration.margins.left,
+        :r => configuration.margins.right,
+        :t => configuration.margins.top,
+        :b => configuration.margins.bottom,
+    )
     if configuration.template !== nothing
         layout["template"] = configuration.template
     end
@@ -5608,6 +5656,32 @@ function graph_layout(configuration::GraphConfiguration, layout::Layout)::Layout
         layout["height"] = configuration.height
     end
     return layout
+end
+
+function plotly_figure(trace::GenericTrace, layout::Layout)::PlotlyFigure
+    purge_nulls!(trace.fields)
+    purge_nulls!(layout.fields)
+    return plot(trace, layout)  # NOJET
+end
+
+function plotly_figure(traces::AbstractVector{<:GenericTrace}, layout::Layout)::PlotlyFigure
+    for trace in traces
+        purge_nulls!(trace.fields)
+    end
+    purge_nulls!(layout.fields)
+    return plot(traces, layout)
+end
+
+function purge_nulls!(dict::T)::T where {T <: AbstractDict}
+    for (_, value) in dict
+        if value isa AbstractDict
+            purge_nulls!(value)
+        end
+    end
+    filter!(dict) do pair
+        return pair.second !== nothing && !(pair.second isa AbstractDict && isempty(pair.second))
+    end
+    return dict
 end
 
 end  # module

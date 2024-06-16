@@ -25,24 +25,6 @@ function normalize_ids(
     return replace(text, replacements...)
 end
 
-function strip_nulls(text::AbstractString)::AbstractString
-    while true
-        next_text = replace(
-            text,
-            r",\"[^\"]+\":null" => "",
-            r"{\"[^\"]+\":null," => "{",
-            r"{\"[^\"]+\":null}" => "{}",
-            r",\"[^\"]+\":{}" => "",
-            r"{\"[^\"]+\":{}," => "{",
-            r"{\"[^\"]+\":{}}" => "{}",
-        )
-        if next_text == text
-            return next_text
-        end
-        text = next_text
-    end
-end
-
 function normalize_svg(svg::AbstractString)::AbstractString
     svg = normalize_ids(svg, "id-", CSS_ID_REGEX, "")
     svg = normalize_ids(svg, "class-", CLASS_REGEX, "")
@@ -53,7 +35,6 @@ end
 
 function normalize_html(html::AbstractString)::AbstractString
     html = normalize_ids(html, "id-", HTML_ID_REGEX, "")
-    html = strip_nulls(html)
     return html
 end
 
@@ -170,13 +151,13 @@ nested_test("renderers") do
             end
 
             nested_test("!width") do
-                graph.configuration.graph.width = 0
-                @test_throws "non-positive configuration.graph.width: 0" graph.figure
+                graph.configuration.figure.width = 0
+                @test_throws "non-positive configuration.figure.width: 0" graph.figure
             end
 
             nested_test("!height") do
-                graph.configuration.graph.height = 0
-                @test_throws "non-positive configuration.graph.height: 0" graph.figure
+                graph.configuration.figure.height = 0
+                @test_throws "non-positive configuration.figure.height: 0" graph.figure
             end
 
             nested_test("!range") do
@@ -210,11 +191,42 @@ nested_test("renderers") do
             graph.configuration.distribution.show_box = true
 
             nested_test("size") do
-                graph.configuration.graph.height = 96 * 2
-                graph.configuration.graph.width = 96 * 2
+                graph.configuration.figure.height = 96 * 2
+                graph.configuration.figure.width = 96 * 2
                 test_html(graph, "distribution.box.size.html")
                 test_svg(graph, "distribution.box.size.svg")
                 return nothing
+            end
+
+            nested_test("margins") do
+                nested_test("()") do
+                    graph.configuration.figure.margins.left = 100
+                    graph.configuration.figure.margins.right = 150
+                    graph.configuration.figure.margins.top = 200
+                    graph.configuration.figure.margins.bottom = 250
+                    test_html(graph, "distribution.box.margins.html")
+                    return nothing
+                end
+
+                nested_test("!left") do
+                    graph.configuration.figure.margins.left = -1
+                    @test_throws "negative configuration.figure.margins.left: -1" graph.figure
+                end
+
+                nested_test("!right") do
+                    graph.configuration.figure.margins.right = -2
+                    @test_throws "negative configuration.figure.margins.right: -2" graph.figure
+                end
+
+                nested_test("!top") do
+                    graph.configuration.figure.margins.top = -3
+                    @test_throws "negative configuration.figure.margins.top: -3" graph.figure
+                end
+
+                nested_test("!bottom") do
+                    graph.configuration.figure.margins.bottom = -4
+                    @test_throws "negative configuration.figure.margins.bottom: -4" graph.figure
+                end
             end
 
             nested_test("range") do
@@ -259,19 +271,19 @@ nested_test("renderers") do
             end
 
             nested_test("!grid") do
-                graph.configuration.graph.show_grid = false
+                graph.configuration.figure.show_grid = false
                 test_html(graph, "distribution.box.!grid.html")
                 return nothing
             end
 
             nested_test("!ticks") do
-                graph.configuration.graph.show_ticks = false
+                graph.configuration.figure.show_ticks = false
                 test_html(graph, "distribution.box.!ticks.html")
                 return nothing
             end
 
             nested_test("titles") do
-                graph.data.graph_title = "Graph"
+                graph.data.figure_title = "Graph"
                 graph.data.value_axis_title = "Value"
                 graph.data.trace_axis_title = "Trace"
                 graph.data.distribution_name = "Name"
@@ -559,7 +571,7 @@ nested_test("renderers") do
             graph.data.distributions_names = ["Foo", "Bar"]
             graph.data.value_axis_title = "Value"
             graph.data.trace_axis_title = "Trace"
-            graph.data.graph_title = "Graph"
+            graph.data.figure_title = "Graph"
             graph.data.legend_title = "Traces"
             test_html(graph, "distributions.box.titles.html")
             return nothing
@@ -575,7 +587,7 @@ nested_test("renderers") do
             graph.data.distributions_names = ["Foo", "Bar"]
             graph.data.value_axis_title = "Value"
             graph.data.trace_axis_title = "Trace"
-            graph.data.graph_title = "Graph"
+            graph.data.figure_title = "Graph"
             graph.data.legend_title = "Traces"
             graph.configuration.show_legend = true
             test_html(graph, "distributions.box.legend&titles.html")
@@ -643,8 +655,8 @@ nested_test("renderers") do
         end
 
         nested_test("!grid") do
-            graph.configuration.graph.show_grid = false
-            graph.configuration.graph.show_ticks = false
+            graph.configuration.figure.show_grid = false
+            graph.configuration.figure.show_ticks = false
             test_html(graph, "line.!grid.html")
             return nothing
         end
@@ -800,7 +812,7 @@ nested_test("renderers") do
         end
 
         nested_test("titles") do
-            graph.data.graph_title = "Graph"
+            graph.data.figure_title = "Graph"
             graph.data.x_axis_title = "X"
             graph.data.y_axis_title = "Y"
             test_html(graph, "line.titles.html")
@@ -1348,7 +1360,7 @@ nested_test("renderers") do
         end
 
         nested_test("titles") do
-            graph.data.graph_title = "Graph"
+            graph.data.figure_title = "Graph"
             graph.data.bar_axis_title = "Bars"
             graph.data.value_axis_title = "Values"
             test_html(graph, "bar.titles.html")
@@ -1370,7 +1382,7 @@ nested_test("renderers") do
             end
 
             nested_test("titles") do
-                graph.data.graph_title = "Graph"
+                graph.data.figure_title = "Graph"
                 graph.data.bar_axis_title = "Bars"
                 graph.data.value_axis_title = "Values"
                 test_html(graph, "bar.horizontal.titles.html")
@@ -1535,7 +1547,7 @@ nested_test("renderers") do
         end
 
         nested_test("titles") do
-            graph.data.graph_title = "Graph"
+            graph.data.figure_title = "Graph"
             graph.data.bar_axis_title = "Bars"
             graph.data.value_axis_title = "Values"
             test_html(graph, "bars.titles.html")
@@ -1563,7 +1575,7 @@ nested_test("renderers") do
             end
 
             nested_test("titles") do
-                graph.data.graph_title = "Graph"
+                graph.data.figure_title = "Graph"
                 graph.data.bar_axis_title = "Bars"
                 graph.data.value_axis_title = "Values"
                 test_html(graph, "bars.horizontal.titles.html")
@@ -2296,7 +2308,7 @@ nested_test("renderers") do
         end
 
         nested_test("!grid") do
-            graph.configuration.graph.show_grid = false
+            graph.configuration.figure.show_grid = false
             test_html(graph, "points.!grid.html")
             return nothing
         end
@@ -2304,7 +2316,7 @@ nested_test("renderers") do
         nested_test("titles") do
             graph.data.x_axis_title = "X"
             graph.data.y_axis_title = "Y"
-            graph.data.graph_title = "Graph"
+            graph.data.figure_title = "Graph"
             test_html(graph, "points.titles.html")
             return nothing
         end
@@ -2733,7 +2745,7 @@ nested_test("renderers") do
         end
 
         nested_test("!grid") do
-            graph.configuration.graph.show_grid = false
+            graph.configuration.figure.show_grid = false
             test_html(graph, "grid.!grid.html")
             return nothing
         end
@@ -2741,7 +2753,7 @@ nested_test("renderers") do
         nested_test("titles") do
             graph.data.x_axis_title = "X"
             graph.data.y_axis_title = "Y"
-            graph.data.graph_title = "Graph"
+            graph.data.figure_title = "Graph"
             graph.data.rows_names = ["A", "B"]
             graph.data.columns_names = ["C", "D", "E"]
             test_html(graph, "grid.titles.html")
@@ -3013,7 +3025,7 @@ nested_test("renderers") do
         end
 
         nested_test("!ticks") do
-            graph.configuration.graph.show_ticks = false
+            graph.configuration.figure.show_ticks = false
             test_html(graph, "heatmap.!ticks.html")
             return nothing
         end
@@ -3028,7 +3040,7 @@ nested_test("renderers") do
         end
 
         nested_test("titles") do
-            graph.data.graph_title = "Graph"
+            graph.data.figure_title = "Graph"
             graph.data.x_axis_title = "Columns"
             graph.data.y_axis_title = "Rows"
             test_html(graph, "heatmap.titles.html")
@@ -3037,7 +3049,7 @@ nested_test("renderers") do
 
         nested_test("annotations") do
             nested_test("()") do
-                graph.data.graph_title = "Graph"
+                graph.data.figure_title = "Graph"
                 graph.configuration.annotations["Foo"] = AnnotationsConfiguration(; color_palette = "Viridis")
                 graph.data.rows_annotations =
                     [AnnotationsData(; values = [1, 2], hovers = ["A", "B"], title = "Bar", name = "Foo")]

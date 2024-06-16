@@ -188,8 +188,8 @@
     min_significant_gene_UMIs::Integer = 40,
     gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
     colors::Maybe{QueryString} = &quot;/ type : color&quot;,
-    entries_hovers::Maybe{QueryColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
-    genes_hovers::Maybe{QueryColumns} = nothing,]
+    entries_hovers::Maybe{FrameColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
+    genes_hovers::Maybe{FrameColumns} = nothing,]
 )::PointsGraph
 </code>
 </pre>
@@ -259,6 +259,66 @@
 </div>
 </section>
 </article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Plotters.plot_marker_genes" href="#MCGraphs.Plotters.plot_marker_genes">
+<code>MCGraphs.Plotters.plot_marker_genes
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function plot_marker_genes(
+    daf::DafReader,
+    [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
+    axis::abstractstring = &quot;metacell&quot;,
+    gene_names::maybe{vector{abstractstring}} = nothing,
+    max_marker_genes::integer = 100,
+    gene_fraction_regularization::abstractfloat = 1e-5,
+    type_property::maybe{abstractstring} = &quot;type&quot;,
+    expression_annotations::maybe{querycolumns} = nothing,
+    gene_annotations::maybe{querycolumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
+    min_significant_fold::Real = 3.0,
+    max_significant_fold::Real = 5.0],
+)::HeatmapGraph
+</code>
+</pre>
+<p>Generate a marker genes graph. This shows the genes that most distinguish between metacells (or profiles using another axis). Type annotations are added based on the 
+<code>type_property
+</code> (which should name an axis with a 
+<code>color
+</code> property), and optional 
+<code>expression_annotations
+</code> and 
+<code>gene_annotations
+</code>.
+</p>
+<p>If 
+<code>gene_names
+</code> is specified, these genes will always appear in the graph. This list is supplemented with additional 
+<code>is_marker
+</code> genes to show at least 
+<code>min_marker_genes
+</code>. A number of strongest such genes is chosen from each profile, such that the total number of these genes together with the forced 
+<code>gene_names
+</code> is at least 
+<code>min_marker_genes
+</code>.
+</p>
+<p>Genes whose (absolute) fold factor (log base 2 of the ratio between the expression level and the median of the population) is less than 
+<code>min_significant_fold
+</code> are colored in white. The color scale continues until 
+<code>max_significant_fold
+</code>.
+</p>
+</div>
+</section>
+</article>
 <h2 id="Index">
 <a class="docs-heading-anchor" href="#Index">Index
 </a>
@@ -277,6 +337,12 @@
 <li>
 <a href="plotters.html#MCGraphs.Plotters.plot_gene_gene">
 <code>MCGraphs.Plotters.plot_gene_gene
+</code>
+</a>
+</li>
+<li>
+<a href="plotters.html#MCGraphs.Plotters.plot_marker_genes">
+<code>MCGraphs.Plotters.plot_marker_genes
 </code>
 </a>
 </li>

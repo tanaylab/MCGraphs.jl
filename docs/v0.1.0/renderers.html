@@ -601,7 +601,7 @@
 <div>
 <pre>
 <code class="language-julia hljs">function points_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     vertical_bands::BandsData = BandsData(),
@@ -680,7 +680,7 @@
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct PointsGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
@@ -708,7 +708,7 @@ end
 <p>The data for a scatter graph of points.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>x_axis_title
 </code> and 
@@ -793,7 +793,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct PointsGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     points::PointsConfiguration = PointsConfiguration()
@@ -844,11 +844,7 @@ end
 <div class="admonition-body">
 <p>There is no 
 <code>show_legend
-</code> for a 
-<a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
-<code>GraphConfiguration
-</code>
-</a> of a points graph. Instead you probably want to set the 
+</code> here. Instead you probably want to set the 
 <code>show_color_scale
 </code> of the 
 <code>points
@@ -955,7 +951,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function line_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     vertical_bands::BandsData = BandsData(),
@@ -993,7 +989,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function lines_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -1089,7 +1085,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct LineGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     vertical_bands::BandsData = BandsData()
@@ -1102,7 +1098,7 @@ end
 <p>The data for a line graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>x_axis_title
 </code> and 
@@ -1133,7 +1129,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct LinesGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
@@ -1152,7 +1148,7 @@ end
 <p>The data for multiple lines graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>x_axis_title
 </code> and 
@@ -1209,7 +1205,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct LineGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     line::LineConfiguration = LineConfiguration()
@@ -1238,7 +1234,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct LinesGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     x_axis::AxisConfiguration = AxisConfiguration()
     y_axis::AxisConfiguration = AxisConfiguration()
     line::LineConfiguration = LineConfiguration()
@@ -1326,7 +1322,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function cdf_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     fraction_axis_title::Maybe{AbstractString} = nothing,
     value_bands::BandsData = BandsData(),
@@ -1363,7 +1359,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function cdfs_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     fraction_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -1456,7 +1452,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct CdfGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
     cdf_values::AbstractVector{&lt;:Real} = Float32[]
@@ -1466,7 +1462,7 @@ end
 <p>The data for a CDF (Cumulative Distribution Function) graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>value_axis_title
 </code> and 
@@ -1495,7 +1491,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct CdfsGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     fraction_axis_title::Maybe{AbstractString} = nothing
     cdfs_values::AbstractVector{&lt;:AbstractVector{&lt;:Real}} = Vector{Float32}[]
@@ -1510,7 +1506,7 @@ end
 <p>The data for multiple CDFs (Cumulative Distribution Functions) graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>value_axis_title
 </code> and 
@@ -1539,7 +1535,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct CdfsGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
     fractions_normalization::GraphNormalization = NormalizeToFractions
@@ -1588,7 +1584,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct CdfGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     fraction_axis::AxisConfiguration = AxisConfiguration()
     fractions_normalization::GraphNormalization = NormalizeToFractions,
@@ -1666,7 +1662,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function grid_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     points_colors_title::Maybe{AbstractString} = nothing,
@@ -1737,7 +1733,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct GridGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     points_colors_title::Maybe{AbstractString} = nothing
@@ -1778,7 +1774,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct GridGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     points::PointsConfiguration = PointsConfiguration()
     borders::PointsConfiguration = PointsConfiguration()
 end
@@ -1814,7 +1810,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function heatmap_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     x_axis_title::Maybe{AbstractString} = nothing,
     y_axis_title::Maybe{AbstractString} = nothing,
     entries_colors_title::Maybe{AbstractString} = nothing,
@@ -1883,13 +1879,13 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct HeatmapGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     x_axis_title::Maybe{AbstractString} = nothing
     y_axis_title::Maybe{AbstractString} = nothing
     entries_colors_title::Maybe{AbstractString} = nothing
     columns_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
     rows_names::Maybe{AbstractVector{&lt;:AbstractString}} = nothing
-    entries_colors::Maybe{AbstractMatrix{&lt;:Union{AbstractString, Real}}} = Float32[;;]
+    entries_colors::Maybe{AbstractMatrix{&lt;:Real}} = Float32[;;]
     entries_hovers::Maybe{AbstractMatrix{&lt;:AbstractString}} = nothing
     columns_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
     rows_annotations::Maybe{AbstractVector{AnnotationsData}} = nothing
@@ -1918,7 +1914,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct HeatmapGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     entries::EntriesConfiguration = EntriesConfiguration()
     annotations::Dict{&lt;:AbstractString,AnnotationsConfiguration} = Dict{String,AnnotationsConfiguration}()
 end
@@ -2077,7 +2073,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function bar_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     bar_axis_title::Maybe{AbstractString} = nothing,
     bars_values::AbstractVector{&lt;:Real} = Float32[],
@@ -2115,7 +2111,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function bars_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     bar_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -2208,7 +2204,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct BarGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     bars_values::AbstractVector{&lt;:Real} = Float32[]
@@ -2221,7 +2217,7 @@ end
 <p>The data for a single bar (histogram) graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>value_axis_title
 </code> and 
@@ -2256,7 +2252,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct BarGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     values_orientation::ValuesOrientation = VerticalValues
     bars_color::Maybe{AbstractString} = nothing
@@ -2294,7 +2290,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct BarsGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     bar_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
@@ -2310,7 +2306,7 @@ end
 <p>The data for a multiple bars (histograms) graph.
 </p>
 <p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>value_axis_title
 </code>, 
@@ -2357,7 +2353,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct BarsGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     value_axis::AxisConfiguration = AxisConfiguration()
     values_orientation::ValuesOrientation = VerticalValues
     bars_gap::Maybe{Real} = nothing
@@ -2406,7 +2402,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function distribution_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     trace_axis_title::Maybe{AbstractString} = nothing,
     distribution_values::AbstractVector{&lt;:Real} = Float32[],
@@ -2442,7 +2438,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">function distributions_graph(;
-    [graph_title::Maybe{AbstractString} = nothing,
+    [figure_title::Maybe{AbstractString} = nothing,
     value_axis_title::Maybe{AbstractString} = nothing,
     trace_axis_title::Maybe{AbstractString} = nothing,
     legend_title::Maybe{AbstractString} = nothing,
@@ -2532,7 +2528,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     distribution_values::AbstractVector{&lt;:Real} = Float32[]
@@ -2541,7 +2537,7 @@ end
 </code>
 </pre>
 <p>By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>value_axis_title
 </code> and the 
@@ -2568,7 +2564,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionsGraphData &lt;: AbstractGraphData
-    graph_title::Maybe{AbstractString} = nothing
+    figure_title::Maybe{AbstractString} = nothing
     value_axis_title::Maybe{AbstractString} = nothing
     trace_axis_title::Maybe{AbstractString} = nothing
     legend_title::Maybe{AbstractString} = nothing
@@ -2579,7 +2575,7 @@ end
 </code>
 </pre>
 <p>The data for a multiple distributions graph. By default, all the titles are empty. You can specify the overall 
-<code>graph_title
+<code>figure_title
 </code> as well as the 
 <code>value_axis_title
 </code>, the 
@@ -2614,7 +2610,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     distribution::DistributionConfiguration = DistributionConfiguration(show_curve = false, show_box = true)
     value_axis::AxisConfiguration = AxisConfiguration()
 end
@@ -2656,7 +2652,7 @@ end
 <div>
 <pre>
 <code class="language-julia hljs">@kwdef mutable struct DistributionsGraphConfiguration &lt;: AbstractGraphConfiguration
-    graph::GraphConfiguration = GraphConfiguration()
+    figure::FigureConfiguration = FigureConfiguration()
     distribution::DistributionConfiguration = DistributionConfiguration(show_curve = false, show_box = true)
     value_axis::AxisConfiguration = AxisConfiguration()
     show_legend::Bool = false
@@ -2767,8 +2763,8 @@ end
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Renderers.GraphConfiguration" href="#MCGraphs.Renderers.GraphConfiguration">
-<code>MCGraphs.Renderers.GraphConfiguration
+<a class="docstring-binding" id="MCGraphs.Renderers.FigureConfiguration" href="#MCGraphs.Renderers.FigureConfiguration">
+<code>MCGraphs.Renderers.FigureConfiguration
 </code>
 </a> — 
 <span class="docstring-category">Type
@@ -2777,7 +2773,7 @@ end
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">@kwdef mutable struct GraphConfiguration
+<code class="language-julia hljs">@kwdef mutable struct FigureConfiguration
     width::Maybe{Int} = nothing
     height::Maybe{Int} = nothing
     template::AbstractString = &quot;simple_white&quot;
@@ -2786,19 +2782,21 @@ end
 end
 </code>
 </pre>
-<p>Generic configuration that applies to any graph. Each complete 
+<p>Generic configuration that applies to the whole figure. Each complete 
 <a href="renderers.html#MCGraphs.Renderers.AbstractGraphConfiguration">
 <code>AbstractGraphConfiguration
 </code>
 </a> contains a 
-<code>graph
+<code>figure
 </code> field of this type.
 </p>
 <p>The optional 
 <code>width
 </code> and 
 <code>height
-</code> are in pixels, that is, 1/96 of an inch.
+</code> are in pixels, that is, 1/96 of an inch. Due to Plotly limitations, you may have to adjust the 
+<code>margins
+</code> to ensure tick labels will fit inside the graph.
 </p>
 <p>By default, 
 <code>show_grid
@@ -2813,6 +2811,33 @@ end
 </em>grid
 <code>and
 </code>show_ticks` can be used to disable the grid and/or ticks for an even cleaner (but less informative) look.
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Renderers.MarginsConfiguration" href="#MCGraphs.Renderers.MarginsConfiguration">
+<code>MCGraphs.Renderers.MarginsConfiguration
+</code>
+</a> — 
+<span class="docstring-category">Type
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">@kwdef mutable struct MarginsConfiguration
+    left::Int = 50
+    bottom::Int = 50
+    right::Int = 50
+    top::Int = 50
+end
+</code>
+</pre>
+<p>Configure the margins of the graph. Sizes are in pixels (1/96th of an inch).
 </p>
 </div>
 </section>
@@ -3240,14 +3265,14 @@ end
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.Graph">
-<code>MCGraphs.Renderers.Graph
+<a href="renderers.html#MCGraphs.Renderers.FigureConfiguration">
+<code>MCGraphs.Renderers.FigureConfiguration
 </code>
 </a>
 </li>
 <li>
-<a href="renderers.html#MCGraphs.Renderers.GraphConfiguration">
-<code>MCGraphs.Renderers.GraphConfiguration
+<a href="renderers.html#MCGraphs.Renderers.Graph">
+<code>MCGraphs.Renderers.Graph
 </code>
 </a>
 </li>
@@ -3332,6 +3357,12 @@ end
 <li>
 <a href="renderers.html#MCGraphs.Renderers.LinesGraphData">
 <code>MCGraphs.Renderers.LinesGraphData
+</code>
+</a>
+</li>
+<li>
+<a href="renderers.html#MCGraphs.Renderers.MarginsConfiguration">
+<code>MCGraphs.Renderers.MarginsConfiguration
 </code>
 </a>
 </li>

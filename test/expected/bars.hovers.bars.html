@@ -20,8 +20,8 @@ window.PlotlyConfig = {MathJaxConfig: 'local'};
         if (document.getElementById('id-1')) {
     Plotly.newPlot(
         'id-1',
-        [{"showlegend":false,"name":"Series 1","customdata":["Foo","Bar","Baz"],"legendgroup":"Series 1","orientation":"v","y":[0.0,1.0,2.0],"type":"bar","hovertemplate":"%{customdata}<extra></extra>","x":["Bar 1","Bar 2","Bar 3"]},{"showlegend":false,"name":"Series 2","customdata":["Foo","Bar","Baz"],"legendgroup":"Series 2","orientation":"v","y":[0.2,1.2,1.8],"type":"bar","hovertemplate":"%{customdata}<extra></extra>","x":["Bar 1","Bar 2","Bar 3"]}],
-        {"showlegend":false,"xaxis":{"showgrid":false,"showticklabels":false},"template":"simple_white","legend":{"tracegroupgap":0,"itemdoubleclick":false},"margin":{"l":50,"b":50,"r":50,"t":60},"yaxis":{"showgrid":true,"showticklabels":true,"range":[null,null]}},
+        [{"showlegend":false,"y":[0.0,1.0,2.0],"type":"bar","name":"Series 1","customdata":["Foo","Bar","Baz"],"legendgroup":"Series 1","orientation":"v","hovertemplate":"%{customdata}<extra></extra>","x":["Bar 1","Bar 2","Bar 3"]},{"showlegend":false,"y":[0.2,1.2,1.8],"type":"bar","name":"Series 2","customdata":["Foo","Bar","Baz"],"legendgroup":"Series 2","orientation":"v","hovertemplate":"%{customdata}<extra></extra>","x":["Bar 1","Bar 2","Bar 3"]}],
+        {"showlegend":false,"xaxis":{"showgrid":false,"showticklabels":false},"template":"simple_white","legend":{"tracegroupgap":0,"itemdoubleclick":false},"margin":{"l":50,"b":50,"r":50,"t":50},"yaxis":{"showgrid":true,"showticklabels":true,"range":[null,null]}},
         {"editable":false,"responsive":true,"staticPlot":false,"scrollZoom":true},
     )
 }
