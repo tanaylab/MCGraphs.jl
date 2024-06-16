@@ -13,9 +13,11 @@ export extract_box_box_data
 
 using Base.Threads
 using Base.Unicode
+using Clustering
 using Daf
 using Daf.GenericTypes
 using DataFrames
+using Distances
 using LinearAlgebra
 using NamedArrays
 using Statistics
@@ -657,6 +659,7 @@ end
         expression_annotations::Maybe{FrameColumns} = nothing,
         gene_annotations::Maybe{FrameColumns} = ["is_lateral", "divergence"],
         gene_names::Maybe{Vector{AbstractString}} = nothing],
+        reorder_by_type::Bool = true,
     )::HeatmapGraphData
 
 Extract the data for a marker genes graph. This shows the genes that most distinguish between metacells (or profiles
@@ -666,6 +669,10 @@ property), and optional `expression_annotations` and `gene_annotations`.
 If `gene_names` is specified, these genes will always appear in the graph. This list is supplemented with additional
 `is_marker` genes to show at least `min_marker_genes`. A number of strongest such genes is chosen from each profile,
 such that the total number of these genes together with the forced `gene_names` is at least `min_marker_genes`.
+
+The data is clustered to show the structure of both genes and metacells (or profiles using another axis). If
+`reorder_by_type` is specified, and `type_property` is not be `nothing`, then the profiles are reordered so that each
+type is contiguous.
 """
 function extract_marker_genes_data(  # untested
     daf::DafReader;
@@ -676,13 +683,30 @@ function extract_marker_genes_data(  # untested
     type_property::Maybe{AbstractString} = "type",
     expression_annotations::Maybe{FrameColumns} = nothing,
     gene_annotations::Maybe{FrameColumns} = ["is_lateral", "divergence"],
+    reorder_by_type::Bool = true,
 )::HeatmapGraphData
     @assert max_marker_genes > 0
     @assert type_property !== nothing || expression_annotations === nothing
+
     power_of_selected_genes_of_profiles, names_of_selected_genes, indices_of_selected_genes =
         compute_marker_genes(daf, axis, gene_names, max_marker_genes, gene_fraction_regularization)
     columns_annotations = marker_genes_columns_annotations(daf, axis, type_property, expression_annotations)
     rows_annotations = marker_genes_rows_annotations(daf, gene_annotations, indices_of_selected_genes)
+
+    if reorder_by_type && type_property !== nothing
+        @assert columns_annotations !== nothing
+        type_indices_of_profiles = columns_annotations[1].values
+    else
+        type_indices_of_profiles = nothing
+    end
+
+    order_of_profiles = reorder_matrix_columns(power_of_selected_genes_of_profiles, type_indices_of_profiles)
+    order_of_genes = reorder_matrix_columns(transposer!(power_of_selected_genes_of_profiles))
+
+    power_of_selected_genes_of_profiles = power_of_selected_genes_of_profiles[order_of_genes, order_of_profiles]
+    reorder_annotations!(columns_annotations, order_of_profiles)
+    reorder_annotations!(rows_annotations, order_of_genes)  # NOJET
+
     return HeatmapGraphData(;
         figure_title = "$(uppercasefirst(axis))s Marker Genes",
         x_axis_title = uppercasefirst(axis),
@@ -701,7 +725,7 @@ function compute_marker_genes(  # untested
     gene_names::Maybe{AbstractVector{<:AbstractString}},
     min_marker_genes::Integer,
     gene_fraction_regularization::AbstractFloat = 1e-5,
-)::Tuple{AbstractMatrix{<:Real}, AbstractVector{<:AbstractString}, AbstractVector{<:Integer}}
+)::Tuple{Matrix{<:Real}, AbstractVector{<:AbstractString}, AbstractVector{<:Integer}}
     if gene_names === nothing
         gene_names = AbstractString[]
     else
@@ -798,29 +822,33 @@ function compute_marker_genes(  # untested
     return power_of_selected_genes_of_profiles, names_of_selected_genes, indices_of_selected_genes
 end
 
-function marker_genes_columns_annotations(::DafReader, ::AbstractString, ::Nothing, ::Maybe{FrameColumns})::Nothing  # untested
+function marker_genes_columns_annotations(::DafReader, ::AbstractString, ::Nothing, ::Nothing)::Nothing  # untested
     return nothing
 end
 
 function marker_genes_columns_annotations(  # untested
     daf::DafReader,
     axis::AbstractString,
-    type_property::AbstractString,
+    type_property::Maybe{AbstractString},
     expression_annotations::Maybe{FrameColumns},
 )::Maybe{Vector{AnnotationsData}}
     annotations = AnnotationsData[]
-    type_of_profiles = get_vector(daf, axis, type_property)
-    push!(
-        annotations,
-        AnnotationsData(;
-            name = "type",
-            title = type_property,
-            values = axis_indices(daf, type_property, type_of_profiles.array),
-            hovers = names(type_of_profiles, 1),
-        ),
-    )
+    if type_property !== nothing
+        type_of_profiles = get_vector(daf, axis, type_property)
+        push!(
+            annotations,
+            AnnotationsData(;
+                name = "type",
+                title = type_property,
+                values = axis_indices(daf, type_property, type_of_profiles.array),
+                hovers = [
+                    "$(name): $(type)" for (name, type) in zip(names(type_of_profiles, 1), type_of_profiles.array)
+                ],
+            ),
+        )
+    end
     if expression_annotations !== nothing
-        data_frame = get_frame(daf, type_property, expression_annotations)
+        data_frame = get_frame(daf, axis, expression_annotations)
         for (name, values) in pairs(eachcol(data_frame))
             push!(annotations, AnnotationsData(; title = string(name), values = Float32.(values)))
         end
@@ -847,11 +875,45 @@ function marker_genes_rows_annotations(
     ]
 end
 
+function reorder_matrix_columns(
+    matrix::Matrix{<:Real},
+    type_indices_of_columns::Maybe{Vector{<:Integer}} = nothing,
+)::Vector{<:Integer}
+    _, n_columns = size(matrix)
+    distances_between_columns = pairwise(CorrDist(), matrix; dims = 2)
+    @assert size(distances_between_columns) == (n_columns, n_columns)
+    distances_between_columns = pairwise(CorrDist(), distances_between_columns; dims = 2)
+    @assert size(distances_between_columns) == (n_columns, n_columns)
+
+    if type_indices_of_columns !== nothing
+        @assert length(type_indices_of_columns) == n_columns
+        distances_between_columns .+= (type_indices_of_columns .!= transpose(type_indices_of_columns)) .* 2  # NOJET
+    end
+
+    clustering = hclust(distances_between_columns; linkage = :ward, branchorder = :optimal)  # NOJET
+    return clustering.order
+end
+
+function reorder_annotations(::Nothing, ::Vector{<:Integer})::Nothing
+    return nothing
+end
+
+function reorder_annotations!(annotations::Vector{AnnotationsData}, order::Vector{<:Integer})::Nothing
+    for annotations_data in annotations
+        annotations_data.values = annotations_data.values[order]
+        hovers = annotations_data.hovers
+        if hovers !== nothing
+            annotations_data.hovers = hovers[order]
+        end
+    end
+    return nothing
+end
+
 """
     default_marker_genes_configuration(
         daf::DafReader,
         [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-        type_property::Maybe{AbstractString},
+        type_property::Maybe{AbstractString} = "type",
         min_significant_fold::Real = 0.5,
         max_significant_fold::Real = 3.0],
     )::HeatmapGraphConfiguration
@@ -865,7 +927,7 @@ population) is less than `min_significant_fold` are colored in white. The color 
 function default_marker_genes_configuration(  # untested
     daf::DafReader,
     configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-    type_property::Maybe{AbstractString},
+    type_property::Maybe{AbstractString} = "type",
     min_significant_fold::Real = 0.5,
     max_significant_fold::Real = 3.0,
 )::HeatmapGraphConfiguration

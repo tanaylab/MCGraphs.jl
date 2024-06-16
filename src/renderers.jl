@@ -5408,31 +5408,57 @@ end
 function graph_to_figure(graph::HeatmapGraph)::PlotlyFigure
     assert_valid_object(graph)
 
-    traces = [heatmap_trace(graph)]
+    traces = GenericTrace[]
 
     coloraxis_index = [1]
+
     columns_annotations = graph.data.columns_annotations
+    rows_annotations = graph.data.rows_annotations
+    n_columns_annotations = columns_annotations === nothing ? 0 : length(columns_annotations)
+    n_rows_annotations = rows_annotations === nothing ? 0 : length(rows_annotations)
+
     if columns_annotations !== nothing
         for (annotations_index, annotations_data) in enumerate(columns_annotations)
-            push!(traces, annotation_trace(annotations_data, coloraxis_index; y_axis_index = annotations_index + 1))
+            push!(
+                traces,
+                annotation_trace(
+                    annotations_data,
+                    coloraxis_index;
+                    x_axis_index = n_rows_annotations + 2,
+                    y_axis_index = annotations_index + 1,
+                    transpose = false,
+                ),
+            )
         end
     end
 
-    rows_annotations = graph.data.rows_annotations
     if rows_annotations !== nothing
         for (annotations_index, annotations_data) in enumerate(rows_annotations)
-            push!(traces, annotation_trace(annotations_data, coloraxis_index; x_axis_index = annotations_index + 1))
+            push!(
+                traces,
+                annotation_trace(
+                    annotations_data,
+                    coloraxis_index;
+                    x_axis_index = annotations_index + 1,
+                    y_axis_index = n_columns_annotations + 2,
+                    transpose = true,
+                ),
+            )
         end
     end
+
+    push!(traces, heatmap_trace(graph; x_axis_index = n_rows_annotations + 2, y_axis_index = n_columns_annotations + 2))
 
     layout = heatmap_layout(graph)
     return plotly_figure(traces, layout)
 end
 
-function heatmap_trace(graph::HeatmapGraph)::GenericTrace
+function heatmap_trace(graph::HeatmapGraph; x_axis_index::Integer, y_axis_index::Integer)::GenericTrace
     return heatmap(;
         name = "",
         z = graph.data.entries_colors,
+        xaxis = "x$(x_axis_index)",
+        yaxis = "y$(y_axis_index)",
         text = graph.data.entries_hovers !== nothing ? permutedims(graph.data.entries_hovers) : nothing,
         coloraxis = "coloraxis",
     )
@@ -5441,30 +5467,17 @@ end
 function annotation_trace(
     data::AnnotationsData,
     coloraxis_index::Vector{Int};
-    x_axis_index::Maybe{Integer} = nothing,
-    y_axis_index::Maybe{Integer} = nothing,
+    x_axis_index::Integer,
+    y_axis_index::Integer,
+    transpose::Bool,
 )::GenericTrace
-    if x_axis_index === nothing
-        x_axis = nothing
-        transpose = false
-    else
-        x_axis = "x$(x_axis_index)"
-        transpose = true
-    end
-
-    if y_axis_index === nothing
-        y_axis = nothing
-    else
-        y_axis = "y$(y_axis_index)"
-    end
-
     coloraxis_index[1] += 1
     return heatmap(;
         name = "",
         z = [data.values],
         text = !transpose ? [data.hovers] : data.hovers !== nothing ? permutedims(data.hovers) : nothing,
-        xaxis = x_axis,
-        yaxis = y_axis,
+        xaxis = "x$(x_axis_index)",
+        yaxis = "y$(y_axis_index)",
         coloraxis = "coloraxis$(coloraxis_index[1])",
         transpose = transpose,
     )
@@ -5474,6 +5487,7 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
     n_rows, n_columns = size(graph.data.entries_colors)
     color_tickvals, color_ticktext = log_color_scale_ticks(graph.data.entries_colors, graph.configuration.entries)
 
+    y_axis_index = 2
     columns_annotations = graph.data.columns_annotations
     if columns_annotations === nothing
         y_axis_domain = nothing
@@ -5482,39 +5496,27 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
             annotations_data.name === nothing ? 0.05 : graph.configuration.annotations[annotations_data.name].size
             for annotations_data in columns_annotations
         ])
-        y_axis_domain = [0, 1 - total_size]
+        y_axis_domain = [total_size, 1]
+        y_axis_index += length(columns_annotations)
     end
 
     rows_annotations = graph.data.rows_annotations
+    x_axis_index = 2
     if rows_annotations === nothing
-        n_rows_annotations = 0
         x_axis_domain = nothing
     else
-        n_rows_annotations = length(rows_annotations)
         total_size = sum([
             annotations_data.name === nothing ? 0.05 : graph.configuration.annotations[annotations_data.name].size
             for annotations_data in rows_annotations
         ])
-        x_axis_domain = [0, 1 - total_size]
+        x_axis_domain = [total_size, 1]
+        x_axis_index += length(rows_annotations)
     end
 
     layout = graph_layout(
         graph.configuration.figure,
         Layout(;  # NOJET
             title = graph.data.figure_title,
-            xaxis_showgrid = graph.configuration.figure.show_grid,
-            xaxis_showticklabels = graph.configuration.figure.show_ticks && graph.data.columns_names !== nothing,
-            xaxis_title = graph.data.x_axis_title,
-            xaxis_tickvals = graph.data.columns_names === nothing ? nothing : collect(0:(n_columns - 1)),
-            xaxis_tickangle = graph.data.columns_names === nothing ? nothing : -90,
-            xaxis_ticktext = graph.data.columns_names,
-            xaxis_domain = x_axis_domain,
-            yaxis_showgrid = graph.configuration.figure.show_grid,
-            yaxis_showticklabels = graph.configuration.figure.show_ticks && graph.data.rows_names !== nothing,
-            yaxis_title = graph.data.y_axis_title,
-            yaxis_ticktext = graph.data.rows_names,
-            yaxis_tickvals = graph.data.rows_names === nothing ? nothing : collect(0:(n_rows - 1)),
-            yaxis_domain = y_axis_domain,
             coloraxis_showscale = graph.configuration.entries.show_color_scale,
             coloraxis_reversescale = graph.configuration.entries.reverse_color_scale,
             coloraxis_colorscale = normalized_color_palette(
@@ -5536,11 +5538,28 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
             coloraxis_colorbar_ticktext = color_ticktext,
         ),
     )
+    layout[Symbol("xaxis$(x_axis_index)")] = Dict(
+        :showgrid => graph.configuration.figure.show_grid,
+        :showticklabels => graph.configuration.figure.show_ticks && graph.data.columns_names !== nothing,
+        :title => graph.data.x_axis_title,
+        :tickvals => graph.data.columns_names === nothing ? nothing : collect(0:(n_columns - 1)),
+        :tickangle => graph.data.columns_names === nothing ? nothing : -90,
+        :ticktext => graph.data.columns_names,
+        :domain => x_axis_domain,
+    )
+    layout[Symbol("yaxis$(y_axis_index)")] = Dict(
+        :showgrid => graph.configuration.figure.show_grid,
+        :showticklabels => graph.configuration.figure.show_ticks && graph.data.rows_names !== nothing,
+        :title => graph.data.y_axis_title,
+        :ticktext => graph.data.rows_names,
+        :tickvals => graph.data.rows_names === nothing ? nothing : collect(0:(n_rows - 1)),
+        :domain => y_axis_domain,
+    )
 
     coloraxis_index = 1
 
     if columns_annotations !== nothing
-        top_size = 1.0
+        bottom_size = 0.0
         for (annotations_index, annotations_data) in enumerate(columns_annotations)
             annotations_configuration =
                 get(graph.configuration.annotations, annotations_data.name, AnnotationsConfiguration())
@@ -5553,18 +5572,18 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
                 :showscale => false,
                 :reversescale => annotations_configuration.reverse_color_scale,
             )
-            bottom_size = top_size - annotations_configuration.size
+            top_size = bottom_size + annotations_configuration.size
             layout[Symbol("yaxis$(annotations_index + 1)")] = Dict(
                 :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
                 :tickvals => [0],
                 :domain => [bottom_size, top_size],
             )
-            top_size = bottom_size
+            bottom_size = top_size
         end
     end
 
     if rows_annotations !== nothing
-        top_size = 1.0
+        bottom_size = 0.0
         for (annotations_index, annotations_data) in enumerate(rows_annotations)
             annotations_configuration =
                 get(graph.configuration.annotations, annotations_data.name, AnnotationsConfiguration())
@@ -5577,14 +5596,14 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
                 :showscale => false,
                 :reversescale => annotations_configuration.reverse_color_scale,
             )
-            bottom_size = top_size - annotations_configuration.size
+            top_size = bottom_size + annotations_configuration.size
             layout[Symbol("xaxis$(annotations_index + 1)")] = Dict(
                 :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
                 :tickvals => [0],
                 :tickangle => -90,
                 :domain => [bottom_size, top_size],
             )
-            top_size = bottom_size
+            bottom_size = top_size
         end
     end
 

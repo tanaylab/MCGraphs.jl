@@ -284,7 +284,8 @@
     expression_annotations::maybe{querycolumns} = nothing,
     gene_annotations::maybe{querycolumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
     min_significant_fold::Real = 3.0,
-    max_significant_fold::Real = 5.0],
+    max_significant_fold::Real = 5.0,
+    reorder_by_type::Bool = false]
 )::HeatmapGraph
 </code>
 </pre>
@@ -309,6 +310,14 @@
 </code> is at least 
 <code>min_marker_genes
 </code>.
+</p>
+<p>The data is clustered to show the structure of both genes and metacells (or profiles using another axis). If 
+<code>reorder_by_type
+</code> is specified, and 
+<code>type_property
+</code> is not be 
+<code>nothing
+</code>, then the profiles are reordered so that each type is contiguous.
 </p>
 <p>Genes whose (absolute) fold factor (log base 2 of the ratio between the expression level and the median of the population) is less than 
 <code>min_significant_fold

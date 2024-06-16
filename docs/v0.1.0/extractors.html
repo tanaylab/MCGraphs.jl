@@ -276,6 +276,7 @@
     expression_annotations::Maybe{FrameColumns} = nothing,
     gene_annotations::Maybe{FrameColumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
     gene_names::Maybe{Vector{AbstractString}} = nothing],
+    reorder_by_type::Bool = true,
 )::HeatmapGraphData
 </code>
 </pre>
@@ -300,6 +301,14 @@
 </code> is at least 
 <code>min_marker_genes
 </code>.
+</p>
+<p>The data is clustered to show the structure of both genes and metacells (or profiles using another axis). If 
+<code>reorder_by_type
+</code> is specified, and 
+<code>type_property
+</code> is not be 
+<code>nothing
+</code>, then the profiles are reordered so that each type is contiguous.
 </p>
 </div>
 </section>
@@ -416,7 +425,7 @@
 <code class="language-julia hljs">default_marker_genes_configuration(
     daf::DafReader,
     [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-    type_property::Maybe{AbstractString},
+    type_property::Maybe{AbstractString} = &quot;type&quot;,
     min_significant_fold::Real = 0.5,
     max_significant_fold::Real = 3.0],
 )::HeatmapGraphConfiguration

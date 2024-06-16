@@ -122,7 +122,8 @@ end
         expression_annotations::maybe{querycolumns} = nothing,
         gene_annotations::maybe{querycolumns} = ["is_lateral", "divergence"],
         min_significant_fold::Real = 3.0,
-        max_significant_fold::Real = 5.0],
+        max_significant_fold::Real = 5.0,
+        reorder_by_type::Bool = false]
     )::HeatmapGraph
 
 Generate a marker genes graph. This shows the genes that most distinguish between metacells (or profiles using another
@@ -132,6 +133,10 @@ optional `expression_annotations` and `gene_annotations`.
 If `gene_names` is specified, these genes will always appear in the graph. This list is supplemented with additional
 `is_marker` genes to show at least `min_marker_genes`. A number of strongest such genes is chosen from each profile,
 such that the total number of these genes together with the forced `gene_names` is at least `min_marker_genes`.
+
+The data is clustered to show the structure of both genes and metacells (or profiles using another axis). If
+`reorder_by_type` is specified, and `type_property` is not be `nothing`, then the profiles are reordered so that each
+type is contiguous.
 
 Genes whose (absolute) fold factor (log base 2 of the ratio between the expression level and the median of the
 population) is less than `min_significant_fold` are colored in white. The color scale continues until
@@ -147,8 +152,9 @@ function plot_marker_genes(
     type_property::Maybe{AbstractString} = "type",
     expression_annotations::Maybe{FrameColumns} = nothing,
     gene_annotations::Maybe{FrameColumns} = ["is_lateral", "divergence"],
-    min_significant_fold::Real = 3.0,
-    max_significant_fold::Real = 5.0,
+    min_significant_fold::Real = 0.5,
+    max_significant_fold::Real = 3.0,
+    reorder_by_type::Bool = true,
 )::HeatmapGraph
     data = extract_marker_genes_data(
         daf;
@@ -159,6 +165,7 @@ function plot_marker_genes(
         type_property = type_property,
         expression_annotations = expression_annotations,
         gene_annotations = gene_annotations,
+        reorder_by_type = reorder_by_type,
     )
     configuration = default_marker_genes_configuration(
         daf,
