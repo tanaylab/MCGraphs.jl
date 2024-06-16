@@ -229,8 +229,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Extractors.extract_sphere_sphere_data" href="#MCGraphs.Extractors.extract_sphere_sphere_data">
-<code>MCGraphs.Extractors.extract_sphere_sphere_data
+<a class="docstring-binding" id="MCGraphs.Extractors.extract_box_box_data" href="#MCGraphs.Extractors.extract_box_box_data">
+<code>MCGraphs.Extractors.extract_box_box_data
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -239,17 +239,17 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">function extract_sphere_sphere_data(
+<code class="language-julia hljs">function extract_box_box_data(
     daf::DafReader;
-    x_sphere::AbstractString,
-    y_sphere::AbstractString,
+    x_box::AbstractString,
+    y_box::AbstractString,
     [min_significant_gene_UMIs::Integer = 40,
-    max_sphere_diameter::AbstractFloat = 2.0,
+    max_box_span::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5],
 )::PointsGraphData
 </code>
 </pre>
-<p>Extract the data for a sphere-sphere graph. This shows why two spheres were not merged (or, if given the same sphere name twice, why the sphere was merged).
+<p>Extract the data for a box-box graph. This shows why two boxes were not merged (or, if given the same box name twice, why the box was merged).
 </p>
 </div>
 </section>
@@ -372,8 +372,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Extractors.default_sphere_sphere_configuration" href="#MCGraphs.Extractors.default_sphere_sphere_configuration">
-<code>MCGraphs.Extractors.default_sphere_sphere_configuration
+<a class="docstring-binding" id="MCGraphs.Extractors.default_box_box_configuration" href="#MCGraphs.Extractors.default_box_box_configuration">
+<code>MCGraphs.Extractors.default_box_box_configuration
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -382,17 +382,17 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">default_sphere_sphere_configuration(
+<code class="language-julia hljs">default_box_box_configuration(
     [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
-    x_sphere::AbstractString,
-    y_sphere::AbstractString,
+    x_box::AbstractString,
+    y_box::AbstractString,
     x_neighborhood::AbstractString,
-    [max_sphere_diameter::AbstractFloat = 2.0,
+    [max_box_span::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5],
 )::PointsGraphConfiguration
 </code>
 </pre>
-<p>Return a default configuration for a sphere-sphere graph. Will modify 
+<p>Return a default configuration for a box-box graph. Will modify 
 <code>configuration
 </code> in-place and return it.
 </p>
@@ -451,6 +451,12 @@
 </a>
 </li>
 <li>
+<a href="extractors.html#MCGraphs.Extractors.default_box_box_configuration">
+<code>MCGraphs.Extractors.default_box_box_configuration
+</code>
+</a>
+</li>
+<li>
 <a href="extractors.html#MCGraphs.Extractors.default_gene_gene_configuration">
 <code>MCGraphs.Extractors.default_gene_gene_configuration
 </code>
@@ -463,8 +469,8 @@
 </a>
 </li>
 <li>
-<a href="extractors.html#MCGraphs.Extractors.default_sphere_sphere_configuration">
-<code>MCGraphs.Extractors.default_sphere_sphere_configuration
+<a href="extractors.html#MCGraphs.Extractors.extract_box_box_data">
+<code>MCGraphs.Extractors.extract_box_box_data
 </code>
 </a>
 </li>
@@ -483,12 +489,6 @@
 <li>
 <a href="extractors.html#MCGraphs.Extractors.extract_marker_genes_data">
 <code>MCGraphs.Extractors.extract_marker_genes_data
-</code>
-</a>
-</li>
-<li>
-<a href="extractors.html#MCGraphs.Extractors.extract_sphere_sphere_data">
-<code>MCGraphs.Extractors.extract_sphere_sphere_data
 </code>
 </a>
 </li>

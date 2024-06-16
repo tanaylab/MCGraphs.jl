@@ -220,8 +220,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Plotters.plot_sphere_sphere" href="#MCGraphs.Plotters.plot_sphere_sphere">
-<code>MCGraphs.Plotters.plot_sphere_sphere
+<a class="docstring-binding" id="MCGraphs.Plotters.plot_box_box" href="#MCGraphs.Plotters.plot_box_box">
+<code>MCGraphs.Plotters.plot_box_box
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -230,31 +230,31 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">plot_sphere_sphere(
+<code class="language-julia hljs">plot_box_box(
     daf::DafReader,
     [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
-    x_sphere::AbstractString,
-    y_sphere::AbstractString,
+    x_box::AbstractString,
+    y_box::AbstractString,
     [min_significant_gene_UMIs::Integer = 40,
-    max_sphere_diameter::AbstractFloat = 2.0,
+    max_box_span::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
     confidence::AbstractFloat = 0.9],
 )::PointsGraph
 </code>
 </pre>
-<p>Generate a complete sphere-sphere graph using 
-<a href="extractors.html#MCGraphs.Extractors.extract_sphere_sphere_data">
-<code>extract_sphere_sphere_data
+<p>Generate a complete box-box graph using 
+<a href="extractors.html#MCGraphs.Extractors.extract_box_box_data">
+<code>extract_box_box_data
 </code>
 </a> and 
-<a href="extractors.html#MCGraphs.Extractors.default_sphere_sphere_configuration">
-<code>default_sphere_sphere_configuration
+<a href="extractors.html#MCGraphs.Extractors.default_box_box_configuration">
+<code>default_box_box_configuration
 </code>
 </a>.
 </p>
 <p>Each point in the graph is a gene which has a robust comparable expression (at least 
 <code>min_significant_gene_UMIs
-</code> between both spgeres). A line is attached to each point showing the confidence modification used when deciding on grouping of metacells into spheres.
+</code> between both spgeres). A line is attached to each point showing the confidence modification used when deciding on grouping of metacells into boxes.
 </p>
 </div>
 </section>
@@ -335,6 +335,12 @@
 </a>
 </li>
 <li>
+<a href="plotters.html#MCGraphs.Plotters.plot_box_box">
+<code>MCGraphs.Plotters.plot_box_box
+</code>
+</a>
+</li>
+<li>
 <a href="plotters.html#MCGraphs.Plotters.plot_gene_gene">
 <code>MCGraphs.Plotters.plot_gene_gene
 </code>
@@ -343,12 +349,6 @@
 <li>
 <a href="plotters.html#MCGraphs.Plotters.plot_marker_genes">
 <code>MCGraphs.Plotters.plot_marker_genes
-</code>
-</a>
-</li>
-<li>
-<a href="plotters.html#MCGraphs.Plotters.plot_sphere_sphere">
-<code>MCGraphs.Plotters.plot_sphere_sphere
 </code>
 </a>
 </li>

@@ -4,7 +4,7 @@ Generate complete graphs from a metacells `Daf` for standard graphs.
 module Plotters
 
 export plot_gene_gene
-export plot_sphere_sphere
+export plot_box_box
 export plot_marker_genes
 
 using Daf
@@ -66,45 +66,45 @@ function plot_gene_gene(  # untested
 end
 
 """
-    plot_sphere_sphere(
+    plot_box_box(
         daf::DafReader,
         [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
-        x_sphere::AbstractString,
-        y_sphere::AbstractString,
+        x_box::AbstractString,
+        y_box::AbstractString,
         [min_significant_gene_UMIs::Integer = 40,
-        max_sphere_diameter::AbstractFloat = 2.0,
+        max_box_span::AbstractFloat = 2.0,
         gene_fraction_regularization::AbstractFloat = 1e-5,
         confidence::AbstractFloat = 0.9],
     )::PointsGraph
 
-Generate a complete sphere-sphere graph using [`extract_sphere_sphere_data`](@ref) and
-[`default_sphere_sphere_configuration`](@ref).
+Generate a complete box-box graph using [`extract_box_box_data`](@ref) and
+[`default_box_box_configuration`](@ref).
 
 Each point in the graph is a gene which has a robust comparable expression (at least `min_significant_gene_UMIs` between
 both spgeres). A line is attached to each point showing the confidence modification used when deciding on grouping of
-metacells into spheres.
+metacells into boxes.
 """
-function plot_sphere_sphere(
+function plot_box_box(
     daf::DafReader,
     configuration::PointsGraphConfiguration = PointsGraphConfiguration();
-    x_sphere::AbstractString,
-    y_sphere::AbstractString,
+    x_box::AbstractString,
+    y_box::AbstractString,
     min_significant_gene_UMIs::Integer = 40,
-    max_sphere_diameter::AbstractFloat = 2.0,
+    max_box_span::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
 )::PointsGraph
-    data = extract_sphere_sphere_data(
+    data = extract_box_box_data(
         daf;
-        x_sphere = x_sphere,
-        y_sphere = y_sphere,
+        x_box = x_box,
+        y_box = y_box,
         min_significant_gene_UMIs = min_significant_gene_UMIs,
         gene_fraction_regularization = gene_fraction_regularization,
     )
-    default_sphere_sphere_configuration(
+    default_box_box_configuration(
         configuration;
-        x_sphere = x_sphere,
-        y_sphere = y_sphere,
-        max_sphere_diameter = max_sphere_diameter,
+        x_box = x_box,
+        y_box = y_box,
+        max_box_span = max_box_span,
         gene_fraction_regularization = gene_fraction_regularization,
     )
     return Graph(data, configuration)

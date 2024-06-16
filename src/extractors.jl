@@ -5,11 +5,11 @@ module Extractors
 
 export default_gene_gene_configuration
 export default_marker_genes_configuration
-export default_sphere_sphere_configuration
+export default_box_box_configuration
 export extract_categorical_color_palette
 export extract_gene_gene_data
 export extract_marker_genes_data
-export extract_sphere_sphere_data
+export extract_box_box_data
 
 using Base.Threads
 using Base.Unicode
@@ -22,8 +22,8 @@ using Statistics
 using ..Renderers
 
 import Printf
-import Metacells.Spheres.compute_confidence_log_fraction_of_genes_in_metacells
-import Metacells.Spheres.gene_distance
+import Metacells.Boxes.compute_confidence_log_fraction_of_genes_in_metacells
+import Metacells.Boxes.gene_distance
 
 GENE_FRACTION_FORMAT = Printf.Format("%.1e")
 
@@ -209,24 +209,24 @@ function default_gene_gene_configuration(  # untested
 end
 
 """
-    function extract_sphere_sphere_data(
+    function extract_box_box_data(
         daf::DafReader;
-        x_sphere::AbstractString,
-        y_sphere::AbstractString,
+        x_box::AbstractString,
+        y_box::AbstractString,
         [min_significant_gene_UMIs::Integer = 40,
-        max_sphere_diameter::AbstractFloat = 2.0,
+        max_box_span::AbstractFloat = 2.0,
         gene_fraction_regularization::AbstractFloat = 1e-5],
     )::PointsGraphData
 
-Extract the data for a sphere-sphere graph. This shows why two spheres were not merged (or, if given the same sphere
-name twice, why the sphere was merged).
+Extract the data for a box-box graph. This shows why two boxes were not merged (or, if given the same box
+name twice, why the box was merged).
 """
-function extract_sphere_sphere_data(
+function extract_box_box_data(
     daf::DafReader;
-    x_sphere::AbstractString,
-    y_sphere::AbstractString,
+    x_box::AbstractString,
+    y_box::AbstractString,
     min_significant_gene_UMIs::Integer = 40,
-    max_sphere_diameter::AbstractFloat = 2.0,
+    max_box_span::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
     confidence::AbstractFloat = 0.9,
 )::PointsGraphData
@@ -235,7 +235,7 @@ function extract_sphere_sphere_data(
     names_of_x_metacells,
     total_UMIs_of_x_metacells,
     total_UMIs_of_x_metacells_of_genes,
-    fraction_of_x_metacells_of_genes = read_sphere_sphere_data(daf, x_sphere)
+    fraction_of_x_metacells_of_genes = read_box_box_data(daf, x_box)
     log_decreased_fraction_of_genes_in_x_metacells, log_increased_fraction_of_genes_in_x_metacells =
         compute_confidence_log_fraction_of_genes_in_metacells(;
             gene_fraction_regularization = gene_fraction_regularization,
@@ -247,7 +247,7 @@ function extract_sphere_sphere_data(
     log_increased_fraction_of_x_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_x_metacells)
     @assert all(log_decreased_fraction_of_x_metacells_of_genes .<= log_increased_fraction_of_x_metacells_of_genes)
 
-    is_self_difference = x_sphere == y_sphere
+    is_self_difference = x_box == y_box
     if is_self_difference
         names_of_y_metacells, total_UMIs_of_y_metacells_of_genes, fraction_of_y_metacells_of_genes =
             names_of_x_metacells, total_UMIs_of_x_metacells_of_genes, fraction_of_x_metacells_of_genes
@@ -257,7 +257,7 @@ function extract_sphere_sphere_data(
         names_of_y_metacells,
         total_UMIs_of_y_metacells,
         total_UMIs_of_y_metacells_of_genes,
-        fraction_of_y_metacells_of_genes = read_sphere_sphere_data(daf, y_sphere)
+        fraction_of_y_metacells_of_genes = read_box_box_data(daf, y_box)
         log_decreased_fraction_of_genes_in_y_metacells, log_increased_fraction_of_genes_in_y_metacells =
             compute_confidence_log_fraction_of_genes_in_metacells(;
                 gene_fraction_regularization = gene_fraction_regularization,
@@ -328,9 +328,9 @@ function extract_sphere_sphere_data(
     end
 
     is_lateral_of_genes = get_vector(daf, "gene", "is_lateral")
-    main_neighborhoods_of_spheres = get_vector(daf, "sphere", "neighborhood.main")
-    x_neighborhood = main_neighborhoods_of_spheres[x_sphere]
-    y_neighborhood = main_neighborhoods_of_spheres[y_sphere]
+    main_neighborhoods_of_boxes = get_vector(daf, "box", "neighborhood.main")
+    x_neighborhood = main_neighborhoods_of_boxes[x_box]
+    y_neighborhood = main_neighborhoods_of_boxes[y_box]
 
     is_correlated_of_x_neighborhood_of_genes =
         get_query(daf, Axis("neighborhood") |> IsEqual(x_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
@@ -348,39 +348,37 @@ function extract_sphere_sphere_data(
     borders_colors = Vector{AbstractString}(undef, n_significant_genes * 3)
 
     not_correlated = "uncorrelated for both"
-    x_correlated = "correlated for $(x_sphere)"
-    y_correlated = "correlated for $(y_sphere)"
+    x_correlated = "correlated for $(x_box)"
+    y_correlated = "correlated for $(y_box)"
     xy_correlated = "correlated for both"
 
-    diameters_of_neighborhoods = get_vector(daf, "neighborhood", "diameter")
-    is_member_of_spheres_in_neighborhoods = get_matrix(daf, "sphere", "neighborhood", "is_member")
+    spans_of_neighborhoods = get_vector(daf, "neighborhood", "span")
+    is_member_of_boxes_in_neighborhoods = get_matrix(daf, "box", "neighborhood", "is_member")
     if x_neighborhood == y_neighborhood
-        neighborhood_diameter = diameters_of_neighborhoods[x_neighborhood]
-        x_axis_title = "$(x_sphere) (main: $(x_neighborhood) diameter: $(neighborhood_diameter))"
-        y_axis_title = "$(y_sphere) (main: $(y_neighborhood) diameter: $(neighborhood_diameter))"
+        neighborhood_span = spans_of_neighborhoods[x_neighborhood]
+        x_axis_title = "$(x_box) (main: $(x_neighborhood) span: $(neighborhood_span))"
+        y_axis_title = "$(y_box) (main: $(y_neighborhood) span: $(neighborhood_span))"
     else
-        x_diameter = diameters_of_neighborhoods[x_neighborhood]
-        is_x_sphere_member_of_main_neighborhood_of_y_sphere =
-            is_member_of_spheres_in_neighborhoods[x_sphere, y_neighborhood]
-        if is_x_sphere_member_of_main_neighborhood_of_y_sphere
+        x_span = spans_of_neighborhoods[x_neighborhood]
+        is_x_box_member_of_main_neighborhood_of_y_box = is_member_of_boxes_in_neighborhoods[x_box, y_neighborhood]
+        if is_x_box_member_of_main_neighborhood_of_y_box
             x_is_not = "is"
         else
             x_is_not = "not"
         end
-        x_axis_title = "$(x_sphere) (main: $(x_neighborhood) diameter: $(x_diameter), $(x_is_not) in: $(y_neighborhood))"
+        x_axis_title = "$(x_box) (main: $(x_neighborhood) span: $(x_span), $(x_is_not) in: $(y_neighborhood))"
 
-        y_diameter = diameters_of_neighborhoods[x_neighborhood]
+        y_span = spans_of_neighborhoods[x_neighborhood]
 
-        is_y_sphere_member_of_main_neighborhood_of_x_sphere =
-            is_member_of_spheres_in_neighborhoods[y_sphere, x_neighborhood]
-        if is_y_sphere_member_of_main_neighborhood_of_x_sphere
+        is_y_box_member_of_main_neighborhood_of_x_box = is_member_of_boxes_in_neighborhoods[y_box, x_neighborhood]
+        if is_y_box_member_of_main_neighborhood_of_x_box
             y_is_not = "is"
         else
             y_is_not = "not"
         end
-        y_axis_title = "$(y_sphere) (main: $(y_neighborhood) diameter: $(y_diameter), $(y_is_not) in: $(x_neighborhood))"
+        y_axis_title = "$(y_box) (main: $(y_neighborhood) span: $(y_span), $(y_is_not) in: $(x_neighborhood))"
 
-        neighborhood_diameter = x_diameter
+        neighborhood_span = x_span
     end
 
     edge_index = 0
@@ -412,19 +410,19 @@ function extract_sphere_sphere_data(
         end
 
         if is_self_difference
-            x_label, y_label = "$(x_sphere) low:", "$(x_sphere) high:"
+            x_label, y_label = "$(x_box) low:", "$(x_box) high:"
         else
-            x_label, y_label = "$(x_sphere):", "$(y_sphere):"
+            x_label, y_label = "$(x_box):", "$(y_box):"
         end
 
-        @assert neighborhood_diameter > max_sphere_diameter
+        @assert neighborhood_span > max_box_span
 
         borders_colors[point_index] = "not a certificate"
         if points_colors[point_index] != not_correlated && !is_lateral_of_genes[gene_index]
-            if distance_of_genes[gene_index] >= neighborhood_diameter
-                borders_colors[point_index] = "certificate for $(x_sphere) neighborhood"
-            elseif distance_of_genes[gene_index] >= max_sphere_diameter
-                borders_colors[point_index] = "certificate for $(x_sphere) sphere"
+            if distance_of_genes[gene_index] >= neighborhood_span
+                borders_colors[point_index] = "certificate for $(x_box) neighborhood"
+            elseif distance_of_genes[gene_index] >= max_box_span
+                borders_colors[point_index] = "certificate for $(x_box) box"
             end
         end
 
@@ -481,7 +479,7 @@ function extract_sphere_sphere_data(
     resize!(edges_points, edge_index)
 
     return PointsGraphData(;
-        figure_title = "Spheres Genes Difference",
+        figure_title = "Boxes Genes Difference",
         x_axis_title = x_axis_title,
         y_axis_title = y_axis_title,
         points_colors_title = "Genes",
@@ -497,16 +495,16 @@ function extract_sphere_sphere_data(
     )
 end
 
-function read_sphere_sphere_data(  # untested
+function read_box_box_data(  # untested
     daf::DafReader,
-    sphere::AbstractString,
+    box::AbstractString,
 )::Tuple{
     AbstractVector{<:AbstractString},
     AbstractVector{<:Unsigned},
     AbstractMatrix{<:Unsigned},
     AbstractMatrix{<:AbstractFloat},
 }
-    metacells_query = Axis("metacell") |> And("sphere") |> IsEqual(sphere)
+    metacells_query = Axis("metacell") |> And("box") |> IsEqual(box)
     names_of_metacells = get_query(daf, metacells_query |> Lookup("name")).array
     total_UMIs_of_metacells = get_query(daf, metacells_query |> Lookup("total_UMIs")).array
     total_UMIs_of_metacells_of_genes = get_query(daf, metacells_query |> Axis("gene") |> Lookup("total_UMIs")).array
@@ -607,28 +605,28 @@ function compute_most_different_metacells_of_gene(;  # untested
 end
 
 """
-    default_sphere_sphere_configuration(
+    default_box_box_configuration(
         [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
-        x_sphere::AbstractString,
-        y_sphere::AbstractString,
+        x_box::AbstractString,
+        y_box::AbstractString,
         x_neighborhood::AbstractString,
-        [max_sphere_diameter::AbstractFloat = 2.0,
+        [max_box_span::AbstractFloat = 2.0,
         gene_fraction_regularization::AbstractFloat = 1e-5],
     )::PointsGraphConfiguration
 
-Return a default configuration for a sphere-sphere graph. Will modify `configuration` in-place and return it.
+Return a default configuration for a box-box graph. Will modify `configuration` in-place and return it.
 """
-function default_sphere_sphere_configuration(  # untested
+function default_box_box_configuration(  # untested
     configuration::PointsGraphConfiguration = PointsGraphConfiguration();
-    x_sphere::AbstractString,
-    y_sphere::AbstractString,
-    max_sphere_diameter::AbstractFloat = 2.0,
+    x_box::AbstractString,
+    y_box::AbstractString,
+    max_box_span::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
 )::PointsGraphConfiguration
     @assert gene_fraction_regularization === nothing || gene_fraction_regularization >= 0
-    configuration.diagonal_bands.low.offset = 2^-max_sphere_diameter
+    configuration.diagonal_bands.low.offset = 2^-max_box_span
     configuration.diagonal_bands.middle.offset = 1.0
-    configuration.diagonal_bands.high.offset = 2^max_sphere_diameter
+    configuration.diagonal_bands.high.offset = 2^max_box_span
     configuration.x_axis.log_regularization = gene_fraction_regularization
     configuration.y_axis.log_regularization = gene_fraction_regularization
     configuration.edges_over_points = false
@@ -638,14 +636,14 @@ function default_sphere_sphere_configuration(  # untested
     configuration.points.color_palette = [
         ("lateral", "grey"),
         ("uncorrelated for both", "salmon"),
-        ("correlated for $(x_sphere)", "seagreen"),
-        ("correlated for $(y_sphere)", "royalblue"),
+        ("correlated for $(x_box)", "seagreen"),
+        ("correlated for $(y_box)", "royalblue"),
         ("correlated for both", "darkturquoise"),
     ]
     configuration.borders.color_palette = [
         ("not a certificate", "lavender"),
-        ("certificate for $(x_sphere) sphere", "mediumpurple"),
-        ("certificate for $(x_sphere) neighborhood", "mediumorchid"),
+        ("certificate for $(x_box) box", "mediumpurple"),
+        ("certificate for $(x_box) neighborhood", "mediumorchid"),
     ]
     return configuration
 end
