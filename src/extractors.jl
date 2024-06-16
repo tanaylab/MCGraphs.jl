@@ -465,8 +465,13 @@ function extract_box_box_data(
             point_index += 1
             points_xs[point_index] = x_confidence_fraction_of_genes[gene_index]
             points_ys[point_index] = y_confidence_fraction_of_genes[gene_index]
-            points_ys[point_index] =
-                points_xs[point_index] * (points_ys[point_index] / points_xs[point_index])^(1 - divergence)
+            if points_ys[point_index] > points_xs[point_index]
+                points_ys[point_index] =
+                    points_xs[point_index] * (points_ys[point_index] / points_xs[point_index])^(1 - divergence)
+            else
+                points_xs[point_index] =
+                    points_ys[point_index] * (points_xs[point_index] / points_ys[point_index])^(1 - divergence)
+            end
             points_colors[point_index] = ""
             points_hovers[point_index] = ""
             borders_colors[point_index] = ""
