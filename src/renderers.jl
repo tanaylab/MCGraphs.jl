@@ -4608,6 +4608,7 @@ function graph_to_figure(graph::GridGraph)::PlotlyFigure
         rows_names = rows_names,
         columns_names = columns_names,
     )
+    layout[:shapes] = [borders_rectangle(nothing, nothing)]
     return plotly_figure(traces, layout)
 end
 
@@ -5556,6 +5557,9 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
         :domain => y_axis_domain,
     )
 
+    shapes = [borders_rectangle(x_axis_domain, y_axis_domain)]
+    layout[:shapes] = shapes
+
     coloraxis_index = 1
 
     if columns_annotations !== nothing
@@ -5573,12 +5577,17 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
                 :reversescale => annotations_configuration.reverse_color_scale,
             )
             top_size = bottom_size + annotations_configuration.size
+            domain = [bottom_size, top_size]
+            bottom_size = top_size
             layout[Symbol("yaxis$(annotations_index + 1)")] = Dict(
+                :showgrid => graph.configuration.figure.show_grid,
                 :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
                 :tickvals => [0],
-                :domain => [bottom_size, top_size],
+                :domain => domain,
             )
-            bottom_size = top_size
+            if shapes !== nothing
+                push!(shapes, borders_rectangle(x_axis_domain, domain))
+            end
         end
     end
 
@@ -5597,17 +5606,45 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
                 :reversescale => annotations_configuration.reverse_color_scale,
             )
             top_size = bottom_size + annotations_configuration.size
+            domain = [bottom_size, top_size]
+            bottom_size = top_size
             layout[Symbol("xaxis$(annotations_index + 1)")] = Dict(
+                :showgrid => graph.configuration.figure.show_grid,
                 :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
                 :tickvals => [0],
                 :tickangle => -90,
-                :domain => [bottom_size, top_size],
+                :domain => domain,
             )
-            bottom_size = top_size
+            if shapes !== nothing
+                push!(shapes, borders_rectangle(domain, y_axis_domain))
+            end
         end
     end
 
     return layout
+end
+
+function borders_rectangle(x_domain::Maybe{Vector{<:Real}}, y_domain::Maybe{Vector{<:Real}})::Dict
+    x0, x1 = domain_low_high(x_domain)
+    y0, y1 = domain_low_high(y_domain)
+    return Dict(
+        :type => "rectangle",
+        :x0 => x0,
+        :x1 => x1,
+        :y0 => y0,
+        :y1 => y1,
+        :xref => "paper",
+        :yref => "paper",
+        :line => Dict(:width => 1),
+    )
+end
+
+function domain_low_high(::Nothing)::Tuple{Real, Real}
+    return 0, 1
+end
+
+function domain_low_high(domain::Vector{<:Real})::Tuple{Real, Real}
+    return domain[1], domain[2]
 end
 
 function log_color_scale_ticks(
