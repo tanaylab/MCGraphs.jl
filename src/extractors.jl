@@ -218,6 +218,7 @@ end
         [min_significant_gene_UMIs::Integer = 40,
         max_box_span::AbstractFloat = 2.0,
         gene_fraction_regularization::AbstractFloat = 1e-5],
+        fold_confidence::AbstractFloat = 0.9,
     )::PointsGraphData
 
 Extract the data for a box-box graph. This shows why two boxes were not merged (or, if given the same box
@@ -230,7 +231,7 @@ function extract_box_box_data(
     min_significant_gene_UMIs::Integer = 40,
     max_box_span::AbstractFloat = 2.0,
     gene_fraction_regularization::AbstractFloat = 1e-5,
-    confidence::AbstractFloat = 0.9,
+    fold_confidence::AbstractFloat = 0.9,
 )::PointsGraphData
     @assert gene_fraction_regularization > 0
 
@@ -243,7 +244,7 @@ function extract_box_box_data(
             gene_fraction_regularization = gene_fraction_regularization,
             fraction_of_genes_in_metacells = transposer!(fraction_of_x_metacells_of_genes),
             total_UMIs_of_metacells = total_UMIs_of_x_metacells,
-            confidence = confidence,
+            fold_confidence = fold_confidence,
         )
     log_decreased_fraction_of_x_metacells_of_genes = transposer!(log_decreased_fraction_of_genes_in_x_metacells)
     log_increased_fraction_of_x_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_x_metacells)
@@ -265,7 +266,7 @@ function extract_box_box_data(
                 gene_fraction_regularization = gene_fraction_regularization,
                 fraction_of_genes_in_metacells = transposer!(fraction_of_y_metacells_of_genes),
                 total_UMIs_of_metacells = total_UMIs_of_y_metacells,
-                confidence = confidence,
+                fold_confidence = fold_confidence,
             )
         log_decreased_fraction_of_y_metacells_of_genes = transposer!(log_decreased_fraction_of_genes_in_y_metacells)
         log_increased_fraction_of_y_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_y_metacells)
