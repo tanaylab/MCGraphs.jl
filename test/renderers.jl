@@ -3059,6 +3059,20 @@ nested_test("renderers") do
                 return nothing
             end
 
+            nested_test("~gap") do
+                graph.data.figure_title = "Graph"
+                graph.configuration.annotations_gap = -0.1
+                @test_throws "negative annotations_gap: -0.1" graph.figure
+                return nothing
+            end
+
+            nested_test("!gap") do
+                graph.data.figure_title = "Graph"
+                graph.configuration.annotations_gap = 0
+                test_html(graph, "heatmap.annotations.!gap.html")
+                return nothing
+            end
+
             nested_test("!values") do
                 graph.data.columns_annotations = [AnnotationsData(; values = [2, 1])]
                 @test_throws dedent("""

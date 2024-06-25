@@ -5079,6 +5079,7 @@ end
         figure::FigureConfiguration = FigureConfiguration()
         entries::EntriesConfiguration = EntriesConfiguration()
         annotations::Dict{<:AbstractString,AnnotationsConfiguration} = Dict{String,AnnotationsConfiguration}()
+        annotations_gap::AbstractFloat = 0.005
     end
 
 Configure a graph showing a heatmap.
@@ -5088,15 +5089,20 @@ each rectangle. An advantage of this over a grid is that it can handle large amo
 limitations, you still need to manually tweak the graph size for best results.
 
 The `annotations` specify the colors for any annotations attached to the rows and/or columns axes. The key is the
-`color_scale` of the [`AnnotationsData`](@ref).
+`color_scale` of the [`AnnotationsData`](@ref). A white space of `annotations_gap` will be left around the annotations.
+Due to Plotly's limitations, this is a fraction of the total size of the graph, instead of an absolute size.
 """
 @kwdef mutable struct HeatmapGraphConfiguration <: AbstractGraphConfiguration
     figure::FigureConfiguration = FigureConfiguration()
     entries::EntriesConfiguration = EntriesConfiguration()
     annotations::Dict{<:AbstractString, AnnotationsConfiguration} = Dict{String, AnnotationsConfiguration}()
+    annotations_gap::AbstractFloat = 0.005
 end
 
 function Validations.validate_object(configuration::HeatmapGraphConfiguration)::Maybe{AbstractString}
+    if configuration.annotations_gap < 0
+        error("negative annotations_gap: $(configuration.annotations_gap)")
+    end
     message = validate_graph_configuration(configuration.figure)
     if message === nothing
         message = validate_entries_configuration("entries", configuration.entries)
@@ -5494,8 +5500,13 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
         y_axis_domain = nothing
     else
         total_size = sum([
-            annotations_data.name === nothing ? 0.05 : graph.configuration.annotations[annotations_data.name].size
-            for annotations_data in columns_annotations
+            (
+                if annotations_data.name === nothing
+                    0.05
+                else
+                    graph.configuration.annotations[annotations_data.name].size
+                end
+            ) + graph.configuration.annotations_gap for annotations_data in columns_annotations
         ])
         y_axis_domain = [total_size, 1]
         y_axis_index += length(columns_annotations)
@@ -5507,8 +5518,13 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
         x_axis_domain = nothing
     else
         total_size = sum([
-            annotations_data.name === nothing ? 0.05 : graph.configuration.annotations[annotations_data.name].size
-            for annotations_data in rows_annotations
+            (
+                if annotations_data.name === nothing
+                    0.05  # untested
+                else
+                    graph.configuration.annotations[annotations_data.name].size
+                end
+            ) + graph.configuration.annotations_gap for annotations_data in rows_annotations
         ])
         x_axis_domain = [total_size, 1]
         x_axis_index += length(rows_annotations)
@@ -5578,7 +5594,7 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
             )
             top_size = bottom_size + annotations_configuration.size
             domain = [bottom_size, top_size]
-            bottom_size = top_size
+            bottom_size = top_size + graph.configuration.annotations_gap
             layout[Symbol("yaxis$(annotations_index + 1)")] = Dict(
                 :showgrid => graph.configuration.figure.show_grid,
                 :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
@@ -5607,7 +5623,7 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
             )
             top_size = bottom_size + annotations_configuration.size
             domain = [bottom_size, top_size]
-            bottom_size = top_size
+            bottom_size = top_size + graph.configuration.annotations_gap
             layout[Symbol("xaxis$(annotations_index + 1)")] = Dict(
                 :showgrid => graph.configuration.figure.show_grid,
                 :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],

@@ -1917,6 +1917,7 @@ end
     figure::FigureConfiguration = FigureConfiguration()
     entries::EntriesConfiguration = EntriesConfiguration()
     annotations::Dict{&lt;:AbstractString,AnnotationsConfiguration} = Dict{String,AnnotationsConfiguration}()
+    annotations_gap::AbstractFloat = 0.005
 end
 </code>
 </pre>
@@ -1932,7 +1933,9 @@ end
 <a href="renderers.html#MCGraphs.Renderers.AnnotationsData">
 <code>AnnotationsData
 </code>
-</a>.
+</a>. A white space of 
+<code>annotations_gap
+</code> will be left around the annotations. Due to Plotly&#39;s limitations, this is a fraction of the total size of the graph, instead of an absolute size.
 </p>
 </div>
 </section>
