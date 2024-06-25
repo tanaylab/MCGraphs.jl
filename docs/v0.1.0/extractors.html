@@ -174,8 +174,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Extractors.extract_gene_gene_data" href="#MCGraphs.Extractors.extract_gene_gene_data">
-<code>MCGraphs.Extractors.extract_gene_gene_data
+<a class="docstring-binding" id="MCGraphs.Extractors.extract_metacells_gene_gene_data" href="#MCGraphs.Extractors.extract_metacells_gene_gene_data">
+<code>MCGraphs.Extractors.extract_metacells_gene_gene_data
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -184,27 +184,24 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">extract_gene_gene_data(
+<code class="language-julia hljs">extract_metacells_gene_gene_data(
     daf::DafReader;
     x_gene::AbstractString,
     y_gene::AbstractString,
-    axis::QueryString,
-    [min_significant_gene_UMIs::Integer = 40,
-    color::Maybe{QueryString} = nothing,
-    entries_hovers::Maybe{FrameColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
-    genes_hovers::Maybe{FrameColumns} = nothing],
+    min_significant_gene_UMIs::Integer = 40,
+    color_query::Maybe{QueryString} = &quot;: type =&gt; color&quot;,
+    colors_title::Maybe{AbstractString} = &quot;Type&quot;,
+    metacells_hovers::Maybe{FrameColumns} = [&quot;type&quot; =&gt; &quot;=&quot;],
 )::PointsGraphData
 </code>
 </pre>
-<p>Extract the data for a gene-gene graph from the 
+<p>Extract the data for a metacells gene-gene graph from the 
 <code>daf
 </code> data. The X coordinate of each point is the fraction of the 
 <code>x_gene
 </code> and the Y coordinate of each gene is the fraction of the 
 <code>y_gene
-</code> in each of the entries of the 
-<code>axis
-</code>. By default we show the genes fractions of all metacells.
+</code> in each of the metacells.
 </p>
 <p>We ignore genes that don&#39;t have at least 
 <code>min_significant_gene_UMIs
@@ -212,15 +209,163 @@
 </p>
 <p>If a 
 <code>colors_query
-</code> is specified, it can be a suffix of a query that fetches a value for each entry of the 
-<code>axis
-</code>, or a full query that groups by the axis. By default we color by the type of the 
-<code>axis
-</code>.
+</code> is specified, it can be a suffix of a query that fetches a value for each metacell, or a full query that groups by metacells. By default we color by the type of the metacell. The 
+<code>colors_title
+</code> is used for the legend.
 </p>
-<p>Anything listed in 
-<code>hovers
-</code> will be collected per metacell and used in the hover data.
+<p>For each metacell point, the hover will include the 
+<code>metacells_hovers
+</code> per-metacell data.
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>metacell
+</strong> (required): Minimal-sized groups of cells for robust point estimates.
+</p>
+<p>
+<strong>type
+</strong> (required): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>metacell @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of all the genes in each metacell.
+</p>
+<p>
+<strong>metacell @ type
+</strong>::AbstractString (optional): The type each metacell belongs to.
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, metacell @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each metacell.
+</p>
+<p>
+<strong>gene, metacell @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of each gene in each metacell.
+</p>
+<p>Additional inputs may be used depending to the query parameter(s).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Extractors.extract_boxes_gene_gene_data" href="#MCGraphs.Extractors.extract_boxes_gene_gene_data">
+<code>MCGraphs.Extractors.extract_boxes_gene_gene_data
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">extract_boxes_gene_gene_data(
+    daf::DafReader;
+    x_gene::AbstractString,
+    y_gene::AbstractString,
+    min_significant_gene_UMIs::Integer = 40,
+    color_query::Maybe{QueryString} = &quot;: type =&gt; color&quot;,
+    colors_title::Maybe{AbstractString} = &quot;Type&quot;,
+    boxes_hovers::Maybe{FrameColumns} = [&quot;type&quot; =&gt; &quot;=&quot;],
+)::PointsGraphData
+</code>
+</pre>
+<p>Extract the data for a boxes gene-gene graph from the 
+<code>daf
+</code> data. The X coordinate of each point is the fraction of the 
+<code>x_gene
+</code> and the Y coordinate of each gene is the fraction of the 
+<code>y_gene
+</code> in each of the boxes.
+</p>
+<p>We ignore genes that don&#39;t have at least 
+<code>min_significant_gene_UMIs
+</code> between both entries.
+</p>
+<p>If a 
+<code>colors_query
+</code> is specified, it can be a suffix of a query that fetches a value for each box, or a full query that groups by boxes. By default we color by the type of the box. The 
+<code>colors_title
+</code> is used for the legend.
+</p>
+<p>For each box point, the hover will include the 
+<code>boxes_hovers
+</code> per-box data.
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>box
+</strong> (required): Distinct groups of metacells with &quot;very close&quot; estimated cell state.
+</p>
+<p>
+<strong>type
+</strong> (required): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>box @ neighborhood.main
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of all the genes in each box.
+</p>
+<p>
+<strong>box @ type
+</strong>::AbstractString (optional): The type each box belongs to.
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, box @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each box.
+</p>
+<p>
+<strong>gene, box @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of each gene in each box.
+</p>
+<p>Additional inputs may be used depending to the query parameter(s).
 </p>
 </div>
 </section>
@@ -245,12 +390,84 @@
     y_box::AbstractString,
     [min_significant_gene_UMIs::Integer = 40,
     max_box_span::AbstractFloat = 2.0,
-    gene_fraction_regularization::AbstractFloat = 1e-5],
+    gene_fraction_regularization::AbstractFloat = 1.0e-5],
     fold_confidence::AbstractFloat = 0.9,
 )::PointsGraphData
 </code>
 </pre>
 <p>Extract the data for a box-box graph. This shows why two boxes were not merged (or, if given the same box name twice, why the box was merged).
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>metacell
+</strong> (required): Minimal-sized groups of cells for robust point estimates.
+</p>
+<p>
+<strong>box
+</strong> (required): Distinct groups of metacells with &quot;very close&quot; estimated cell state.
+</p>
+<p>
+<strong>neighborhood
+</strong> (required): Overlapping groups of boxes with &quot;close&quot; estimated cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>metacell @ box
+</strong>::AbstractString (required): The unique box each metacell belongs to.
+</p>
+<p>
+<strong>metacell @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of all the genes in each metacell.
+</p>
+<p>
+<strong>gene @ is_lateral
+</strong>::Bool (required): A mask of genes that are lateral to the biological behaviors of interest.
+</p>
+<p>
+<strong>gene @ divergence
+</strong>::Union{Float32, Float64} (required): Scale fold factors of each gene by multiplying with (1 - divergence) of the gene.
+</p>
+<p>
+<strong>box @ neighborhood.main
+</strong>::AbstractString (required): The unique main neighborhood of each box.
+</p>
+<p>
+<strong>neighborhood @ span
+</strong>::Union{Float32, Float64} (required): The span (fold factor) used to compute the neighborhood.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, metacell @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each metacell.
+</p>
+<p>
+<strong>gene, metacell @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of each gene in each metacell.
+</p>
+<p>
+<strong>gene, neighborhood @ is_correlated
+</strong>::Bool (required): Which genes are correlated in each neighborhood.
+</p>
+<p>
+<strong>box, neighborhood @ is_member
+</strong>::Bool (required): A mask of the member boxes of each neighborhood.
 </p>
 </div>
 </section>
@@ -259,8 +476,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Extractors.extract_marker_genes_data" href="#MCGraphs.Extractors.extract_marker_genes_data">
-<code>MCGraphs.Extractors.extract_marker_genes_data
+<a class="docstring-binding" id="MCGraphs.Extractors.extract_metacells_marker_genes_data" href="#MCGraphs.Extractors.extract_metacells_marker_genes_data">
+<code>MCGraphs.Extractors.extract_metacells_marker_genes_data
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -269,27 +486,25 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">function extract_marker_genes_data(
+<code class="language-julia hljs">function extract_metacells_marker_genes_data(
     daf::DafReader;
-    [axis::AbstractString = &quot;metacell&quot;,
-    min_marker_genes::Integer = 100,
-    type_property::Maybe{AbstractString} = &quot;type&quot;,
+    [gene_names::Maybe{Vector{AbstractString}} = nothing,
+    max_marker_genes::Integer = 100,
+    gene_fraction_regularization::AbstractFloat = 1.0e-5,
+    type_annotation::Bool = true,
     expression_annotations::Maybe{FrameColumns} = nothing,
     gene_annotations::Maybe{FrameColumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
-    gene_names::Maybe{Vector{AbstractString}} = nothing],
-    reorder_by_type::Bool = true,
+    reorder_by_type::Bool = true]
 )::HeatmapGraphData
 </code>
 </pre>
-<p>Extract the data for a marker genes graph. This shows the genes that most distinguish between metacells (or profiles using another axis). Type annotations are added based on the 
-<code>type_property
-</code> (which should name an axis with a 
-<code>color
-</code> property), and optional 
+<p>Extract the data for a metacells marker genes graph. This shows the genes that most distinguish between metacells. If set, 
+<code>type_annotation
+</code> is is added based on the type of each metacell. Optional 
 <code>expression_annotations
 </code> and 
 <code>gene_annotations
-</code>.
+</code> are added as well.
 </p>
 <p>If 
 <code>gene_names
@@ -303,13 +518,179 @@
 <code>min_marker_genes
 </code>.
 </p>
-<p>The data is clustered to show the structure of both genes and metacells (or profiles using another axis). If 
+<p>If 
+<code>named_gene_annotation
+</code> is set, and any 
+<code>gene_names
+</code> were specified, then this is added as a gene annotation called &quot;named&quot;.
+</p>
+<p>The data is clustered to show the structure of both genes and metacells. If 
+<code>reorder_by_type
+</code> is specified, then the profiles are reordered so that each type is contiguous.
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>metacell
+</strong> (required): Minimal-sized groups of cells for robust point estimates.
+</p>
+<p>
+<strong>type
+</strong> (optional): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>gene @ divergence
+</strong>::Union{Float32, Float64} (required): Scale fold factors of each gene by multiplying with (1 - divergence) of the gene.
+</p>
+<p>
+<strong>gene @ is_lateral
+</strong>::Bool (optional): A mask of genes that are lateral to the biological behaviors of interest.
+</p>
+<p>
+<strong>box @ type
+</strong>::AbstractString (optional): The type each box belongs to.
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, box @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each box.
+</p>
+<p>Additional inputs may be used depending to the query parameter(s).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Extractors.extract_boxes_marker_genes_data" href="#MCGraphs.Extractors.extract_boxes_marker_genes_data">
+<code>MCGraphs.Extractors.extract_boxes_marker_genes_data
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function extract_boxes_marker_genes_data(
+    daf::DafReader;
+    [gene_names::Maybe{Vector{AbstractString}} = nothing,
+    max_marker_genes::Integer = 100,
+    gene_fraction_regularization::AbstractFloat = 1.0e-5,
+    type_annotation::Bool = true,
+    expression_annotations::Maybe{FrameColumns} = nothing,
+    named_gene_annotation::Bool = true,
+    gene_annotations::Maybe{FrameColumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
+    reorder_by_type::Bool = true]
+)::HeatmapGraphData
+</code>
+</pre>
+<p>Extract the data for a boxes marker genes graph. This shows the genes that most distinguish between boxes. If set, 
+<code>type_annotation
+</code> is is added based on the type of each box. Optional 
+<code>expression_annotations
+</code> and 
+<code>gene_annotations
+</code> are added as well.
+</p>
+<p>If 
+<code>gene_names
+</code> is specified, these genes will always appear in the graph. This list is supplemented with additional 
+<code>is_marker
+</code> genes to show at least 
+<code>min_marker_genes
+</code>. A number of strongest such genes is chosen from each profile, such that the total number of these genes together with the forced 
+<code>gene_names
+</code> is at least 
+<code>min_marker_genes
+</code>.
+</p>
+<p>If 
+<code>named_gene_annotation
+</code> is set, and any 
+<code>gene_names
+</code> were specified, then this is added as a gene annotation called &quot;named&quot;.
+</p>
+<p>The data is clustered to show the structure of both genes and boxes. If 
 <code>reorder_by_type
 </code> is specified, and 
 <code>type_property
 </code> is not be 
 <code>nothing
 </code>, then the profiles are reordered so that each type is contiguous.
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>box
+</strong> (required): Distinct groups of metacells with &quot;very close&quot; estimated cell state.
+</p>
+<p>
+<strong>type
+</strong> (optional): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>gene @ divergence
+</strong>::Union{Float32, Float64} (required): Scale fold factors of each gene by multiplying with (1 - divergence) of the gene.
+</p>
+<p>
+<strong>gene @ is_lateral
+</strong>::Bool (optional): A mask of genes that are lateral to the biological behaviors of interest.
+</p>
+<p>
+<strong>box @ type
+</strong>::AbstractString (optional): The type each box belongs to.
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, box @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each box.
+</p>
+<p>Additional inputs may be used depending to the query parameter(s).
 </p>
 </div>
 </section>
@@ -326,35 +707,6 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Extractors.extract_categorical_color_palette" href="#MCGraphs.Extractors.extract_categorical_color_palette">
-<code>MCGraphs.Extractors.extract_categorical_color_palette
-</code>
-</a> — 
-<span class="docstring-category">Function
-</span>
-</header>
-<section>
-<div>
-<pre>
-<code class="language-julia hljs">extract_categorical_color_palette(
-    daf::DafReader,
-    query::QueryString
-)::AbstractVector{&lt;:AbstractString, &lt;:AbstractString}
-</code>
-</pre>
-<p>Convert the results of a 
-<code>query
-</code> to a color palette for rendering. The query must return a named vector of strings; the names are taken to be the values and the strings are taken to be the color names. For example, 
-<code>extract_categorical_color_palette(daf, q&quot;/ type : color&quot;)
-</code> will return a color palette mapping each type to its color.
-</p>
-</div>
-</section>
-</article>
-<article class="docstring">
-<header>
-<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
-</a>
 <a class="docstring-binding" id="MCGraphs.Extractors.default_gene_gene_configuration" href="#MCGraphs.Extractors.default_gene_gene_configuration">
 <code>MCGraphs.Extractors.default_gene_gene_configuration
 </code>
@@ -366,12 +718,14 @@
 <div>
 <pre>
 <code class="language-julia hljs">default_gene_gene_configuration(
+    daf::DafReader,
     configuration = PointsGraphConfiguration();
-    [gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5],
+    [color_query::Maybe{QueryString} = &quot;/ type : color&quot;,
+    gene_fraction_regularization::Maybe{AbstractFloat} = 1.0e-5]
 )::PointsGraphConfiguration
 </code>
 </pre>
-<p>Return a default configuration for a gene-gene graph. This just applies the log scale to the axes. Will modify 
+<p>Return a default configuration for a gene-gene graph. This applies the log scale to the axes, and sets up the color palette. Will modify 
 <code>configuration
 </code> in-place and return it.
 </p>
@@ -398,7 +752,7 @@
     y_box::AbstractString,
     x_neighborhood::AbstractString,
     [max_box_span::AbstractFloat = 2.0,
-    gene_fraction_regularization::AbstractFloat = 1e-5],
+    gene_fraction_regularization::AbstractFloat = 1.0e-5],
 )::PointsGraphConfiguration
 </code>
 </pre>
@@ -426,7 +780,7 @@
 <code class="language-julia hljs">default_marker_genes_configuration(
     daf::DafReader,
     [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-    type_property::Maybe{AbstractString} = &quot;type&quot;,
+    type_annotation::Bool = true,
     min_significant_fold::Real = 0.5,
     max_significant_fold::Real = 3.0],
 )::HeatmapGraphConfiguration
@@ -441,6 +795,30 @@
 </code> are colored in white. The color scale continues until 
 <code>max_significant_fold
 </code>.
+</p>
+<p>If 
+<code>type_annotation
+</code> is set, sets up the color palette for the type annotations.
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>type
+</strong> (optional): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
 </p>
 </div>
 </section>
@@ -485,20 +863,26 @@
 </a>
 </li>
 <li>
-<a href="extractors.html#MCGraphs.Extractors.extract_categorical_color_palette">
-<code>MCGraphs.Extractors.extract_categorical_color_palette
+<a href="extractors.html#MCGraphs.Extractors.extract_boxes_gene_gene_data">
+<code>MCGraphs.Extractors.extract_boxes_gene_gene_data
 </code>
 </a>
 </li>
 <li>
-<a href="extractors.html#MCGraphs.Extractors.extract_gene_gene_data">
-<code>MCGraphs.Extractors.extract_gene_gene_data
+<a href="extractors.html#MCGraphs.Extractors.extract_boxes_marker_genes_data">
+<code>MCGraphs.Extractors.extract_boxes_marker_genes_data
 </code>
 </a>
 </li>
 <li>
-<a href="extractors.html#MCGraphs.Extractors.extract_marker_genes_data">
-<code>MCGraphs.Extractors.extract_marker_genes_data
+<a href="extractors.html#MCGraphs.Extractors.extract_metacells_gene_gene_data">
+<code>MCGraphs.Extractors.extract_metacells_gene_gene_data
+</code>
+</a>
+</li>
+<li>
+<a href="extractors.html#MCGraphs.Extractors.extract_metacells_marker_genes_data">
+<code>MCGraphs.Extractors.extract_metacells_marker_genes_data
 </code>
 </a>
 </li>

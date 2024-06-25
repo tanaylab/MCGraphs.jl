@@ -168,8 +168,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Plotters.plot_gene_gene" href="#MCGraphs.Plotters.plot_gene_gene">
-<code>MCGraphs.Plotters.plot_gene_gene
+<a class="docstring-binding" id="MCGraphs.Plotters.plot_metacells_gene_gene" href="#MCGraphs.Plotters.plot_metacells_gene_gene">
+<code>MCGraphs.Plotters.plot_metacells_gene_gene
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -178,40 +178,174 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">plot_gene_gene(
+<code class="language-julia hljs">plot_metacells_gene_gene(
     daf::DafReader
     [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
     x_gene::AbstractString,
     y_gene::AbstractString,
-    [axis::QueryString = &quot;metacell&quot;,
-    color::Maybe{QueryString} = &quot;type&quot;,
-    min_significant_gene_UMIs::Integer = 40,
-    gene_fraction_regularization::Maybe{AbstractFloat} = 1e-5,
-    colors::Maybe{QueryString} = &quot;/ type : color&quot;,
-    entries_hovers::Maybe{FrameColumns} = [&quot;total_UMIs&quot; =&gt; &quot;=&quot;, &quot;type&quot; =&gt; &quot;=&quot;],
-    genes_hovers::Maybe{FrameColumns} = nothing,]
+    [min_significant_gene_UMIs::Integer = 40,
+    gene_fraction_regularization::Maybe{AbstractFloat} = 1.0e-5,
+    color_query::Maybe{QueryString} = &quot;: type =&gt; color&quot;,
+    metacells_hovers::Maybe{FrameColumns} = [&quot;type&quot; =&gt; &quot;=&quot;]]
 )::PointsGraph
 </code>
 </pre>
-<p>Generate a complete gene-gene graph using 
-<a href="extractors.html#MCGraphs.Extractors.extract_gene_gene_data">
-<code>extract_gene_gene_data
+<p>Generate a complete metacells gene-gene graph using 
+<a href="extractors.html#MCGraphs.Extractors.extract_metacells_gene_gene_data">
+<code>extract_metacells_gene_gene_data
 </code>
-</a>, 
-<a href="extractors.html#MCGraphs.Extractors.extract_categorical_color_palette">
-<code>extract_categorical_color_palette
-</code>
-</a>, and 
+</a> and 
 <a href="extractors.html#MCGraphs.Extractors.default_gene_gene_configuration">
 <code>default_gene_gene_configuration
 </code>
 </a>.
 </p>
-<p>By default, we look at gene expression per metacell; you can override this using the 
-<code>axis
-</code> parameter. Each point in the graph is a gene which has a robust comparable expression (at least 
+<p>Each point in the graph is a gene which has a robust comparable expression (at least 
 <code>min_significant_gene_UMIs
-</code> between both axis entries).
+</code> between both metacells).
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>metacell
+</strong> (required): Minimal-sized groups of cells for robust point estimates.
+</p>
+<p>
+<strong>type
+</strong> (required): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>metacell @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of all the genes in each metacell.
+</p>
+<p>
+<strong>metacell @ type
+</strong>::AbstractString (optional): The type each metacell belongs to.
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, metacell @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each metacell.
+</p>
+<p>
+<strong>gene, metacell @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of each gene in each metacell.
+</p>
+<p>Additional inputs may be used depending to the query parameter(s).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Plotters.plot_boxes_gene_gene" href="#MCGraphs.Plotters.plot_boxes_gene_gene">
+<code>MCGraphs.Plotters.plot_boxes_gene_gene
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">plot_boxes_gene_gene(
+    daf::DafReader
+    [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
+    x_gene::AbstractString,
+    y_gene::AbstractString,
+    [min_significant_gene_UMIs::Integer = 40,
+    gene_fraction_regularization::Maybe{AbstractFloat} = 1.0e-5,
+    color_query::Maybe{QueryString} = &quot;: type =&gt; color&quot;,
+    boxes_hovers::Maybe{FrameColumns} = [&quot;type&quot; =&gt; &quot;=&quot;]]
+)::PointsGraph
+</code>
+</pre>
+<p>Generate a complete boxes gene-gene graph using 
+<a href="extractors.html#MCGraphs.Extractors.extract_boxes_gene_gene_data">
+<code>extract_boxes_gene_gene_data
+</code>
+</a> and 
+<a href="extractors.html#MCGraphs.Extractors.default_gene_gene_configuration">
+<code>default_gene_gene_configuration
+</code>
+</a>.
+</p>
+<p>Each point in the graph is a gene which has a robust comparable expression (at least 
+<code>min_significant_gene_UMIs
+</code> between both boxes).
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>box
+</strong> (required): Distinct groups of metacells with &quot;very close&quot; estimated cell state.
+</p>
+<p>
+<strong>type
+</strong> (required): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>box @ neighborhood.main
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of all the genes in each box.
+</p>
+<p>
+<strong>box @ type
+</strong>::AbstractString (optional): The type each box belongs to.
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, box @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each box.
+</p>
+<p>
+<strong>gene, box @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of each gene in each box.
+</p>
+<p>Additional inputs may be used depending to the query parameter(s).
 </p>
 </div>
 </section>
@@ -237,8 +371,7 @@
     y_box::AbstractString,
     [min_significant_gene_UMIs::Integer = 40,
     max_box_span::AbstractFloat = 2.0,
-    gene_fraction_regularization::AbstractFloat = 1e-5,
-    confidence::AbstractFloat = 0.9],
+    gene_fraction_regularization::AbstractFloat = 1.0e-5],
 )::PointsGraph
 </code>
 </pre>
@@ -256,6 +389,78 @@
 <code>min_significant_gene_UMIs
 </code> between both spgeres). A line is attached to each point showing the confidence modification used when deciding on grouping of metacells into boxes.
 </p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>metacell
+</strong> (required): Minimal-sized groups of cells for robust point estimates.
+</p>
+<p>
+<strong>box
+</strong> (required): Distinct groups of metacells with &quot;very close&quot; estimated cell state.
+</p>
+<p>
+<strong>neighborhood
+</strong> (required): Overlapping groups of boxes with &quot;close&quot; estimated cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>metacell @ box
+</strong>::AbstractString (required): The unique box each metacell belongs to.
+</p>
+<p>
+<strong>metacell @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of all the genes in each metacell.
+</p>
+<p>
+<strong>gene @ is_lateral
+</strong>::Bool (required): A mask of genes that are lateral to the biological behaviors of interest.
+</p>
+<p>
+<strong>gene @ divergence
+</strong>::Union{Float32, Float64} (required): Scale fold factors of each gene by multiplying with (1 - divergence) of the gene.
+</p>
+<p>
+<strong>box @ neighborhood.main
+</strong>::AbstractString (required): The unique main neighborhood of each box.
+</p>
+<p>
+<strong>neighborhood @ span
+</strong>::Union{Float32, Float64} (required): The span (fold factor) used to compute the neighborhood.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, metacell @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each metacell.
+</p>
+<p>
+<strong>gene, metacell @ total_UMIs
+</strong>::Union{UInt16, UInt32, UInt64, UInt8} (required): The total number of UMIs used to estimate the fraction of each gene in each metacell.
+</p>
+<p>
+<strong>gene, neighborhood @ is_correlated
+</strong>::Bool (required): Which genes are correlated in each neighborhood.
+</p>
+<p>
+<strong>box, neighborhood @ is_member
+</strong>::Bool (required): A mask of the member boxes of each neighborhood.
+</p>
 </div>
 </section>
 </article>
@@ -263,8 +468,8 @@
 <header>
 <a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
 </a>
-<a class="docstring-binding" id="MCGraphs.Plotters.plot_marker_genes" href="#MCGraphs.Plotters.plot_marker_genes">
-<code>MCGraphs.Plotters.plot_marker_genes
+<a class="docstring-binding" id="MCGraphs.Plotters.plot_metacells_marker_genes" href="#MCGraphs.Plotters.plot_metacells_marker_genes">
+<code>MCGraphs.Plotters.plot_metacells_marker_genes
 </code>
 </a> — 
 <span class="docstring-category">Function
@@ -273,23 +478,23 @@
 <section>
 <div>
 <pre>
-<code class="language-julia hljs">function plot_marker_genes(
+<code class="language-julia hljs">function plot_metacells_marker_genes(
     daf::DafReader,
     [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-    axis::abstractstring = &quot;metacell&quot;,
-    gene_names::maybe{vector{abstractstring}} = nothing,
-    max_marker_genes::integer = 100,
-    gene_fraction_regularization::abstractfloat = 1e-5,
-    type_property::maybe{abstractstring} = &quot;type&quot;,
-    expression_annotations::maybe{querycolumns} = nothing,
-    gene_annotations::maybe{querycolumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
-    min_significant_fold::Real = 3.0,
-    max_significant_fold::Real = 5.0,
-    reorder_by_type::Bool = false]
+    gene_names::Maybe{Vector{AbstractString}} = nothing,
+    max_marker_genes::Integer = 100,
+    gene_fraction_regularization::AbstractFloat = 1.0e-5,
+    type_annotation::Bool = true,
+    expression_annotations::Maybe{FrameColumns} = nothing,
+    named_gene_annotation::Bool = true,
+    gene_annotations::Maybe{FrameColumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
+    reorder_by_type::Bool = true,
+    min_significant_fold::Real = 0.5,
+    max_significant_fold::Real = 3.0]
 )::HeatmapGraph
 </code>
 </pre>
-<p>Generate a marker genes graph. This shows the genes that most distinguish between metacells (or profiles using another axis). Type annotations are added based on the 
+<p>Generate a metacells marker genes graph. This shows the genes that most distinguish between metacells (or profiles using another axis). Type annotations are added based on the 
 <code>type_property
 </code> (which should name an axis with a 
 <code>color
@@ -325,6 +530,175 @@
 <code>max_significant_fold
 </code>.
 </p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>metacell
+</strong> (required): Minimal-sized groups of cells for robust point estimates.
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>type
+</strong> (optional): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>box @ type
+</strong>::AbstractString (optional): The type each box belongs to.
+</p>
+<p>
+<strong>gene @ is_lateral
+</strong>::Bool (optional): A mask of genes that are lateral to the biological behaviors of interest.
+</p>
+<p>
+<strong>gene @ divergence
+</strong>::Union{Float32, Float64} (required): Scale fold factors of each gene by multiplying with (1 - divergence) of the gene.
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, box @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each box.
+</p>
+<p>Additional inputs may be used depending to the query parameter(s).
+</p>
+</div>
+</section>
+</article>
+<article class="docstring">
+<header>
+<a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring">
+</a>
+<a class="docstring-binding" id="MCGraphs.Plotters.plot_boxes_marker_genes" href="#MCGraphs.Plotters.plot_boxes_marker_genes">
+<code>MCGraphs.Plotters.plot_boxes_marker_genes
+</code>
+</a> — 
+<span class="docstring-category">Function
+</span>
+</header>
+<section>
+<div>
+<pre>
+<code class="language-julia hljs">function plot_boxes_marker_genes(
+    daf::DafReader,
+    [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
+    gene_names::Maybe{Vector{AbstractString}} = nothing,
+    max_marker_genes::Integer = 100,
+    gene_fraction_regularization::AbstractFloat = 1.0e-5,
+    type_annotation::Bool = true,
+    expression_annotations::Maybe{FrameColumns} = nothing,
+    named_gene_annotation::Bool = true,
+    gene_annotations::Maybe{FrameColumns} = [&quot;is_lateral&quot;, &quot;divergence&quot;],
+    reorder_by_type::Bool = truem
+    min_significant_fold::Real = 0.5,
+    max_significant_fold::Real = 3.0]
+)::HeatmapGraph
+</code>
+</pre>
+<p>Generate a boxes marker genes graph. This shows the genes that most distinguish between boxes (or profiles using another axis). Type annotations are added based on the 
+<code>type_property
+</code> (which should name an axis with a 
+<code>color
+</code> property), and optional 
+<code>expression_annotations
+</code> and 
+<code>gene_annotations
+</code>.
+</p>
+<p>If 
+<code>gene_names
+</code> is specified, these genes will always appear in the graph. This list is supplemented with additional 
+<code>is_marker
+</code> genes to show at least 
+<code>min_marker_genes
+</code>. A number of strongest such genes is chosen from each profile, such that the total number of these genes together with the forced 
+<code>gene_names
+</code> is at least 
+<code>min_marker_genes
+</code>.
+</p>
+<p>The data is clustered to show the structure of both genes and boxes (or profiles using another axis). If 
+<code>reorder_by_type
+</code> is specified, and 
+<code>type_property
+</code> is not be 
+<code>nothing
+</code>, then the profiles are reordered so that each type is contiguous.
+</p>
+<p>Genes whose (absolute) fold factor (log base 2 of the ratio between the expression level and the median of the population) is less than 
+<code>min_significant_fold
+</code> are colored in white. The color scale continues until 
+<code>max_significant_fold
+</code>.
+</p>
+<p>
+<strong>Inputs
+</strong>
+</p>
+<p>
+<strong>Axes
+</strong>
+</p>
+<p>
+<strong>gene
+</strong> (required): Sequenced genes.
+</p>
+<p>
+<strong>box
+</strong> (required): Distinct groups of metacells with &quot;very close&quot; estimated cell state.
+</p>
+<p>
+<strong>type
+</strong> (optional): Distinct named biological cell states.
+</p>
+<p>
+<strong>Vectors
+</strong>
+</p>
+<p>
+<strong>box @ type
+</strong>::AbstractString (optional): The type each box belongs to.
+</p>
+<p>
+<strong>gene @ is_lateral
+</strong>::Bool (optional): A mask of genes that are lateral to the biological behaviors of interest.
+</p>
+<p>
+<strong>gene @ divergence
+</strong>::Union{Float32, Float64} (required): Scale fold factors of each gene by multiplying with (1 - divergence) of the gene.
+</p>
+<p>
+<strong>type @ color
+</strong>::AbstractString (optional): A unique color for each type for graphs.
+</p>
+<p>
+<strong>Matrices
+</strong>
+</p>
+<p>
+<strong>gene, box @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each box.
+</p>
+<p>Additional inputs may be used depending to the query parameter(s).
+</p>
 </div>
 </section>
 </article>
@@ -350,14 +724,26 @@
 </a>
 </li>
 <li>
-<a href="plotters.html#MCGraphs.Plotters.plot_gene_gene">
-<code>MCGraphs.Plotters.plot_gene_gene
+<a href="plotters.html#MCGraphs.Plotters.plot_boxes_gene_gene">
+<code>MCGraphs.Plotters.plot_boxes_gene_gene
 </code>
 </a>
 </li>
 <li>
-<a href="plotters.html#MCGraphs.Plotters.plot_marker_genes">
-<code>MCGraphs.Plotters.plot_marker_genes
+<a href="plotters.html#MCGraphs.Plotters.plot_boxes_marker_genes">
+<code>MCGraphs.Plotters.plot_boxes_marker_genes
+</code>
+</a>
+</li>
+<li>
+<a href="plotters.html#MCGraphs.Plotters.plot_metacells_gene_gene">
+<code>MCGraphs.Plotters.plot_metacells_gene_gene
+</code>
+</a>
+</li>
+<li>
+<a href="plotters.html#MCGraphs.Plotters.plot_metacells_marker_genes">
+<code>MCGraphs.Plotters.plot_metacells_marker_genes
 </code>
 </a>
 </li>
