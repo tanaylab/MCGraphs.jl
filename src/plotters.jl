@@ -190,7 +190,7 @@ population) is less than `min_significant_fold` are colored in white. The color 
 $(CONTRACT)
 """
 @computation (
-    function_contract(extract_metacells_marker_genes_data) + function_contract(default_marker_genes_configuration)
+    function_contract(extract_metacells_marker_genes_data) |> function_contract(default_marker_genes_configuration)
 ) function plot_metacells_marker_genes(  # untested
     daf::DafReader,
     configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
@@ -261,7 +261,7 @@ population) is less than `min_significant_fold` are colored in white. The color 
 $(CONTRACT)
 """
 @computation (
-    function_contract(extract_boxes_marker_genes_data) + function_contract(default_marker_genes_configuration)
+    function_contract(extract_boxes_marker_genes_data) |> function_contract(default_marker_genes_configuration)
 ) function plot_boxes_marker_genes(  # untested
     daf::DafReader,
     configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
