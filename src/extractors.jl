@@ -16,6 +16,7 @@ using Base.Threads
 using Base.Unicode
 using Clustering
 using Daf
+using Daf.GenericLogging
 using Daf.GenericTypes
 using DataFrames
 using Distances
@@ -58,7 +59,7 @@ For each metacell point, the hover will include the `metacells_hovers` per-metac
 
 $(CONTRACT)
 """
-@computation Contract(
+@logged @computation Contract(
     is_relaxed = true,
     axes = [gene_axis(RequiredInput), metacell_axis(RequiredInput), type_axis(RequiredInput)],
     data = [
@@ -112,7 +113,7 @@ For each box point, the hover will include the `boxes_hovers` per-box data.
 
 $(CONTRACT)
 """
-@computation Contract(
+@logged @computation Contract(
     is_relaxed = true,
     axes = [gene_axis(RequiredInput), box_axis(RequiredInput), type_axis(RequiredInput)],
     data = [
@@ -232,7 +233,7 @@ end
 Return a default configuration for a gene-gene graph. This applies the log scale to the axes, and sets up the color
 palette. Will modify `configuration` in-place and return it.
 """
-@computation function default_gene_gene_configuration(  # untested
+@logged @computation function default_gene_gene_configuration(  # untested
     daf::DafReader,
     configuration = PointsGraphConfiguration();
     color_query::Maybe{QueryString} = "/ type : color",
@@ -263,7 +264,7 @@ name twice, why the box was merged).
 
 $(CONTRACT)
 """
-@computation Contract(
+@logged @computation Contract(
     axes = [
         gene_axis(RequiredInput),
         metacell_axis(RequiredInput),
@@ -682,7 +683,7 @@ end
 
 Return a default configuration for a box-box graph. Will modify `configuration` in-place and return it.
 """
-@computation function default_box_box_configuration(  # untested
+@logged @computation function default_box_box_configuration(  # untested
     configuration::PointsGraphConfiguration = PointsGraphConfiguration();
     x_box::AbstractString,
     y_box::AbstractString,
@@ -742,7 +743,7 @@ profiles are reordered so that each type is contiguous.
 
 $(CONTRACT)
 """
-@computation Contract(
+@logged @computation Contract(
     is_relaxed = true,
     axes = [gene_axis(RequiredInput), metacell_axis(RequiredInput), type_axis(OptionalInput)],
     data = [
@@ -806,7 +807,7 @@ The data is clustered to show the structure of both genes and boxes. If `reorder
 
 $(CONTRACT)
 """
-@computation Contract(
+@logged @computation Contract(
     is_relaxed = true,
     axes = [gene_axis(RequiredInput), box_axis(RequiredInput), type_axis(OptionalInput)],
     data = [
@@ -966,7 +967,6 @@ function compute_marker_genes(  # untested
                 transpose(median_fractions_of_candidate_genes .+ gene_fraction_regularization)
             ) .* (1 .- divergence_of_candidate_genes)
         @assert size(power_of_candidate_genes_of_profiles) == (n_candidate_genes, n_profiles)
-
         if n_candidate_genes <= min_marker_genes
             selected_genes_mask = ones(Bool, n_candidate_genes)
         else
@@ -1000,10 +1000,12 @@ function compute_marker_genes(  # untested
         mask_of_named_selected_genes = [gene_name in gene_names_set for gene_name in names_of_selected_genes]
     end
 
-    return power_of_selected_genes_of_profiles,
-    names_of_selected_genes,
-    indices_of_selected_genes,
-    mask_of_named_selected_genes
+    return (
+        power_of_selected_genes_of_profiles,
+        names_of_selected_genes,
+        indices_of_selected_genes,
+        mask_of_named_selected_genes,
+    )
 end
 
 function marker_genes_columns_annotations(::DafReader, ::AbstractString, ::Nothing, ::Nothing)::Nothing  # untested
@@ -1059,7 +1061,7 @@ function marker_cells_rows_annotations(  # untested
 )::Vector{AnnotationsData}
     annotations = AnnotationsData[]
     if named_gene_annotation
-        push!(annotations, AnnotationsData(; title = "named", values = mask_of_named_selected_genes))
+        push!(annotations, AnnotationsData(; title = "is_named", values = mask_of_named_selected_genes))
     end
     if gene_annotations !== nothing
         data_frame = get_frame(daf, "gene", gene_annotations)
@@ -1130,7 +1132,7 @@ If `type_annotation` is set, sets up the color palette for the type annotations.
 
 $(CONTRACT)
 """
-@computation Contract(
+@logged @computation Contract(
     #! format: off
     axes = [type_axis(OptionalInput)],
     data = [type_color_vector(OptionalInput)]

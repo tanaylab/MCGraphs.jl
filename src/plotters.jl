@@ -10,6 +10,7 @@ export plot_metacells_gene_gene
 export plot_metacells_marker_genes
 
 using Daf
+using Daf.GenericLogging
 using Daf.GenericTypes
 using NamedArrays
 using ..Renderers
@@ -35,7 +36,7 @@ both metacells).
 
 $(CONTRACT)
 """
-@computation function_contract(extract_metacells_gene_gene_data) function plot_metacells_gene_gene(  # untested
+@logged @computation function_contract(extract_metacells_gene_gene_data) function plot_metacells_gene_gene(  # untested
     daf::DafReader,
     configuration::PointsGraphConfiguration = PointsGraphConfiguration();
     x_gene::AbstractString,
@@ -82,7 +83,7 @@ both boxes).
 
 $(CONTRACT)
 """
-@computation function_contract(extract_boxes_gene_gene_data) function plot_boxes_gene_gene(  # untested
+@logged @computation function_contract(extract_boxes_gene_gene_data) function plot_boxes_gene_gene(  # untested
     daf::DafReader,
     configuration::PointsGraphConfiguration = PointsGraphConfiguration();
     x_gene::AbstractString,
@@ -129,7 +130,7 @@ metacells into boxes.
 
 $(CONTRACT)
 """
-@computation function_contract(extract_box_box_data) function plot_box_box(  # untested
+@logged @computation function_contract(extract_box_box_data) function plot_box_box(  # untested
     daf::DafReader,
     configuration::PointsGraphConfiguration = PointsGraphConfiguration();
     x_box::AbstractString,
@@ -189,7 +190,7 @@ population) is less than `min_significant_fold` are colored in white. The color 
 
 $(CONTRACT)
 """
-@computation (
+@logged @computation (
     function_contract(extract_metacells_marker_genes_data) |> function_contract(default_marker_genes_configuration)
 ) function plot_metacells_marker_genes(  # untested
     daf::DafReader,
@@ -260,7 +261,7 @@ population) is less than `min_significant_fold` are colored in white. The color 
 
 $(CONTRACT)
 """
-@computation (
+@logged @computation (
     function_contract(extract_boxes_marker_genes_data) |> function_contract(default_marker_genes_configuration)
 ) function plot_boxes_marker_genes(  # untested
     daf::DafReader,
