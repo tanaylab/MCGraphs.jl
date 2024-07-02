@@ -301,12 +301,12 @@ $(CONTRACT)
     log_decreased_fraction_of_genes_in_x_metacells, log_increased_fraction_of_genes_in_x_metacells =
         compute_confidence_log_fraction_of_genes_in_metacells(;
             gene_fraction_regularization = gene_fraction_regularization,
-            fraction_of_genes_in_metacells = transposer!(fraction_of_x_metacells_of_genes),
+            fraction_of_genes_in_metacells = transposer(fraction_of_x_metacells_of_genes),
             total_UMIs_of_metacells = total_UMIs_of_x_metacells,
             fold_confidence = fold_confidence,
         )
-    log_decreased_fraction_of_x_metacells_of_genes = transposer!(log_decreased_fraction_of_genes_in_x_metacells)
-    log_increased_fraction_of_x_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_x_metacells)
+    log_decreased_fraction_of_x_metacells_of_genes = transposer(log_decreased_fraction_of_genes_in_x_metacells)
+    log_increased_fraction_of_x_metacells_of_genes = transposer(log_increased_fraction_of_genes_in_x_metacells)
     @assert all(log_decreased_fraction_of_x_metacells_of_genes .<= log_increased_fraction_of_x_metacells_of_genes)
 
     is_self_difference = x_box == y_box
@@ -323,12 +323,12 @@ $(CONTRACT)
         log_decreased_fraction_of_genes_in_y_metacells, log_increased_fraction_of_genes_in_y_metacells =
             compute_confidence_log_fraction_of_genes_in_metacells(;
                 gene_fraction_regularization = gene_fraction_regularization,
-                fraction_of_genes_in_metacells = transposer!(fraction_of_y_metacells_of_genes),
+                fraction_of_genes_in_metacells = transposer(fraction_of_y_metacells_of_genes),
                 total_UMIs_of_metacells = total_UMIs_of_y_metacells,
                 fold_confidence = fold_confidence,
             )
-        log_decreased_fraction_of_y_metacells_of_genes = transposer!(log_decreased_fraction_of_genes_in_y_metacells)
-        log_increased_fraction_of_y_metacells_of_genes = transposer!(log_increased_fraction_of_genes_in_y_metacells)
+        log_decreased_fraction_of_y_metacells_of_genes = transposer(log_decreased_fraction_of_genes_in_y_metacells)
+        log_increased_fraction_of_y_metacells_of_genes = transposer(log_increased_fraction_of_genes_in_y_metacells)
     end
     @assert all(log_decreased_fraction_of_y_metacells_of_genes .<= log_increased_fraction_of_y_metacells_of_genes)
 
@@ -880,7 +880,7 @@ function extract_marker_genes_data(  # untested
     end
 
     order_of_profiles = reorder_matrix_columns(power_of_selected_genes_of_profiles, type_indices_of_profiles)
-    order_of_genes = reorder_matrix_columns(transposer!(power_of_selected_genes_of_profiles))
+    order_of_genes = reorder_matrix_columns(transposer(power_of_selected_genes_of_profiles))
 
     power_of_selected_genes_of_profiles = power_of_selected_genes_of_profiles[order_of_genes, order_of_profiles]
     reorder_annotations!(columns_annotations, order_of_profiles)
@@ -926,7 +926,7 @@ function compute_marker_genes(  # untested
         fractions_of_profiles_of_named_genes = fractions_of_profiles_of_genes[:, indices_of_named_genes]
         @assert size(fractions_of_profiles_of_genes) == (n_profiles, n_named_genes)
 
-        fractions_of_named_genes_of_profiles = transposer!(fractions_of_profiles_of_named_genes)
+        fractions_of_named_genes_of_profiles = transposer(fractions_of_profiles_of_named_genes)
         @assert size(fractions_of_named_genes_of_profiles) == (n_named_genes, n_profiles)
 
         median_fractions_of_named_genes = median(fractions_of_named_genes_of_profiles; dims = 2)
@@ -957,7 +957,7 @@ function compute_marker_genes(  # untested
         median_fractions_of_candidate_genes = median(fractions_of_profiles_of_candidate_genes; dims = 1)  # NOJET
         @assert length(median_fractions_of_candidate_genes) == n_candidate_genes
 
-        fractions_of_candidate_genes_of_profiles = transposer!(fractions_of_profiles_of_candidate_genes)
+        fractions_of_candidate_genes_of_profiles = transposer(fractions_of_profiles_of_candidate_genes)
         @assert size(fractions_of_candidate_genes_of_profiles) == (n_candidate_genes, n_profiles)
 
         divergence_of_candidate_genes = divergence_of_genes[indices_of_candidate_genes]
