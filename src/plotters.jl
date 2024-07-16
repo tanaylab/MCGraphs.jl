@@ -160,7 +160,7 @@ end
     function plot_metacells_marker_genes(
         daf::DafReader,
         [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-        gene_names::Maybe{Vector{AbstractString}} = $(DEFAULT.gene_names),
+        gene_names::Maybe{AbstractVector{<:AbstractString}} = $(DEFAULT.gene_names),
         max_marker_genes::Integer = $(DEFAULT.max_marker_genes),
         gene_fraction_regularization::AbstractFloat = $(DEFAULT.gene_fraction_regularization),
         type_annotation::Bool = $(DEFAULT.type_annotation),
@@ -195,7 +195,7 @@ $(CONTRACT)
 ) function plot_metacells_marker_genes(  # untested
     daf::DafReader,
     configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-    gene_names::Maybe{Vector{AbstractString}} = nothing,
+    gene_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
     max_marker_genes::Integer = 100,
     gene_fraction_regularization::AbstractFloat = 1e-5,
     type_annotation::Bool = true,
@@ -231,7 +231,7 @@ end
     function plot_boxes_marker_genes(
         daf::DafReader,
         [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-        gene_names::Maybe{Vector{AbstractString}} = $(DEFAULT.gene_names),
+        gene_names::Maybe{AbstractVector{<:AbstractString}} = $(DEFAULT.gene_names),
         max_marker_genes::Integer = $(DEFAULT.max_marker_genes),
         gene_fraction_regularization::AbstractFloat = $(DEFAULT.gene_fraction_regularization),
         type_annotation::Bool = $(DEFAULT.type_annotation),
@@ -266,7 +266,7 @@ $(CONTRACT)
 ) function plot_boxes_marker_genes(  # untested
     daf::DafReader,
     configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-    gene_names::Maybe{Vector{AbstractString}} = nothing,
+    gene_names::Maybe{AbstractVector{<:AbstractString}} = nothing,
     max_marker_genes::Integer = 100,
     gene_fraction_regularization::AbstractFloat = 1e-5,
     type_annotation::Bool = true,

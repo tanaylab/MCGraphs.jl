@@ -718,7 +718,7 @@ end
 """
     function extract_metacells_marker_genes_data(
         daf::DafReader;
-        [gene_names::Maybe{Vector{AbstractString}} = $(DEFAULT.gene_names),
+        [gene_names::Maybe{Vector{<:AbstractString}} = $(DEFAULT.gene_names),
         max_marker_genes::Integer = $(DEFAULT.max_marker_genes),
         gene_fraction_regularization::AbstractFloat = $(DEFAULT.gene_fraction_regularization),
         type_annotation::Bool = $(DEFAULT.type_annotation),
@@ -749,13 +749,13 @@ $(CONTRACT)
     data = [
         gene_divergence_vector(RequiredInput),
         gene_is_lateral_vector(OptionalInput),
-        gene_box_fraction_matrix(RequiredInput),
-        box_type_vector(OptionalInput),
+        gene_metacell_fraction_matrix(RequiredInput),
+        metacell_type_vector(OptionalInput),
         type_color_vector(OptionalInput),
     ],
 ) function extract_metacells_marker_genes_data(  # untested
     daf::DafReader;
-    gene_names::Maybe{Vector{AbstractString}} = nothing,
+    gene_names::Maybe{Vector{<:AbstractString}} = nothing,
     max_marker_genes::Integer = 100,
     gene_fraction_regularization::AbstractFloat = GENE_FRACTION_REGULARIZATION,
     type_annotation::Bool = true,
@@ -781,7 +781,7 @@ end
 """
     function extract_boxes_marker_genes_data(
         daf::DafReader;
-        [gene_names::Maybe{Vector{AbstractString}} = $(DEFAULT.gene_names),
+        [gene_names::Maybe{Vector{<:AbstractString}} = $(DEFAULT.gene_names),
         max_marker_genes::Integer = $(DEFAULT.max_marker_genes),
         gene_fraction_regularization::AbstractFloat = $(DEFAULT.gene_fraction_regularization),
         type_annotation::Bool = $(DEFAULT.type_annotation),
@@ -819,7 +819,7 @@ $(CONTRACT)
     ],
 ) function extract_boxes_marker_genes_data(  # untested
     daf::DafReader;
-    gene_names::Maybe{Vector{AbstractString}} = nothing,
+    gene_names::Maybe{Vector{<:AbstractString}} = nothing,
     max_marker_genes::Integer = 100,
     gene_fraction_regularization::AbstractFloat = GENE_FRACTION_REGULARIZATION,
     type_annotation::Bool = true,
@@ -845,7 +845,7 @@ end
 function extract_marker_genes_data(  # untested
     daf::DafReader;
     axis_name::AbstractString,
-    gene_names::Maybe{Vector{AbstractString}},
+    gene_names::Maybe{Vector{<:AbstractString}},
     max_marker_genes::Integer,
     gene_fraction_regularization::AbstractFloat,
     type_annotation::Bool,
@@ -861,6 +861,7 @@ function extract_marker_genes_data(  # untested
     indices_of_selected_genes,
     mask_of_named_selected_genes =
         compute_marker_genes(daf, axis_name, gene_names, max_marker_genes, gene_fraction_regularization)
+
     columns_annotations = marker_genes_columns_annotations(daf, axis_name, type_annotation, expression_annotations)
 
     rows_annotations = marker_genes_rows_annotations(  # NOJET
@@ -882,17 +883,18 @@ function extract_marker_genes_data(  # untested
     order_of_profiles = reorder_matrix_columns(power_of_selected_genes_of_profiles, type_indices_of_profiles)
     order_of_genes = reorder_matrix_columns(transposer(power_of_selected_genes_of_profiles))
 
-    power_of_selected_genes_of_profiles = power_of_selected_genes_of_profiles[order_of_genes, order_of_profiles]
+    rows_names = names_of_selected_genes[order_of_genes]
+    entries_colors = power_of_selected_genes_of_profiles[order_of_genes, order_of_profiles]
     reorder_annotations!(columns_annotations, order_of_profiles)
     reorder_annotations!(rows_annotations, order_of_genes)  # NOJET
 
     return HeatmapGraphData(;
         figure_title = "$(uppercasefirst(axis_name))s Marker Genes",
         x_axis_title = uppercasefirst(axis_name),
-        y_axis_title = "Genes",
+        y_axis_title = "Gene",
         entries_colors_title = "Fold Factor",
-        rows_names = names_of_selected_genes,
-        entries_colors = power_of_selected_genes_of_profiles,
+        rows_names = rows_names,
+        entries_colors = entries_colors,
         columns_annotations = columns_annotations,
         rows_annotations = rows_annotations,
     )
@@ -944,12 +946,18 @@ function compute_marker_genes(  # untested
         names_of_selected_genes = gene_names
         indices_of_selected_genes = indices_of_named_genes
         mask_of_named_selected_genes = ones(Bool, length(gene_names))
+
     else
         mask_of_candidate_genes = copy_array(get_vector(daf, "gene", "is_marker").array)
         mask_of_candidate_genes[indices_of_named_genes] .= true
         indices_of_candidate_genes = findall(mask_of_candidate_genes)
         names_of_candidate_genes = axis_array(daf, "gene")[indices_of_candidate_genes]
         n_candidate_genes = length(indices_of_candidate_genes)
+
+        mask_of_named_genes = zeros(Bool, n_genes)
+        mask_of_named_genes[indices_of_named_genes] .= true
+        mask_of_named_candidate_genes = mask_of_named_genes[mask_of_candidate_genes]
+        @assert sum(mask_of_named_genes) == length(indices_of_named_genes)
 
         fractions_of_profiles_of_candidate_genes = fractions_of_profiles_of_genes[:, indices_of_candidate_genes]
         @assert size(fractions_of_profiles_of_candidate_genes) == (n_profiles, n_candidate_genes)
@@ -967,15 +975,16 @@ function compute_marker_genes(  # untested
                 transpose(median_fractions_of_candidate_genes .+ gene_fraction_regularization)
             ) .* (1 .- divergence_of_candidate_genes)
         @assert size(power_of_candidate_genes_of_profiles) == (n_candidate_genes, n_profiles)
+
         if n_candidate_genes <= min_marker_genes
-            selected_genes_mask = ones(Bool, n_candidate_genes)
+            mask_of_selected_candidate_genes = ones(Bool, n_candidate_genes)
         else
             rank_of_candidate_genes_of_profiles = Matrix{Int32}(undef, n_candidate_genes, n_profiles)
             @threads for profile_index in 1:n_profiles
                 @views power_of_candidate_genes_of_profile = power_of_candidate_genes_of_profiles[:, profile_index]
                 rank_of_candidate_genes_of_profiles[:, profile_index] =
                     sortperm(abs.(power_of_candidate_genes_of_profile); rev = true)
-                rank_of_candidate_genes_of_profiles[indices_of_named_genes, profile_index] .= 0
+                rank_of_candidate_genes_of_profiles[mask_of_named_candidate_genes, profile_index] .= 0
             end
 
             threshold = 1
@@ -988,16 +997,16 @@ function compute_marker_genes(  # untested
                 end
                 threshold += 1
             end
-            order_of_candidate_genes = sortperm(votes_of_candidate_genes; rev = true)
-            selected_genes_mask = zeros(Bool, n_candidate_genes)
-            selected_genes_mask[order_of_candidate_genes[1:min_marker_genes]] .= true
+            threshold_index = partialsortperm(votes_of_candidate_genes, min_marker_genes; rev = true)
+            min_votes = votes_of_candidate_genes[threshold_index]
+            mask_of_selected_candidate_genes = votes_of_candidate_genes .>= min_votes
+            @assert sum(mask_of_selected_candidate_genes) >= min_marker_genes
         end
 
-        power_of_selected_genes_of_profiles = power_of_candidate_genes_of_profiles[selected_genes_mask, :]
-        names_of_selected_genes = names_of_candidate_genes[selected_genes_mask]
+        power_of_selected_genes_of_profiles = power_of_candidate_genes_of_profiles[mask_of_selected_candidate_genes, :]
+        names_of_selected_genes = names_of_candidate_genes[mask_of_selected_candidate_genes]
         indices_of_selected_genes = axis_indices(daf, "gene", names_of_selected_genes)
-        gene_names_set = Set(gene_names)
-        mask_of_named_selected_genes = [gene_name in gene_names_set for gene_name in names_of_selected_genes]
+        mask_of_named_selected_genes = mask_of_named_candidate_genes[mask_of_selected_candidate_genes]
     end
 
     return (
@@ -1052,7 +1061,7 @@ function marker_genes_rows_annotations(  # untested
     return nothing
 end
 
-function marker_cells_rows_annotations(  # untested
+function marker_genes_rows_annotations(  # untested
     daf::DafReader,
     gene_annotations::FrameColumns,
     indices_of_selected_genes::AbstractVector{<:Integer},
@@ -1061,7 +1070,7 @@ function marker_cells_rows_annotations(  # untested
 )::Vector{AnnotationsData}
     annotations = AnnotationsData[]
     if named_gene_annotation
-        push!(annotations, AnnotationsData(; title = "is_named", values = mask_of_named_selected_genes))
+        push!(annotations, AnnotationsData(; name = "bool", title = "is_named", values = mask_of_named_selected_genes))
     end
     if gene_annotations !== nothing
         data_frame = get_frame(daf, "gene", gene_annotations)
@@ -1084,7 +1093,7 @@ function reorder_matrix_columns(  # untested
     type_indices_of_columns::Maybe{Vector{<:Integer}} = nothing,
 )::Vector{<:Integer}
     _, n_columns = size(matrix)
-    distances_between_columns = pairwise(CorrDist(), matrix; dims = 2)
+    distances_between_columns = pairwise(CorrDist(), matrix; dims = 2)  # NOJET
     @assert size(distances_between_columns) == (n_columns, n_columns)
     distances_between_columns = pairwise(CorrDist(), distances_between_columns; dims = 2)
     @assert size(distances_between_columns) == (n_columns, n_columns)

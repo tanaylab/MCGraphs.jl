@@ -35,6 +35,7 @@ end
 
 function normalize_html(html::AbstractString)::AbstractString
     html = normalize_ids(html, "id-", HTML_ID_REGEX, "")
+    html = replace(html, ",\"" => ",\n\"")
     return html
 end
 

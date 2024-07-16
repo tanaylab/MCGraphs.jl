@@ -488,7 +488,7 @@
 <pre>
 <code class="language-julia hljs">function extract_metacells_marker_genes_data(
     daf::DafReader;
-    [gene_names::Maybe{Vector{AbstractString}} = nothing,
+    [gene_names::Maybe{Vector{&lt;:AbstractString}} = nothing,
     max_marker_genes::Integer = 100,
     gene_fraction_regularization::AbstractFloat = 1.0e-5,
     type_annotation::Bool = true,
@@ -561,8 +561,8 @@
 </strong>::Bool (optional): A mask of genes that are lateral to the biological behaviors of interest.
 </p>
 <p>
-<strong>box @ type
-</strong>::AbstractString (optional): The type each box belongs to.
+<strong>metacell @ type
+</strong>::AbstractString (optional): The type each metacell belongs to.
 </p>
 <p>
 <strong>type @ color
@@ -573,8 +573,8 @@
 </strong>
 </p>
 <p>
-<strong>gene, box @ fraction
-</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each box.
+<strong>gene, metacell @ fraction
+</strong>::Union{Float32, Float64} (required): The estimated fraction of the UMIs of each gene in each metacell.
 </p>
 <p>Additional inputs may be used depending to the query parameter(s).
 </p>
@@ -597,7 +597,7 @@
 <pre>
 <code class="language-julia hljs">function extract_boxes_marker_genes_data(
     daf::DafReader;
-    [gene_names::Maybe{Vector{AbstractString}} = nothing,
+    [gene_names::Maybe{Vector{&lt;:AbstractString}} = nothing,
     max_marker_genes::Integer = 100,
     gene_fraction_regularization::AbstractFloat = 1.0e-5,
     type_annotation::Bool = true,

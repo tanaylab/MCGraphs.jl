@@ -2638,7 +2638,7 @@ function graph_to_figure(graph::BarsGraph)::PlotlyFigure
                     if graph.data.bars_hovers === nothing
                         fill(graph.data.series_hovers[index], length(series_values[index]))
                     else
-                        (graph.data.series_hovers[index] * "<br>") .* graph.data.bars_hovers
+                        (graph.data.series_hovers[index] * "<br>") .* graph.data.bars_hovers  # NOJET
                     end
                 end,
                 names = graph.data.bars_names,
@@ -5140,7 +5140,7 @@ function validate_color_palette(
             end
             log_color_scale_regularization = configuration.color_scale.log_regularization
             if log_color_scale_regularization !== nothing && cmin + log_color_scale_regularization <= 0
-                index = argmin(color_palette)
+                index = argmin(color_palette)  # NOJET
                 return "log of non-positive configuration.$(of_what).color_palette[$(index)]: $(cmin + log_color_scale_regularization)"
             end
         elseif configuration.reverse_color_scale
@@ -5481,7 +5481,7 @@ function annotation_trace(
     coloraxis_index[1] += 1
     return heatmap(;
         name = "",
-        z = [data.values],
+        z = [data.values .* 1.0],
         text = !transpose ? [data.hovers] : data.hovers !== nothing ? permutedims(data.hovers) : nothing,
         xaxis = "x$(x_axis_index)",
         yaxis = "y$(y_axis_index)",
@@ -5499,15 +5499,17 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
     if columns_annotations === nothing
         y_axis_domain = nothing
     else
-        total_size = sum([
-            (
-                if annotations_data.name === nothing
-                    0.05
-                else
-                    graph.configuration.annotations[annotations_data.name].size
-                end
-            ) + graph.configuration.annotations_gap for annotations_data in columns_annotations
-        ])
+        total_size = sum(
+            Float32[
+                (
+                    if annotations_data.name === nothing
+                        0.05
+                    else
+                        graph.configuration.annotations[annotations_data.name].size
+                    end
+                ) + graph.configuration.annotations_gap for annotations_data in columns_annotations
+            ],
+        )
         y_axis_domain = [total_size, 1]
         y_axis_index += length(columns_annotations)
     end
@@ -5517,15 +5519,17 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
     if rows_annotations === nothing
         x_axis_domain = nothing
     else
-        total_size = sum([
-            (
-                if annotations_data.name === nothing
-                    0.05  # untested
-                else
-                    graph.configuration.annotations[annotations_data.name].size
-                end
-            ) + graph.configuration.annotations_gap for annotations_data in rows_annotations
-        ])
+        total_size = sum(
+            Float32[
+                (
+                    if annotations_data.name === nothing
+                        0.05  # untested
+                    else
+                        graph.configuration.annotations[annotations_data.name].size
+                    end
+                ) + graph.configuration.annotations_gap for annotations_data in rows_annotations
+            ],
+        )
         x_axis_domain = [total_size, 1]
         x_axis_index += length(rows_annotations)
     end
@@ -5560,7 +5564,7 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
         :showticklabels => graph.configuration.figure.show_ticks && graph.data.columns_names !== nothing,
         :title => graph.data.x_axis_title,
         :tickvals => graph.data.columns_names === nothing ? nothing : collect(0:(n_columns - 1)),
-        :tickangle => graph.data.columns_names === nothing ? nothing : -90,
+        :tickangle => graph.data.columns_names === nothing ? nothing : -45,
         :ticktext => graph.data.columns_names,
         :domain => x_axis_domain,
     )
@@ -5584,11 +5588,12 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
             annotations_configuration =
                 get(graph.configuration.annotations, annotations_data.name, AnnotationsConfiguration())
             coloraxis_index += 1
+            color_palette =
+                normalized_color_palette(annotations_configuration.color_palette, annotations_configuration.color_scale)
             layout[Symbol("coloraxis$(coloraxis_index)")] = Dict(
-                :colorscale => normalized_color_palette(
-                    annotations_configuration.color_palette,
-                    annotations_configuration.color_scale,
-                ),
+                :colorscale => color_palette,
+                :cmin => lowest_color(annotations_configuration.color_palette, nothing, nothing),
+                :cmax => highest_color(annotations_configuration.color_palette, nothing, nothing),
                 :showscale => false,
                 :reversescale => annotations_configuration.reverse_color_scale,
             )
@@ -5613,11 +5618,12 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
             annotations_configuration =
                 get(graph.configuration.annotations, annotations_data.name, AnnotationsConfiguration())
             coloraxis_index += 1
+            color_palette =
+                normalized_color_palette(annotations_configuration.color_palette, annotations_configuration.color_scale)
             layout[Symbol("coloraxis$(coloraxis_index)")] = Dict(
-                :colorscale => normalized_color_palette(
-                    annotations_configuration.color_palette,
-                    annotations_configuration.color_scale,
-                ),
+                :colorscale => color_palette,
+                :cmin => lowest_color(annotations_configuration.color_palette, nothing, nothing),
+                :cmax => highest_color(annotations_configuration.color_palette, nothing, nothing),
                 :showscale => false,
                 :reversescale => annotations_configuration.reverse_color_scale,
             )
@@ -5628,7 +5634,7 @@ function heatmap_layout(graph::HeatmapGraph)::Layout
                 :showgrid => graph.configuration.figure.show_grid,
                 :ticktext => [annotations_data.title !== nothing ? annotations_data.title : ""],
                 :tickvals => [0],
-                :tickangle => -90,
+                :tickangle => -45,
                 :domain => domain,
             )
             if shapes !== nothing
