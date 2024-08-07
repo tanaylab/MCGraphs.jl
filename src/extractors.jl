@@ -3,12 +3,10 @@ Extract data from a metacells `Daf` for standard graphs.
 """
 module Extractors
 
-export default_box_box_configuration
+export default_block_block_configuration
 export default_gene_gene_configuration
 export default_marker_genes_configuration
-export extract_box_box_data
-export extract_boxes_gene_gene_data
-export extract_boxes_marker_genes_data
+export extract_block_block_data
 export extract_metacells_gene_gene_data
 export extract_metacells_marker_genes_data
 
@@ -27,8 +25,8 @@ using Statistics
 using ..Renderers
 
 import Printf
-import Metacells.Boxes.compute_confidence_log_fraction_of_genes_in_metacells
-import Metacells.Boxes.gene_distance
+import Metacells.Programs.compute_confidence_log_fraction_of_genes_in_metacells
+import Metacells.Programs.gene_distance
 
 GENE_FRACTION_FORMAT = Printf.Format("%.1e")
 
@@ -87,60 +85,6 @@ $(CONTRACT)
         color_query = color_query,
         colors_title = colors_title,
         entries_hovers = metacells_hovers,
-    )
-end
-
-"""
-    extract_boxes_gene_gene_data(
-        daf::DafReader;
-        x_gene::AbstractString,
-        y_gene::AbstractString,
-        min_significant_gene_UMIs::Integer = $(DEFAULT.min_significant_gene_UMIs),
-        color_query::Maybe{QueryString} = $(DEFAULT.color_query),
-        colors_title::Maybe{AbstractString} = $(DEFAULT.colors_title),
-        boxes_hovers::Maybe{FrameColumns} = $(DEFAULT.boxes_hovers),
-    )::PointsGraphData
-
-Extract the data for a boxes gene-gene graph from the `daf` data. The X coordinate of each point is the fraction of the
-`x_gene` and the Y coordinate of each gene is the fraction of the `y_gene` in each of the boxes.
-
-We ignore genes that don't have at least `min_significant_gene_UMIs` between both entries.
-
-If a `colors_query` is specified, it can be a suffix of a query that fetches a value for each box, or a full query that
-groups by boxes. By default we color by the type of the box. The `colors_title` is used for the legend.
-
-For each box point, the hover will include the `boxes_hovers` per-box data.
-
-$(CONTRACT)
-"""
-@logged @computation Contract(
-    is_relaxed = true,
-    axes = [gene_axis(RequiredInput), box_axis(RequiredInput), type_axis(RequiredInput)],
-    data = [
-        box_total_UMIs_vector(RequiredInput),
-        box_type_vector(OptionalInput),
-        type_color_vector(OptionalInput),
-        gene_box_fraction_matrix(RequiredInput),
-        gene_box_total_UMIs_matrix(RequiredInput),
-    ],
-) function extract_boxes_gene_gene_data(  # untested
-    daf::DafReader;
-    x_gene::AbstractString,
-    y_gene::AbstractString,
-    min_significant_gene_UMIs::Integer = MIN_SIGNIFICANT_GENE_UMIS,
-    color_query::Maybe{QueryString} = ": type => color",
-    colors_title::Maybe{AbstractString} = "Type",
-    boxes_hovers::Maybe{FrameColumns} = ["type" => "="],
-)::PointsGraphData
-    return extract_gene_gene_data(
-        daf;
-        axis_name = "box",
-        x_gene = x_gene,
-        y_gene = y_gene,
-        min_significant_gene_UMIs = min_significant_gene_UMIs,
-        color_query = color_query,
-        colors_title = colors_title,
-        entries_hovers = boxes_hovers,
     )
 end
 
@@ -249,59 +193,53 @@ palette. Will modify `configuration` in-place and return it.
 end
 
 """
-    function extract_box_box_data(
+    function extract_block_block_data(
         daf::DafReader;
-        x_box::AbstractString,
-        y_box::AbstractString,
+        x_block::AbstractString,
+        y_block::AbstractString,
         [min_significant_gene_UMIs::Integer = $(DEFAULT.min_significant_gene_UMIs),
-        max_box_span::AbstractFloat = $(DEFAULT.max_box_span),
+        max_block_span::AbstractFloat = $(DEFAULT.max_block_span),
         gene_fraction_regularization::AbstractFloat = $(DEFAULT.gene_fraction_regularization)],
         fold_confidence::AbstractFloat = $(DEFAULT.fold_confidence),
     )::PointsGraphData
 
-Extract the data for a box-box graph. This shows why two boxes were not merged (or, if given the same box
-name twice, why the box was merged).
+Extract the data for a block-block graph. This shows why two blocks were not merged (or, if given the same block
+name twice, why the block was merged).
 
 $(CONTRACT)
 """
 @logged @computation Contract(
-    axes = [
-        gene_axis(RequiredInput),
-        metacell_axis(RequiredInput),
-        box_axis(RequiredInput),
-        neighborhood_axis(RequiredInput),
-    ],
+    axes = [gene_axis(RequiredInput), metacell_axis(RequiredInput)],
     data = [
-        metacell_box_vector(RequiredInput),
+        metacell_block_vector(RequiredInput),
         metacell_total_UMIs_vector(RequiredInput),
         gene_is_lateral_vector(RequiredInput),
+        gene_is_marker_vector(RequiredInput),
+        gene_is_transcription_factor_vector(RequiredInput),
+        gene_is_global_predictive_factor_vector(RequiredInput),
         gene_divergence_vector(RequiredInput),
-        box_main_neighborhood_vector(RequiredInput),
-        neighborhood_span_vector(RequiredInput),
         gene_metacell_fraction_matrix(RequiredInput),
         gene_metacell_total_UMIs_matrix(RequiredInput),
-        gene_neighborhood_is_correlated_matrix(RequiredInput),
-        box_neighborhood_is_member_matrix(RequiredInput),
     ],
-) function extract_box_box_data(  # untested
+) function extract_block_block_data(  # untested
     daf::DafReader;
-    x_box::AbstractString,
-    y_box::AbstractString,
+    x_block::AbstractString,
+    y_block::AbstractString,
     min_significant_gene_UMIs::Integer = MIN_SIGNIFICANT_GENE_UMIS,
-    max_box_span::AbstractFloat = function_default(compute_boxes!, :max_box_span),
+    max_block_span::AbstractFloat = function_default(compute_local_predictive_factors!, :max_block_span),
     gene_fraction_regularization::AbstractFloat = GENE_FRACTION_REGULARIZATION,
-    fold_confidence::AbstractFloat = function_default(compute_boxes!, :fold_confidence),
+    fold_confidence::AbstractFloat = function_default(compute_local_predictive_factors!, :fold_confidence),
 )::PointsGraphData
     @assert gene_fraction_regularization > 0
 
     names_of_x_metacells,
     total_UMIs_of_x_metacells,
     total_UMIs_of_x_metacells_of_genes,
-    fraction_of_x_metacells_of_genes = read_box_box_data(daf, x_box)
+    fraction_of_x_metacells_of_genes = read_block_block_data(daf, x_block)
     log_decreased_fraction_of_genes_in_x_metacells, log_increased_fraction_of_genes_in_x_metacells =
         compute_confidence_log_fraction_of_genes_in_metacells(;
             gene_fraction_regularization = gene_fraction_regularization,
-            fraction_of_genes_in_metacells = transposer(fraction_of_x_metacells_of_genes),
+            fractions_of_genes_in_metacells = transposer(fraction_of_x_metacells_of_genes),
             total_UMIs_of_metacells = total_UMIs_of_x_metacells,
             fold_confidence = fold_confidence,
         )
@@ -309,21 +247,21 @@ $(CONTRACT)
     log_increased_fraction_of_x_metacells_of_genes = transposer(log_increased_fraction_of_genes_in_x_metacells)
     @assert all(log_decreased_fraction_of_x_metacells_of_genes .<= log_increased_fraction_of_x_metacells_of_genes)
 
-    is_self_difference = x_box == y_box
+    is_self_difference = x_block == y_block
     if is_self_difference
-        names_of_y_metacells, total_UMIs_of_y_metacells_of_genes, fraction_of_y_metacells_of_genes =
-            names_of_x_metacells, total_UMIs_of_x_metacells_of_genes, fraction_of_x_metacells_of_genes
+        names_of_y_metacells, total_UMIs_of_y_metacells, total_UMIs_of_y_metacells_of_genes, fraction_of_y_metacells_of_genes =
+            names_of_x_metacells, total_UMIs_of_x_metacells, total_UMIs_of_x_metacells_of_genes, fraction_of_x_metacells_of_genes
         log_decreased_fraction_of_y_metacells_of_genes, log_increased_fraction_of_y_metacells_of_genes =
             log_decreased_fraction_of_x_metacells_of_genes, log_increased_fraction_of_x_metacells_of_genes
     else
         names_of_y_metacells,
         total_UMIs_of_y_metacells,
         total_UMIs_of_y_metacells_of_genes,
-        fraction_of_y_metacells_of_genes = read_box_box_data(daf, y_box)
+        fraction_of_y_metacells_of_genes = read_block_block_data(daf, y_block)
         log_decreased_fraction_of_genes_in_y_metacells, log_increased_fraction_of_genes_in_y_metacells =
             compute_confidence_log_fraction_of_genes_in_metacells(;
                 gene_fraction_regularization = gene_fraction_regularization,
-                fraction_of_genes_in_metacells = transposer(fraction_of_y_metacells_of_genes),
+                fractions_of_genes_in_metacells = transposer(fraction_of_y_metacells_of_genes),
                 total_UMIs_of_metacells = total_UMIs_of_y_metacells,
                 fold_confidence = fold_confidence,
             )
@@ -390,14 +328,9 @@ $(CONTRACT)
     end
 
     is_lateral_of_genes = get_vector(daf, "gene", "is_lateral")
-    main_neighborhoods_of_boxes = get_vector(daf, "box", "neighborhood.main")
-    x_neighborhood = main_neighborhoods_of_boxes[x_box]
-    y_neighborhood = main_neighborhoods_of_boxes[y_box]
-
-    is_correlated_of_x_neighborhood_of_genes =
-        get_query(daf, Axis("neighborhood") |> IsEqual(x_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
-    is_correlated_of_y_neighborhood_of_genes =
-        get_query(daf, Axis("neighborhood") |> IsEqual(y_neighborhood) |> Axis("gene") |> Lookup("is_correlated"))
+    is_marker_of_genes = get_vector(daf, "gene", "is_marker")
+    is_transcription_factor_of_genes = get_vector(daf, "gene", "is_transcription_factor")
+    is_global_predictive_factor_of_genes = get_vector(daf, "gene", "is_global_predictive_factor")
 
     n_significant_genes = sum(mask_of_genes)
     @assert n_significant_genes > 0
@@ -409,39 +342,8 @@ $(CONTRACT)
     edges_points = Vector{Tuple{Int, Int}}(undef, n_significant_genes * 2)
     borders_colors = Vector{AbstractString}(undef, n_significant_genes * 3)
 
-    not_correlated = "uncorrelated for both"
-    x_correlated = "correlated for $(x_box)"
-    y_correlated = "correlated for $(y_box)"
-    xy_correlated = "correlated for both"
-
-    spans_of_neighborhoods = get_vector(daf, "neighborhood", "span")
-    is_member_of_boxes_in_neighborhoods = get_matrix(daf, "box", "neighborhood", "is_member")
-    if x_neighborhood == y_neighborhood
-        neighborhood_span = spans_of_neighborhoods[x_neighborhood]
-        x_axis_title = "$(x_box) (main: $(x_neighborhood) span: $(neighborhood_span))"
-        y_axis_title = "$(y_box) (main: $(y_neighborhood) span: $(neighborhood_span))"
-    else
-        x_span = spans_of_neighborhoods[x_neighborhood]
-        is_x_box_member_of_main_neighborhood_of_y_box = is_member_of_boxes_in_neighborhoods[x_box, y_neighborhood]
-        if is_x_box_member_of_main_neighborhood_of_y_box
-            x_is_not = "is"
-        else
-            x_is_not = "not"
-        end
-        x_axis_title = "$(x_box) (main: $(x_neighborhood) span: $(x_span), $(x_is_not) in: $(y_neighborhood))"
-
-        y_span = spans_of_neighborhoods[x_neighborhood]
-
-        is_y_box_member_of_main_neighborhood_of_x_box = is_member_of_boxes_in_neighborhoods[y_box, x_neighborhood]
-        if is_y_box_member_of_main_neighborhood_of_x_box
-            y_is_not = "is"
-        else
-            y_is_not = "not"
-        end
-        y_axis_title = "$(y_box) (main: $(y_neighborhood) span: $(y_span), $(y_is_not) in: $(x_neighborhood))"
-
-        neighborhood_span = x_span
-    end
+    x_axis_title = x_block
+    y_axis_title = y_block
 
     edge_index = 0
     point_index = 0
@@ -455,37 +357,22 @@ $(CONTRACT)
         points_xs[point_index] = x_fraction_of_genes[gene_index]
         points_ys[point_index] = y_fraction_of_genes[gene_index]
 
-        if is_lateral_of_genes[gene_index]
-            points_colors[point_index] = "lateral"
-        elseif is_correlated_of_x_neighborhood_of_genes[gene_index]
-            if is_correlated_of_y_neighborhood_of_genes[gene_index]
-                points_colors[point_index] = xy_correlated
-            else
-                points_colors[point_index] = x_correlated
-            end
+        if is_global_predictive_factor_of_genes[gene_index]
+            points_colors[point_index] = "global predictive factors"
+        elseif is_transcription_factor_of_genes[gene_index]
+            points_colors[point_index] = "transcription factors"
+        elseif is_lateral_of_genes[gene_index]
+            points_colors[point_index] = "lateral genes"
+        elseif is_marker_of_genes[gene_index]
+            points_colors[point_index] = "marker genes"
         else
-            if is_correlated_of_y_neighborhood_of_genes[gene_index]
-                points_colors[point_index] = y_correlated
-            else
-                points_colors[point_index] = not_correlated
-            end
+            points_colors[point_index] = "other genes"
         end
 
         if is_self_difference
-            x_label, y_label = "$(x_box) low:", "$(x_box) high:"
+            x_label, y_label = "$(x_block) low:", "$(x_block) high:"
         else
-            x_label, y_label = "$(x_box):", "$(y_box):"
-        end
-
-        @assert neighborhood_span > max_box_span
-
-        borders_colors[point_index] = "not a certificate"
-        if points_colors[point_index] != not_correlated && !is_lateral_of_genes[gene_index]
-            if distance_of_genes[gene_index] >= neighborhood_span
-                borders_colors[point_index] = "certificate for $(x_box) neighborhood"
-            elseif distance_of_genes[gene_index] >= max_box_span
-                borders_colors[point_index] = "certificate for $(x_box) box"
-            end
+            x_label, y_label = "$(x_block):", "$(y_block):"
         end
 
         divergence = divergence_of_genes[gene_index]
@@ -508,33 +395,40 @@ $(CONTRACT)
             "<br>",
         )
 
-        edge_index += 1
-        edges_points[edge_index] = (point_index, point_index + 1)
-
-        point_index += 1
-        points_xs[point_index] = x_confidence_fraction_of_genes[gene_index]
-        points_ys[point_index] = y_confidence_fraction_of_genes[gene_index]
-        points_colors[point_index] = ""
-        points_hovers[point_index] = ""
         borders_colors[point_index] = ""
+        if is_global_predictive_factor_of_genes[gene_index]
+            if distance_of_genes[gene_index] >= max_block_span
+                borders_colors[point_index] = "certificates"
+            end
 
-        if divergence > 0
             edge_index += 1
             edges_points[edge_index] = (point_index, point_index + 1)
 
             point_index += 1
             points_xs[point_index] = x_confidence_fraction_of_genes[gene_index]
             points_ys[point_index] = y_confidence_fraction_of_genes[gene_index]
-            if points_ys[point_index] > points_xs[point_index]
-                points_ys[point_index] =
-                    points_xs[point_index] * (points_ys[point_index] / points_xs[point_index])^(1 - divergence)
-            else
-                points_xs[point_index] =
-                    points_ys[point_index] * (points_xs[point_index] / points_ys[point_index])^(1 - divergence)
-            end
             points_colors[point_index] = ""
             points_hovers[point_index] = ""
             borders_colors[point_index] = ""
+
+            if divergence > 0
+                edge_index += 1
+                edges_points[edge_index] = (point_index, point_index + 1)
+
+                point_index += 1
+                points_xs[point_index] = x_confidence_fraction_of_genes[gene_index]
+                points_ys[point_index] = y_confidence_fraction_of_genes[gene_index]
+                if points_ys[point_index] > points_xs[point_index]
+                    points_ys[point_index] =
+                        points_xs[point_index] * (points_ys[point_index] / points_xs[point_index])^(1 - divergence)
+                else
+                    points_xs[point_index] =
+                        points_ys[point_index] * (points_xs[point_index] / points_ys[point_index])^(1 - divergence)
+                end
+                points_colors[point_index] = ""
+                points_hovers[point_index] = ""
+                borders_colors[point_index] = ""
+            end
         end
     end
 
@@ -546,7 +440,7 @@ $(CONTRACT)
     resize!(edges_points, edge_index)
 
     return PointsGraphData(;
-        figure_title = "Boxes Genes Difference",
+        figure_title = "Blocks Genes Difference",
         x_axis_title = x_axis_title,
         y_axis_title = y_axis_title,
         points_colors_title = "Genes",
@@ -562,16 +456,16 @@ $(CONTRACT)
     )
 end
 
-function read_box_box_data(  # untested
+function read_block_block_data(  # untested
     daf::DafReader,
-    box::AbstractString,
+    block::AbstractString,
 )::Tuple{
     AbstractVector{<:AbstractString},
     AbstractVector{<:Unsigned},
     AbstractMatrix{<:Unsigned},
     AbstractMatrix{<:AbstractFloat},
 }
-    metacells_query = Axis("metacell") |> And("box") |> IsEqual(box)
+    metacells_query = Axis("metacell") |> And("block") |> IsEqual(block)
     names_of_metacells = get_query(daf, metacells_query |> Lookup("name")).array
     total_UMIs_of_metacells = get_query(daf, metacells_query |> Lookup("total_UMIs")).array
     total_UMIs_of_metacells_of_genes = get_query(daf, metacells_query |> Axis("gene") |> Lookup("total_UMIs")).array
@@ -636,7 +530,6 @@ function compute_most_different_metacells_of_gene(;  # untested
                     log_increased_fraction_of_y_metacells_of_genes[y_metacell_index, gene_index],
                     divergence_of_gene,
                 )
-
                 if distance > most_distance
                     most_x_metacell_index = x_metacell_index
                     most_y_metacell_index = y_metacell_index
@@ -672,28 +565,23 @@ function compute_most_different_metacells_of_gene(;  # untested
 end
 
 """
-    default_box_box_configuration(
+    default_block_block_configuration(
         [configuration::PointsGraphConfiguration = PointsGraphConfiguration()];
-        x_box::AbstractString,
-        y_box::AbstractString,
-        x_neighborhood::AbstractString,
-        [max_box_span::AbstractFloat = $(DEFAULT.max_box_span),
+        [max_block_span::AbstractFloat = $(DEFAULT.max_block_span),
         gene_fraction_regularization::AbstractFloat = $(DEFAULT.gene_fraction_regularization)],
     )::PointsGraphConfiguration
 
-Return a default configuration for a box-box graph. Will modify `configuration` in-place and return it.
+Return a default configuration for a block-block graph. Will modify `configuration` in-place and return it.
 """
-@logged @computation function default_box_box_configuration(  # untested
+@logged @computation function default_block_block_configuration(  # untested
     configuration::PointsGraphConfiguration = PointsGraphConfiguration();
-    x_box::AbstractString,
-    y_box::AbstractString,
-    max_box_span::AbstractFloat = function_default(compute_boxes!, :max_box_span),
+    max_block_span::AbstractFloat = function_default(compute_local_predictive_factors!, :max_block_span),
     gene_fraction_regularization::AbstractFloat = GENE_FRACTION_REGULARIZATION,
 )::PointsGraphConfiguration
     @assert gene_fraction_regularization === nothing || gene_fraction_regularization >= 0
-    configuration.diagonal_bands.low.offset = 2^-max_box_span
+    configuration.diagonal_bands.low.offset = 2^-max_block_span
     configuration.diagonal_bands.middle.offset = 1.0
-    configuration.diagonal_bands.high.offset = 2^max_box_span
+    configuration.diagonal_bands.high.offset = 2^max_block_span
     configuration.x_axis.log_regularization = gene_fraction_regularization
     configuration.y_axis.log_regularization = gene_fraction_regularization
     configuration.edges_over_points = false
@@ -701,17 +589,13 @@ Return a default configuration for a box-box graph. Will modify `configuration` 
     configuration.points.show_color_scale = true
     configuration.borders.show_color_scale = true
     configuration.points.color_palette = [
-        ("lateral", "grey"),
-        ("uncorrelated for both", "salmon"),
-        ("correlated for $(x_box)", "seagreen"),
-        ("correlated for $(y_box)", "royalblue"),
-        ("correlated for both", "darkturquoise"),
+        ("other genes", "lightgrey"),
+        ("lateral genes", "grey"),
+        ("marker genes", "seagreen"),
+        ("transcription factors", "royalblue"),
+        ("global predictive factors", "salmon"),
     ]
-    configuration.borders.color_palette = [
-        ("not a certificate", "lavender"),
-        ("certificate for $(x_box) box", "mediumpurple"),
-        ("certificate for $(x_box) neighborhood", "mediumorchid"),
-    ]
+    configuration.borders.color_palette = [("certificates", "mediumpurple")]
     return configuration
 end
 
@@ -721,14 +605,16 @@ end
         [gene_names::Maybe{Vector{<:AbstractString}} = $(DEFAULT.gene_names),
         max_marker_genes::Integer = $(DEFAULT.max_marker_genes),
         gene_fraction_regularization::AbstractFloat = $(DEFAULT.gene_fraction_regularization),
-        type_annotation::Bool = $(DEFAULT.type_annotation),
-        expression_annotations::Maybe{FrameColumns} = $(DEFAULT.expression_annotations),
+        type_annotation::Maybe{AbstractString} = $(DEFAULT.type_annotation),
+        type_color::Bool = $(DEFAULT.type_color),
+        metacell_annotations::Maybe{FrameColumns} = $(DEFAULT.metacell_annotations),
         gene_annotations::Maybe{FrameColumns} = $(DEFAULT.gene_annotations),
         reorder_by_type::Bool = $(DEFAULT.reorder_by_type)]
     )::HeatmapGraphData
 
 Extract the data for a metacells marker genes graph. This shows the genes that most distinguish between metacells. If
-set, `type_annotation` is is added based on the type of each metacell. Optional `expression_annotations` and
+set, `type_annotation` is is added based on the type of each metacell. If `type_color`, this is expected to also be an
+axis with a `color` property; otherwise, types are colored black or white. Optional `metacell_annotations` and
 `gene_annotations` are added as well.
 
 If `gene_names` is specified, these genes will always appear in the graph. This list is supplemented with additional
@@ -739,7 +625,8 @@ If `named_gene_annotation` is set, and any `gene_names` were specified, then thi
 "named".
 
 The data is clustered to show the structure of both genes and metacells. If `reorder_by_type` is specified, then the
-profiles are reordered so that each type is contiguous.
+profiles are reordered so that each type is contiguous. In this case, if `type_color` is not set, then the types are
+colored black and white so that adjacent types are different.
 
 $(CONTRACT)
 """
@@ -749,7 +636,7 @@ $(CONTRACT)
     data = [
         gene_divergence_vector(RequiredInput),
         gene_is_lateral_vector(OptionalInput),
-        gene_metacell_fraction_matrix(RequiredInput),
+        gene_metacell_fraction_matrix(OptionalInput),  # TODOX
         metacell_type_vector(OptionalInput),
         type_color_vector(OptionalInput),
     ],
@@ -758,8 +645,9 @@ $(CONTRACT)
     gene_names::Maybe{Vector{<:AbstractString}} = nothing,
     max_marker_genes::Integer = 100,
     gene_fraction_regularization::AbstractFloat = GENE_FRACTION_REGULARIZATION,
-    type_annotation::Bool = true,
-    expression_annotations::Maybe{FrameColumns} = nothing,
+    type_annotation::Maybe{AbstractString} = "type",
+    type_color::Bool = true,
+    metacell_annotations::Maybe{FrameColumns} = nothing,
     named_gene_annotation::Bool = true,
     gene_annotations::Maybe{FrameColumns} = ["is_lateral", "divergence"],
     reorder_by_type::Bool = true,
@@ -771,71 +659,8 @@ $(CONTRACT)
         max_marker_genes = max_marker_genes,
         gene_fraction_regularization = gene_fraction_regularization,
         type_annotation = type_annotation,
-        expression_annotations = expression_annotations,
-        named_gene_annotation = named_gene_annotation,
-        gene_annotations = gene_annotations,
-        reorder_by_type = reorder_by_type,
-    )
-end
-
-"""
-    function extract_boxes_marker_genes_data(
-        daf::DafReader;
-        [gene_names::Maybe{Vector{<:AbstractString}} = $(DEFAULT.gene_names),
-        max_marker_genes::Integer = $(DEFAULT.max_marker_genes),
-        gene_fraction_regularization::AbstractFloat = $(DEFAULT.gene_fraction_regularization),
-        type_annotation::Bool = $(DEFAULT.type_annotation),
-        expression_annotations::Maybe{FrameColumns} = $(DEFAULT.expression_annotations),
-        named_gene_annotation::Bool = $(DEFAULT.named_gene_annotation),
-        gene_annotations::Maybe{FrameColumns} = $(DEFAULT.gene_annotations),
-        reorder_by_type::Bool = $(DEFAULT.reorder_by_type)]
-    )::HeatmapGraphData
-
-Extract the data for a boxes marker genes graph. This shows the genes that most distinguish between boxes. If set,
-`type_annotation` is is added based on the type of each box. Optional `expression_annotations` and `gene_annotations`
-are added as well.
-
-If `gene_names` is specified, these genes will always appear in the graph. This list is supplemented with additional
-`is_marker` genes to show at least `min_marker_genes`. A number of strongest such genes is chosen from each profile,
-such that the total number of these genes together with the forced `gene_names` is at least `min_marker_genes`.
-
-If `named_gene_annotation` is set, and any `gene_names` were specified, then this is added as a gene annotation called
-"named".
-
-The data is clustered to show the structure of both genes and boxes. If `reorder_by_type` is specified, and
-`type_property` is not be `nothing`, then the profiles are reordered so that each type is contiguous.
-
-$(CONTRACT)
-"""
-@logged @computation Contract(
-    is_relaxed = true,
-    axes = [gene_axis(RequiredInput), box_axis(RequiredInput), type_axis(OptionalInput)],
-    data = [
-        gene_divergence_vector(RequiredInput),
-        gene_is_lateral_vector(OptionalInput),
-        gene_box_fraction_matrix(RequiredInput),
-        box_type_vector(OptionalInput),
-        type_color_vector(OptionalInput),
-    ],
-) function extract_boxes_marker_genes_data(  # untested
-    daf::DafReader;
-    gene_names::Maybe{Vector{<:AbstractString}} = nothing,
-    max_marker_genes::Integer = 100,
-    gene_fraction_regularization::AbstractFloat = GENE_FRACTION_REGULARIZATION,
-    type_annotation::Bool = true,
-    expression_annotations::Maybe{FrameColumns} = nothing,
-    named_gene_annotation::Bool = true,
-    gene_annotations::Maybe{FrameColumns} = ["is_lateral", "divergence"],
-    reorder_by_type::Bool = true,
-)::HeatmapGraphData
-    return extract_marker_genes_data(
-        daf;
-        axis_name = "box",
-        gene_names = gene_names,
-        max_marker_genes = max_marker_genes,
-        gene_fraction_regularization = gene_fraction_regularization,
-        type_annotation = type_annotation,
-        expression_annotations = expression_annotations,
+        type_color = type_color,
+        metacell_annotations = metacell_annotations,
         named_gene_annotation = named_gene_annotation,
         gene_annotations = gene_annotations,
         reorder_by_type = reorder_by_type,
@@ -848,8 +673,9 @@ function extract_marker_genes_data(  # untested
     gene_names::Maybe{Vector{<:AbstractString}},
     max_marker_genes::Integer,
     gene_fraction_regularization::AbstractFloat,
-    type_annotation::Bool,
-    expression_annotations::Maybe{FrameColumns},
+    type_annotation::Maybe{AbstractString},
+    type_color::Bool,
+    metacell_annotations::Maybe{FrameColumns},
     named_gene_annotation::Bool,
     gene_annotations::Maybe{FrameColumns},
     reorder_by_type::Bool,
@@ -862,7 +688,8 @@ function extract_marker_genes_data(  # untested
     mask_of_named_selected_genes =
         compute_marker_genes(daf, axis_name, gene_names, max_marker_genes, gene_fraction_regularization)
 
-    columns_annotations = marker_genes_columns_annotations(daf, axis_name, type_annotation, expression_annotations)
+    columns_annotations =
+        marker_genes_columns_annotations(daf, axis_name, type_annotation, type_color, metacell_annotations)
 
     rows_annotations = marker_genes_rows_annotations(  # NOJET
         daf,
@@ -874,8 +701,8 @@ function extract_marker_genes_data(  # untested
 
     if reorder_by_type
         type_indices_of_profiles = columns_annotations[1].values
-        type_of_profiles = get_vector(daf, axis_name, "type")
-        type_indices_of_profiles = axis_indices(daf, "type", type_of_profiles.array)
+        type_of_profiles = get_vector(daf, axis_name, type_annotation)
+        type_indices_of_profiles = axis_indices(daf, type_annotation, type_of_profiles.array)
     else
         type_indices_of_profiles = nothing
     end
@@ -926,7 +753,7 @@ function compute_marker_genes(  # untested
 
     if length(gene_names) >= min_marker_genes
         fractions_of_profiles_of_named_genes = fractions_of_profiles_of_genes[:, indices_of_named_genes]
-        @assert size(fractions_of_profiles_of_genes) == (n_profiles, n_named_genes)
+        @assert size(fractions_of_profiles_of_named_genes) == (n_profiles, n_named_genes)
 
         fractions_of_named_genes_of_profiles = transposer(fractions_of_profiles_of_named_genes)
         @assert size(fractions_of_named_genes_of_profiles) == (n_named_genes, n_profiles)
@@ -938,8 +765,8 @@ function compute_marker_genes(  # untested
         power_of_named_genes_of_profiles =
             log2.(
                 (fractions_of_named_genes_of_profiles .+ gene_fraction_regularization) ./
-                transpose(median_fractions_of_named_genes .+ gene_fraction_regularization)
-            ) .* (1 .- transpose(divergence_of_named_genes))
+                (median_fractions_of_named_genes .+ gene_fraction_regularization)
+            ) .* (1 .- divergence_of_named_genes)
         @assert size(power_of_named_genes_of_profiles) == (n_named_genes, n_profiles)
 
         power_of_selected_genes_of_profiles = power_of_named_genes_of_profiles
@@ -1024,26 +851,31 @@ end
 function marker_genes_columns_annotations(  # untested
     daf::DafReader,
     axis::AbstractString,
-    type_annotation::Bool,
-    expression_annotations::Maybe{FrameColumns},
+    type_annotation::Maybe{AbstractString},
+    type_color::Bool,
+    metacell_annotations::Maybe{FrameColumns},
 )::Maybe{Vector{AnnotationsData}}
     annotations = AnnotationsData[]
-    if type_annotation
-        type_of_profiles = get_vector(daf, axis, "type")
+    if type_annotation !== nothing
+        type_of_profiles = get_vector(daf, axis, type_annotation)
+        values = axis_indices(daf, type_annotation, type_of_profiles.array)
+        if !type_color
+            values = Vector{Float32}(values) ./ axis_length(daf, type_annotation)
+        end
         push!(
             annotations,
             AnnotationsData(;
                 name = "type",
-                title = "type",
-                values = axis_indices(daf, "type", type_of_profiles.array),
+                title = type_annotation,
+                values = values,
                 hovers = [
                     "$(name): $(type)" for (name, type) in zip(names(type_of_profiles, 1), type_of_profiles.array)
                 ],
             ),
         )
     end
-    if expression_annotations !== nothing
-        data_frame = get_frame(daf, axis, expression_annotations)
+    if metacell_annotations !== nothing
+        data_frame = get_frame(daf, axis, metacell_annotations)
         for (name, values) in pairs(eachcol(data_frame))
             push!(annotations, AnnotationsData(; title = string(name), values = Float32.(values)))
         end
@@ -1112,12 +944,18 @@ function reorder_annotations(::Nothing, ::Vector{<:Integer})::Nothing  # unteste
 end
 
 function reorder_annotations!(annotations::Vector{AnnotationsData}, order::Vector{<:Integer})::Nothing  # untested
-    for annotations_data in annotations
-        annotations_data.values = annotations_data.values[order]
+    for (annotation_index, annotations_data) in enumerate(annotations)
+        values = annotations_data.values[order]
         hovers = annotations_data.hovers
         if hovers !== nothing
-            annotations_data.hovers = hovers[order]
+            hovers = hovers[order]
         end
+        annotations[annotation_index] = AnnotationsData(;
+            name = annotations_data.name,
+            title = annotations_data.title,
+            values = values,
+            hovers = hovers,
+        )
     end
     return nothing
 end
@@ -1126,7 +964,8 @@ end
     default_marker_genes_configuration(
         daf::DafReader,
         [configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-        type_annotation::Bool = $(DEFAULT.type_annotation),
+        type_annotation::Maybe{AbstractString} = $(DEFAULT.type_annotation),
+        type_color::Bool = $(DEFAULT.type_annotation),
         min_significant_fold::Real = $(DEFAULT.min_significant_fold),
         max_significant_fold::Real = $(DEFAULT.max_significant_fold)],
     )::HeatmapGraphConfiguration
@@ -1149,7 +988,8 @@ $(CONTRACT)
 ) function default_marker_genes_configuration(  # untested
     daf::DafReader,
     configuration::HeatmapGraphConfiguration = HeatmapGraphConfiguration();
-    type_annotation::Bool = true,
+    type_annotation::Maybe{AbstractString} = "type",
+    type_color::Bool = true,
     min_significant_fold::Real = 0.5,
     max_significant_fold::Real = 3.0,
 )::HeatmapGraphConfiguration
@@ -1168,9 +1008,24 @@ $(CONTRACT)
     ]
     configuration.entries.color_scale.minimum = -max_significant_fold - 0.05
     configuration.entries.color_scale.maximum = max_significant_fold + 0.05
-    if type_annotation
-        configuration.annotations["type"] =
-            AnnotationsConfiguration(; color_palette = collect(enumerate(get_vector(daf, "type", "color").array)))
+    if type_annotation !== nothing
+        if type_color
+            configuration.annotations["type"] =
+                AnnotationsConfiguration(; color_palette = collect(enumerate(get_vector(daf, "type", "color").array)))
+        else
+            configuration.annotations["type"] = AnnotationsConfiguration(;
+                color_scale = AxisConfiguration(minimum = 0, maximum = 1),
+                color_palette = [
+                    (0 / 6, "#ff0000"),
+                    (1 / 6, "#ffff00"),
+                    (2 / 6, "#00ff00"),
+                    (3 / 6, "#00ffff"),
+                    (4 / 6, "#0000ff"),
+                    (5 / 6, "#ff00ff"),
+                    (6 / 6, "#ff0000"),
+                ],
+            )
+        end
     end
     configuration.annotations["bool"] = AnnotationsConfiguration(; color_palette = [(0.0, "#ffffff"), (1.0, "#000000")])
     return configuration
