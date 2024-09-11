@@ -102,6 +102,9 @@ MCGraphs.Renderers.DistributionConfiguration
 MCGraphs.Renderers.FigureConfiguration
 MCGraphs.Renderers.MarginsConfiguration
 MCGraphs.Renderers.AxisConfiguration
+MCGraphs.Renderers.ColorsConfiguration
+MCGraphs.Renderers.ContinuousColors
+MCGraphs.Renderers.CategoricalColors
 MCGraphs.Renderers.ValuesOrientation
 MCGraphs.Renderers.GraphNormalization
 MCGraphs.Renderers.SizeRangeConfiguration

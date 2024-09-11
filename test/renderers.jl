@@ -35,7 +35,7 @@ end
 
 function normalize_html(html::AbstractString)::AbstractString
     html = normalize_ids(html, "id-", HTML_ID_REGEX, "")
-    html = replace(html, ",\"" => ",\n\"")
+    html = replace(html, ",\"" => ",\n\"", ",{" => ",\n{", ",[" => ",\n[")
     return html
 end
 
@@ -183,7 +183,7 @@ nested_test("renderers") do
 
             nested_test("!log_regularization") do
                 graph.configuration.value_axis.log_regularization = -1.0
-                @test_throws "negative configuration.value_axis.log_regularization: -1.0" graph.figure
+                @test_throws "linear non-zero configuration.value_axis.log_regularization: -1.0" graph.figure
             end
         end
 
@@ -248,10 +248,42 @@ nested_test("renderers") do
                 return nothing
             end
 
+            nested_test("percent") do
+                graph.data.distribution_values = graph.data.distribution_values / 100
+                graph.configuration.value_axis.percent = true
+                return test_html(graph, "distribution.box.percent.html")
+            end
+
             nested_test("log") do
-                graph.configuration.value_axis.log_regularization = 0
-                test_html(graph, "distribution.box.log.html")
-                return nothing
+                nested_test("10") do
+                    graph.configuration.value_axis.log_scale = Log10Scale
+
+                    nested_test("()") do
+                        test_html(graph, "distribution.box.log.html")
+                        return nothing
+                    end
+
+                    nested_test("percent") do
+                        graph.data.distribution_values = graph.data.distribution_values / 100
+                        graph.configuration.value_axis.percent = true
+                        return test_html(graph, "distribution.box.log.percent.html")
+                    end
+                end
+
+                nested_test("2") do
+                    graph.configuration.value_axis.log_scale = Log2Scale
+
+                    nested_test("()") do
+                        test_html(graph, "distribution.box.log2.html")
+                        return nothing
+                    end
+
+                    nested_test("percent") do
+                        graph.data.distribution_values = graph.data.distribution_values / 100
+                        graph.configuration.value_axis.percent = true
+                        return test_html(graph, "distribution.box.log2.percent.html")
+                    end
+                end
             end
 
             nested_test("outliers") do
@@ -321,9 +353,17 @@ nested_test("renderers") do
             end
 
             nested_test("log") do
-                graph.configuration.value_axis.log_regularization = 0
-                test_html(graph, "distribution.violin.log.html")
-                return nothing
+                nested_test("10") do
+                    graph.configuration.value_axis.log_scale = Log10Scale
+                    test_html(graph, "distribution.violin.log.html")
+                    return nothing
+                end
+
+                nested_test("2") do
+                    graph.configuration.value_axis.log_scale = Log2Scale
+                    test_html(graph, "distribution.violin.log2.html")
+                    return nothing
+                end
             end
         end
 
@@ -355,9 +395,17 @@ nested_test("renderers") do
             end
 
             nested_test("log") do
-                graph.configuration.value_axis.log_regularization = 0
-                test_html(graph, "distribution.curve.log.html")
-                return nothing
+                nested_test("10") do
+                    graph.configuration.value_axis.log_scale = Log10Scale
+                    test_html(graph, "distribution.curve.log.html")
+                    return nothing
+                end
+
+                nested_test("2") do
+                    graph.configuration.value_axis.log_scale = Log2Scale
+                    test_html(graph, "distribution.curve.log2.html")
+                    return nothing
+                end
             end
         end
     end
@@ -444,6 +492,13 @@ nested_test("renderers") do
             nested_test("vertical") do
                 graph.configuration.distribution.values_orientation = VerticalValues
                 test_html(graph, "distributions.box.vertical.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.data.distributions_values = [values / 100 for values in graph.data.distributions_values]
+                graph.configuration.value_axis.percent = true
+                test_html(graph, "distributions.box.percent.html")
                 return nothing
             end
 
@@ -557,9 +612,36 @@ nested_test("renderers") do
         end
 
         nested_test("log") do
-            graph.configuration.value_axis.log_regularization = 0
-            test_html(graph, "distributions.log.html")
-            return nothing
+            graph.configuration.value_axis.log_scale = Log10Scale
+            nested_test("10") do
+                nested_test("()") do
+                    test_html(graph, "distributions.log.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.data.distributions_values = [values / 100 for values in graph.data.distributions_values]
+                    graph.configuration.value_axis.percent = true
+                    test_html(graph, "distributions.log.percent.html")
+                    return nothing
+                end
+            end
+
+            nested_test("2") do
+                graph.configuration.value_axis.log_scale = Log2Scale
+
+                nested_test("()") do
+                    test_html(graph, "distributions.log2.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.data.distributions_values = [values / 100 for values in graph.data.distributions_values]
+                    graph.configuration.value_axis.percent = true
+                    test_html(graph, "distributions.log2.percent.html")
+                    return nothing
+                end
+            end
         end
 
         nested_test("colors") do
@@ -624,6 +706,32 @@ nested_test("renderers") do
             return nothing
         end
 
+        nested_test("percent") do
+            graph.configuration.x_axis.percent = true
+            graph.configuration.y_axis.percent = true
+            test_html(graph, "line.percent.html")
+            return nothing
+        end
+
+        nested_test("log") do
+            graph.configuration.x_axis.log_scale = Log2Scale
+            graph.configuration.x_axis.log_regularization = 1
+            graph.configuration.y_axis.log_scale = Log10Scale
+            graph.configuration.y_axis.log_regularization = 1.2
+
+            nested_test("()") do
+                test_html(graph, "line.log.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "line.log.percent.html")
+                return nothing
+            end
+        end
+
         nested_test("dash") do
             graph.configuration.line.is_dashed = true
             test_html(graph, "line.dash.html")
@@ -644,8 +752,18 @@ nested_test("renderers") do
 
         nested_test("fill_below") do
             graph.configuration.line.is_filled = true
-            test_html(graph, "line.fill_below.html")
-            return nothing
+
+            nested_test("()") do
+                test_html(graph, "line.fill_below.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "line.fill_below.percent.html")
+                return nothing
+            end
         end
 
         nested_test("fill_below!line") do
@@ -669,6 +787,12 @@ nested_test("renderers") do
 
             nested_test("()") do
                 test_html(graph, "line.vertical_lines.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                test_html(graph, "line.vertical_lines.percent.html")
                 return nothing
             end
 
@@ -720,6 +844,13 @@ nested_test("renderers") do
                 return nothing
             end
 
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "line.vertical_fills.percent.html")
+                return nothing
+            end
+
             nested_test("legend") do
                 graph.configuration.vertical_bands.show_legend = true
                 test_legend(graph, "line.vertical_fills") do
@@ -739,6 +870,12 @@ nested_test("renderers") do
 
             nested_test("()") do
                 test_html(graph, "line.horizontal_lines.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "line.horizontal_lines.percent.html")
                 return nothing
             end
 
@@ -768,6 +905,13 @@ nested_test("renderers") do
 
             nested_test("()") do
                 test_html(graph, "line.horizontal_fills.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "line.horizontal_fills.percent.html")
                 return nothing
             end
 
@@ -830,6 +974,52 @@ nested_test("renderers") do
         nested_test("()") do
             test_html(graph, "lines.html")
             return nothing
+        end
+
+        nested_test("percent") do
+            graph.configuration.x_axis.percent = true
+            graph.configuration.y_axis.percent = true
+            test_html(graph, "lines.percent.html")
+            return nothing
+        end
+
+        nested_test("log") do
+            graph.configuration.x_axis.log_regularization = 1.0
+            graph.configuration.y_axis.log_regularization = 1.2
+
+            nested_test("10") do
+                graph.configuration.x_axis.log_scale = Log10Scale
+                graph.configuration.y_axis.log_scale = Log10Scale
+
+                nested_test("()") do
+                    test_html(graph, "lines.log.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.x_axis.percent = true
+                    graph.configuration.y_axis.percent = true
+                    test_html(graph, "lines.log.percent.html")
+                    return nothing
+                end
+            end
+
+            nested_test("2") do
+                graph.configuration.x_axis.log_scale = Log2Scale
+                graph.configuration.y_axis.log_scale = Log2Scale
+
+                nested_test("()") do
+                    test_html(graph, "lines.log2.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.x_axis.percent = true
+                    graph.configuration.y_axis.percent = true
+                    test_html(graph, "lines.log2.percent.html")
+                    return nothing
+                end
+            end
         end
 
         nested_test("invalid") do
@@ -970,29 +1160,64 @@ nested_test("renderers") do
 
         nested_test("fills") do
             graph.data.lines_are_filled = [true, false]
-            test_html(graph, "lines.fills.html")
-            return nothing
+
+            nested_test("()") do
+                test_html(graph, "lines.fills.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "lines.fills.percent.html")
+                return nothing
+            end
         end
 
         nested_test("stack") do
             nested_test("values") do
-                graph.configuration.stacking_normalization = NormalizeToValues
-                test_html(graph, "lines.stack.values.html")
-                return nothing
-            end
+                graph.configuration.stacking = StackValues
 
-            nested_test("percents") do
-                graph.data.lines_ys[1][1] = 0.2
-                graph.configuration.stacking_normalization = NormalizeToPercents
-                test_html(graph, "lines.stack.percents.html")
-                return nothing
+                nested_test("()") do
+                    test_html(graph, "lines.stack.values.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.x_axis.percent = true
+                    graph.configuration.y_axis.percent = true
+                    test_html(graph, "lines.stack.values.percent.html")
+                    return nothing
+                end
+
+                nested_test("!log") do
+                    graph.configuration.y_axis.log_scale = Log10Scale
+                    @test_throws "log of stacked data" graph.figure
+                end
+
+                nested_test("log") do
+                    graph.configuration.x_axis.log_scale = Log10Scale
+                    graph.configuration.x_axis.log_regularization = 1.0
+                    test_html(graph, "lines.stack.values.log.html")
+                    return nothing
+                end
             end
 
             nested_test("fractions") do
+                graph.configuration.stacking = StackFractions
                 graph.data.lines_ys[1][1] = 0.2
-                graph.configuration.stacking_normalization = NormalizeToFractions
-                test_html(graph, "lines.stack.fractions.html")
-                return nothing
+
+                nested_test("()") do
+                    test_html(graph, "lines.stack.fractions.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.x_axis.percent = true
+                    graph.configuration.y_axis.percent = true
+                    test_html(graph, "lines.stack.fractions.percent.html")
+                    return nothing
+                end
             end
         end
 
@@ -1003,6 +1228,12 @@ nested_test("renderers") do
 
             nested_test("()") do
                 test_html(graph, "lines.vertical_lines.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                test_html(graph, "lines.vertical_lines.percent.html")
                 return nothing
             end
 
@@ -1054,6 +1285,13 @@ nested_test("renderers") do
                 return nothing
             end
 
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "lines.vertical_fills.percent.html")
+                return nothing
+            end
+
             nested_test("legend") do
                 graph.configuration.vertical_bands.show_legend = true
                 test_legend(graph, "lines.vertical_fills") do
@@ -1070,8 +1308,15 @@ nested_test("renderers") do
             graph.configuration.horizontal_bands.low.offset = 0.75
             graph.configuration.horizontal_bands.middle.offset = 1.25
             graph.configuration.horizontal_bands.high.offset = 1.5
+
             nested_test("()") do
                 test_html(graph, "lines.horizontal_lines.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "lines.horizontal_lines.percent.html")
                 return nothing
             end
 
@@ -1105,6 +1350,13 @@ nested_test("renderers") do
 
             nested_test("()") do
                 test_html(graph, "lines.horizontal_fills.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                graph.configuration.y_axis.percent = true
+                test_html(graph, "lines.horizontal_fills.percent.html")
                 return nothing
             end
 
@@ -1166,6 +1418,52 @@ nested_test("renderers") do
             return nothing
         end
 
+        nested_test("percent") do
+            graph.configuration.value_axis.percent = true
+            graph.configuration.fraction_axis.percent = true
+            graph.data.cdf_values = graph.data.cdf_values / 100
+            test_html(graph, "cdf.percent.html")
+            return nothing
+        end
+
+        nested_test("log") do
+            nested_test("10") do
+                graph.configuration.value_axis.log_scale = Log10Scale
+                graph.configuration.fraction_axis.log_scale = Log10Scale
+
+                nested_test("()") do
+                    test_html(graph, "cdf.log.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    graph.configuration.fraction_axis.percent = true
+                    graph.data.cdf_values = graph.data.cdf_values / 100
+                    test_html(graph, "cdf.log.percent.html")
+                    return nothing
+                end
+            end
+
+            nested_test("2") do
+                graph.configuration.value_axis.log_scale = Log2Scale
+                graph.configuration.fraction_axis.log_scale = Log2Scale
+
+                nested_test("()") do
+                    test_html(graph, "cdf.log2.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    graph.configuration.fraction_axis.percent = true
+                    graph.data.cdf_values = graph.data.cdf_values / 100
+                    test_html(graph, "cdf.log2.percent.html")
+                    return nothing
+                end
+            end
+        end
+
         nested_test("~values") do
             empty!(graph.data.cdf_values)
             @test_throws "too few data.cdf_values: 0" graph.figure
@@ -1173,35 +1471,96 @@ nested_test("renderers") do
 
         nested_test("vertical") do
             graph.configuration.values_orientation = VerticalValues
-            graph.configuration.value_bands.middle.offset = 110
+            graph.configuration.value_bands.middle.offset = 110.0
             graph.configuration.fraction_bands.middle.offset = 0.5
             graph.configuration.fraction_bands.middle.is_dashed = true
-            test_html(graph, "cdf.vertical.html")
-            return nothing
-        end
 
-        nested_test("percent") do
-            graph.configuration.fractions_normalization = NormalizeToPercents
-            graph.configuration.value_bands.middle.offset = 110
-            graph.configuration.fraction_bands.middle.offset = 0.5
-            graph.configuration.fraction_bands.middle.is_dashed = true
-            test_html(graph, "cdf.percent.html")
-            return nothing
+            nested_test("()") do
+                test_html(graph, "cdf.vertical.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.value_axis.percent = true
+                graph.configuration.fraction_axis.percent = true
+                graph.data.cdf_values = graph.data.cdf_values / 100
+                graph.configuration.value_bands.middle.offset /= 100
+                test_html(graph, "cdf.vertical.percent.html")
+                return nothing
+            end
         end
 
         nested_test("values") do
-            graph.configuration.fractions_normalization = NormalizeToValues
+            graph.configuration.normalize = false
             graph.configuration.value_bands.middle.offset = 110
             graph.configuration.fraction_bands.middle.offset = 0.5
             graph.configuration.fraction_bands.middle.is_dashed = true
-            test_html(graph, "cdf.values.html")
-            return nothing
+
+            nested_test("()") do
+                test_html(graph, "cdf.values.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.fraction_axis.percent = true
+                graph.data.cdf_values = graph.data.cdf_values / 100
+                @test_throws "percent of non-normalized fractions" graph.figure
+                return nothing
+            end
         end
 
         nested_test("downto") do
             graph.configuration.cdf_direction = CdfDownToValue
-            test_html(graph, "cdf.downto.html")
-            return nothing
+
+            nested_test("()") do
+                test_html(graph, "cdf.downto.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.fraction_axis.percent = true
+                graph.configuration.cdf_direction = CdfDownToValue
+                test_html(graph, "cdf.downto.percent.html")
+                return nothing
+            end
+
+            nested_test("log") do
+                nested_test("10") do
+                    graph.configuration.value_axis.log_scale = Log10Scale
+                    graph.configuration.fraction_axis.log_scale = Log10Scale
+
+                    nested_test("()") do
+                        test_html(graph, "cdf.downto.log.html")
+                        return nothing
+                    end
+
+                    nested_test("percent") do
+                        graph.configuration.value_axis.percent = true
+                        graph.configuration.fraction_axis.percent = true
+                        graph.data.cdf_values = graph.data.cdf_values / 100
+                        test_html(graph, "cdf.downto.log.percent.html")
+                        return nothing
+                    end
+                end
+
+                nested_test("2") do
+                    graph.configuration.value_axis.log_scale = Log2Scale
+                    graph.configuration.fraction_axis.log_scale = Log2Scale
+
+                    nested_test("()") do
+                        test_html(graph, "cdf.downto.log2.html")
+                        return nothing
+                    end
+
+                    nested_test("percent") do
+                        graph.configuration.value_axis.percent = true
+                        graph.configuration.fraction_axis.percent = true
+                        graph.data.cdf_values = graph.data.cdf_values / 100
+                        test_html(graph, "cdf.downto.log2.percent.html")
+                        return nothing
+                    end
+                end
+            end
         end
     end
 
@@ -1234,6 +1593,55 @@ nested_test("renderers") do
             return nothing
         end
 
+        nested_test("percent") do
+            graph.configuration.value_axis.percent = true
+            graph.configuration.fraction_axis.percent = true
+            graph.data.cdfs_values[1] = graph.data.cdfs_values[1] / 10
+            graph.data.cdfs_values[2] = graph.data.cdfs_values[2] / 10
+            test_html(graph, "cdfs.percent.html")
+            return nothing
+        end
+
+        nested_test("log") do
+            nested_test("10") do
+                graph.configuration.value_axis.log_scale = Log10Scale
+                graph.configuration.fraction_axis.log_scale = Log10Scale
+
+                nested_test("()") do
+                    test_html(graph, "cdfs.log.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    graph.configuration.fraction_axis.percent = true
+                    graph.data.cdfs_values[1] = graph.data.cdfs_values[1] / 10
+                    graph.data.cdfs_values[2] = graph.data.cdfs_values[2] / 10
+                    test_html(graph, "cdfs.log.percent.html")
+                    return nothing
+                end
+            end
+
+            nested_test("2") do
+                graph.configuration.value_axis.log_scale = Log2Scale
+                graph.configuration.fraction_axis.log_scale = Log2Scale
+
+                nested_test("()") do
+                    test_html(graph, "cdfs.log2.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    graph.configuration.fraction_axis.percent = true
+                    graph.data.cdfs_values[1] = graph.data.cdfs_values[1] / 10
+                    graph.data.cdfs_values[2] = graph.data.cdfs_values[2] / 10
+                    test_html(graph, "cdfs.log2.percent.html")
+                    return nothing
+                end
+            end
+        end
+
         nested_test("invalid") do
             nested_test("~values") do
                 empty!(graph.data.cdfs_values)
@@ -1251,21 +1659,24 @@ nested_test("renderers") do
             graph.configuration.value_bands.middle.offset = 11
             graph.configuration.fraction_bands.middle.offset = 0.5
             graph.configuration.fraction_bands.middle.is_dashed = true
-            test_html(graph, "cdfs.vertical.html")
-            return nothing
-        end
 
-        nested_test("percent") do
-            graph.configuration.fractions_normalization = NormalizeToPercents
-            graph.configuration.value_bands.middle.offset = 11
-            graph.configuration.fraction_bands.middle.offset = 0.5
-            graph.configuration.fraction_bands.middle.is_dashed = true
-            test_html(graph, "cdfs.percent.html")
-            return nothing
+            nested_test("()") do
+                test_html(graph, "cdfs.vertical.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.value_axis.percent = true
+                graph.configuration.fraction_axis.percent = true
+                graph.data.cdfs_values[1] = graph.data.cdfs_values[1] / 10
+                graph.data.cdfs_values[2] = graph.data.cdfs_values[2] / 10
+                test_html(graph, "cdfs.vertical.percent.html")
+                return nothing
+            end
         end
 
         nested_test("values") do
-            graph.configuration.fractions_normalization = NormalizeToValues
+            graph.configuration.normalize = false
             graph.configuration.value_bands.middle.offset = 11
             graph.configuration.fraction_bands.middle.offset = 0.5
             graph.configuration.fraction_bands.middle.is_dashed = true
@@ -1277,17 +1688,75 @@ nested_test("renderers") do
                 """) graph.figure
             end
 
+            resize!(graph.data.cdfs_values[2], length(graph.data.cdfs_values[1]))
+
             nested_test("()") do
-                resize!(graph.data.cdfs_values[2], length(graph.data.cdfs_values[1]))
                 test_html(graph, "cdfs.values.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.fraction_axis.percent = true
+                @test_throws "percent of non-normalized fractions" graph.figure
                 return nothing
             end
         end
 
         nested_test("downto") do
             graph.configuration.cdf_direction = CdfDownToValue
-            test_html(graph, "cdfs.downto.html")
-            return nothing
+
+            nested_test("()") do
+                test_html(graph, "cdfs.downto.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.fraction_axis.percent = true
+                graph.data.cdfs_values[1] = graph.data.cdfs_values[1] / 10
+                graph.data.cdfs_values[2] = graph.data.cdfs_values[2] / 10
+                test_html(graph, "cdfs.downto.percent.html")
+                return nothing
+            end
+
+            nested_test("log") do
+                nested_test("10") do
+                    graph.configuration.value_axis.log_scale = Log10Scale
+                    graph.configuration.fraction_axis.log_scale = Log10Scale
+
+                    nested_test("()") do
+                        test_html(graph, "cdfs.downto.log.html")
+                        return nothing
+                    end
+
+                    nested_test("percent") do
+                        graph.configuration.value_axis.percent = true
+                        graph.configuration.fraction_axis.percent = true
+                        graph.data.cdfs_values[1] = graph.data.cdfs_values[1] / 10
+                        graph.data.cdfs_values[2] = graph.data.cdfs_values[2] / 10
+                        test_html(graph, "cdfs.downto.log.percent.html")
+                        return nothing
+                    end
+                end
+
+                nested_test("2") do
+                    graph.configuration.value_axis.log_scale = Log2Scale
+                    graph.configuration.fraction_axis.log_scale = Log2Scale
+
+                    nested_test("()") do
+                        test_html(graph, "cdfs.downto.log2.html")
+                        return nothing
+                    end
+
+                    nested_test("percent") do
+                        graph.configuration.value_axis.percent = true
+                        graph.configuration.fraction_axis.percent = true
+                        graph.data.cdfs_values[1] = graph.data.cdfs_values[1] / 10
+                        graph.data.cdfs_values[2] = graph.data.cdfs_values[2] / 10
+                        test_html(graph, "cdfs.downto.log2.percent.html")
+                        return nothing
+                    end
+                end
+            end
         end
 
         nested_test("legend") do
@@ -1306,6 +1775,46 @@ nested_test("renderers") do
         nested_test("()") do
             test_html(graph, "bar.html")
             return nothing
+        end
+
+        nested_test("percent") do
+            graph.configuration.value_axis.percent = true
+            test_html(graph, "bar.percent.html")
+            return nothing
+        end
+
+        nested_test("log") do
+            graph.configuration.value_axis.log_regularization = 1.2
+
+            nested_test("10") do
+                graph.configuration.value_axis.log_scale = Log10Scale
+
+                nested_test("()") do
+                    test_html(graph, "bar.log.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    test_html(graph, "bar.log.percent.html")
+                    return nothing
+                end
+            end
+
+            nested_test("2") do
+                graph.configuration.value_axis.log_scale = Log2Scale
+
+                nested_test("()") do
+                    test_html(graph, "bar.log2.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    test_html(graph, "bar.log2.percent.html")
+                    return nothing
+                end
+            end
         end
 
         nested_test("invalid") do
@@ -1424,6 +1933,46 @@ nested_test("renderers") do
             return nothing
         end
 
+        nested_test("percent") do
+            graph.configuration.value_axis.percent = true
+            test_html(graph, "bars.percent.html")
+            return nothing
+        end
+
+        nested_test("log") do
+            graph.configuration.value_axis.log_regularization = 1
+
+            nested_test("10") do
+                graph.configuration.value_axis.log_scale = Log10Scale
+
+                nested_test("()") do
+                    test_html(graph, "bars.log.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    test_html(graph, "bars.log.percent.html")
+                    return nothing
+                end
+            end
+
+            nested_test("2") do
+                graph.configuration.value_axis.log_scale = Log2Scale
+
+                nested_test("()") do
+                    test_html(graph, "bars.log2.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    test_html(graph, "bars.log2.percent.html")
+                    return nothing
+                end
+            end
+        end
+
         nested_test("invalid") do
             nested_test("!values") do
                 empty!(graph.data.series_values)
@@ -1492,21 +2041,42 @@ nested_test("renderers") do
 
         nested_test("stack") do
             nested_test("values") do
-                graph.configuration.stacking_normalization = NormalizeToValues
-                test_html(graph, "bars.stack.values.html")
-                return nothing
-            end
+                graph.configuration.stacking = StackValues
 
-            nested_test("percents") do
-                graph.configuration.stacking_normalization = NormalizeToPercents
-                test_html(graph, "bars.stack.percents.html")
-                return nothing
+                nested_test("()") do
+                    test_html(graph, "bars.stack.values.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    test_html(graph, "bars.stack.values.percent.html")
+                    return nothing
+                end
+
+                nested_test("!log") do
+                    graph.configuration.value_axis.log_scale = Log10Scale
+                    @test_throws "log of stacked data" graph.figure
+                end
             end
 
             nested_test("fractions") do
-                graph.configuration.stacking_normalization = NormalizeToFractions
-                test_html(graph, "bars.stack.fractions.html")
-                return nothing
+                graph.configuration.stacking = StackFractions
+                nested_test("()") do
+                    test_html(graph, "bars.stack.fractions.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.value_axis.percent = true
+                    test_html(graph, "bars.stack.fractions.percent.html")
+                    return nothing
+                end
+
+                nested_test("!log") do
+                    graph.configuration.value_axis.log_scale = Log10Scale
+                    @test_throws "log of stacked data" graph.figure
+                end
             end
         end
 
@@ -1620,6 +2190,13 @@ nested_test("renderers") do
             return nothing
         end
 
+        nested_test("percent") do
+            graph.configuration.x_axis.percent = true
+            graph.configuration.y_axis.percent = true
+            test_html(graph, "points.percent.html")
+            return nothing
+        end
+
         nested_test("invalid") do
             nested_test("!size") do
                 graph.configuration.points.size = 0
@@ -1640,8 +2217,8 @@ nested_test("renderers") do
             end
 
             nested_test("!colors") do
-                graph.configuration.points.show_color_scale = true
-                @test_throws "no data.points_colors specified for configuration.points.show_color_scale" graph.figure
+                graph.configuration.points.colors_configuration.show_legend = true
+                @test_throws "no data.points_colors specified for configuration.points.colors_configuration.show_legend" graph.figure
             end
 
             nested_test("~colors") do
@@ -1653,8 +2230,8 @@ nested_test("renderers") do
             end
 
             nested_test("!borders_colors") do
-                graph.configuration.borders.show_color_scale = true
-                @test_throws "no data.borders_colors specified for configuration.borders.show_color_scale" graph.figure
+                graph.configuration.borders.colors_configuration.show_legend = true
+                @test_throws "no data.borders_colors specified for configuration.borders.colors_configuration.show_legend" graph.figure
             end
 
             nested_test("~borders_colors") do
@@ -1745,8 +2322,17 @@ nested_test("renderers") do
 
                 graph.configuration.diagonal_bands.middle.width = 8
 
-                test_html(graph, "points.diagonal.html")
-                return nothing
+                nested_test("()") do
+                    test_html(graph, "points.diagonal.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.x_axis.percent = true
+                    graph.configuration.y_axis.percent = true
+                    test_html(graph, "points.diagonal.percent.html")
+                    return nothing
+                end
             end
 
             nested_test("low_fills") do
@@ -1807,8 +2393,16 @@ nested_test("renderers") do
             graph.configuration.vertical_bands.middle.offset = 1.25
             graph.configuration.vertical_bands.high.offset = 1.5
 
-            test_html(graph, "points.vertical_lines.html")
-            return nothing
+            nested_test("()") do
+                test_html(graph, "points.vertical_lines.html")
+                return nothing
+            end
+
+            nested_test("percent") do
+                graph.configuration.x_axis.percent = true
+                test_html(graph, "points.vertical_lines.percent.html")
+                return nothing
+            end
         end
 
         nested_test("vertical_fills") do
@@ -1865,10 +2459,45 @@ nested_test("renderers") do
             graph.data.points_ys .*= 10
             graph.data.points_xs .+= 1
             graph.data.points_ys .+= 3
-            graph.configuration.x_axis.log_regularization = 0
-            graph.configuration.y_axis.log_regularization = 0
+
+            nested_test("10") do
+                graph.configuration.x_axis.log_scale = Log10Scale
+                graph.configuration.y_axis.log_scale = Log10Scale
+
+                nested_test("()") do
+                    test_html(graph, "points.log.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.x_axis.percent = true
+                    graph.configuration.y_axis.percent = true
+                    test_html(graph, "points.log.percent.html")
+                    return nothing
+                end
+            end
+
+            nested_test("2") do
+                graph.configuration.x_axis.log_scale = Log2Scale
+                graph.configuration.y_axis.log_scale = Log2Scale
+
+                nested_test("()") do
+                    test_html(graph, "points.log2.html")
+                    return nothing
+                end
+
+                nested_test("percent") do
+                    graph.configuration.x_axis.percent = true
+                    graph.configuration.y_axis.percent = true
+                    test_html(graph, "points.log2.percent.html")
+                    return nothing
+                end
+            end
 
             nested_test("invalid") do
+                graph.configuration.x_axis.log_scale = Log10Scale
+                graph.configuration.y_axis.log_scale = Log2Scale
+
                 nested_test("!minimum") do
                     graph.configuration.x_axis.minimum = 0.0
                     @test_throws "log of non-positive configuration.x_axis.minimum: 0.0" graph.figure
@@ -1886,43 +2515,74 @@ nested_test("renderers") do
 
                 nested_test("!ys") do
                     graph.data.points_ys[1] = -0.2
-                    graph.configuration.y_axis.log_regularization = 0
+                    graph.configuration.y_axis.log_scale = Log10Scale
                     @test_throws "log of non-positive data.points_ys[1]: -0.2" graph.figure
                 end
             end
 
-            nested_test("()") do
-                test_html(graph, "points.log.html")
-                return nothing
-            end
-
             nested_test("diagonal") do
                 nested_test("invalid") do
+                    graph.configuration.x_axis.log_scale = Log10Scale
+                    graph.configuration.y_axis.log_scale = Log10Scale
+                    graph.configuration.diagonal_bands.low.offset = 0
+
                     nested_test("!line_offset") do
-                        graph.configuration.x_axis.log_regularization = 0
-                        graph.configuration.y_axis.log_regularization = 0
                         graph.configuration.diagonal_bands.low.offset = -1
                         @test_throws "log of non-positive configuration.diagonal_bands.low.offset: -1" graph.figure
                     end
 
                     nested_test("!log") do
-                        graph.configuration.y_axis.log_regularization = nothing
-                        graph.configuration.diagonal_bands.middle.offset = 1
-                        @test_throws "configuration.diagonal_bands specified for a combination of linear and log scale axes" graph.figure
+                        graph.configuration.y_axis.log_scale = nothing
+                        @test_throws "configuration.diagonal_bands specified for a combination of different linear and/or log scale axes" graph.figure
                         return nothing
+                    end
+
+                    nested_test("!percent") do
+                        graph.configuration.x_axis.percent = true
+                        @test_throws "configuration.diagonal_bands specified for a combination of percent and non-percent axes" graph.figure
                     end
                 end
 
-                nested_test("()") do
-                    graph.configuration.x_axis.log_regularization = 0
-                    graph.configuration.y_axis.log_regularization = 0
-
+                nested_test("10") do
                     graph.configuration.diagonal_bands.low.offset = 0.5
                     graph.configuration.diagonal_bands.middle.offset = 1
                     graph.configuration.diagonal_bands.high.offset = 2
 
-                    test_html(graph, "points.log.diagonal.html")
-                    return nothing
+                    graph.configuration.x_axis.log_scale = Log10Scale
+                    graph.configuration.y_axis.log_scale = Log10Scale
+
+                    nested_test("()") do
+                        test_html(graph, "points.log.diagonal.html")
+                        return nothing
+                    end
+
+                    nested_test("percent") do
+                        graph.configuration.x_axis.percent = true
+                        graph.configuration.y_axis.percent = true
+                        test_html(graph, "points.log.diagonal.percent.html")
+                        return nothing
+                    end
+                end
+
+                nested_test("2") do
+                    graph.configuration.diagonal_bands.low.offset = 0.5
+                    graph.configuration.diagonal_bands.middle.offset = 1
+                    graph.configuration.diagonal_bands.high.offset = 2
+
+                    graph.configuration.x_axis.log_scale = Log2Scale
+                    graph.configuration.y_axis.log_scale = Log2Scale
+
+                    nested_test("()") do
+                        test_html(graph, "points.log2.diagonal.html")
+                        return nothing
+                    end
+
+                    nested_test("percent") do
+                        graph.configuration.x_axis.percent = true
+                        graph.configuration.y_axis.percent = true
+                        test_html(graph, "points.log2.diagonal.percent.html")
+                        return nothing
+                    end
                 end
 
                 nested_test("low_fills") do
@@ -1941,8 +2601,39 @@ nested_test("renderers") do
                     graph.configuration.diagonal_bands.low.offset = 0.25
                     graph.configuration.diagonal_bands.high.offset = 0.75
 
-                    test_html(graph, "points.log.diagonal.low_fills.html")
-                    return nothing
+                    nested_test("10") do
+                        graph.configuration.x_axis.log_scale = Log10Scale
+                        graph.configuration.y_axis.log_scale = Log10Scale
+
+                        nested_test("()") do
+                            test_html(graph, "points.log.diagonal.low_fills.html")
+                            return nothing
+                        end
+
+                        nested_test("percent") do
+                            graph.configuration.x_axis.percent = true
+                            graph.configuration.y_axis.percent = true
+                            test_html(graph, "points.log.diagonal.low_fills.percent.html")
+                            return nothing
+                        end
+                    end
+
+                    nested_test("2") do
+                        graph.configuration.x_axis.log_scale = Log2Scale
+                        graph.configuration.y_axis.log_scale = Log2Scale
+
+                        nested_test("()") do
+                            test_html(graph, "points.log2.diagonal.low_fills.html")
+                            return nothing
+                        end
+
+                        nested_test("percent") do
+                            graph.configuration.x_axis.percent = true
+                            graph.configuration.y_axis.percent = true
+                            test_html(graph, "points.log2.diagonal.low_fills.percent.html")
+                            return nothing
+                        end
+                    end
                 end
 
                 nested_test("high_fills") do
@@ -1961,8 +2652,19 @@ nested_test("renderers") do
                     graph.configuration.diagonal_bands.low.offset = 1.25
                     graph.configuration.diagonal_bands.high.offset = 1.75
 
-                    test_html(graph, "points.log.diagonal.high_fills.html")
-                    return nothing
+                    nested_test("10") do
+                        graph.configuration.x_axis.log_scale = Log10Scale
+                        graph.configuration.y_axis.log_scale = Log10Scale
+                        test_html(graph, "points.log.diagonal.high_fills.html")
+                        return nothing
+                    end
+
+                    nested_test("2") do
+                        graph.configuration.x_axis.log_scale = Log2Scale
+                        graph.configuration.y_axis.log_scale = Log2Scale
+                        test_html(graph, "points.log2.diagonal.high_fills.html")
+                        return nothing
+                    end
                 end
 
                 nested_test("middle_fills") do
@@ -1973,8 +2675,19 @@ nested_test("renderers") do
                     graph.configuration.diagonal_bands.low.offset = 0.75
                     graph.configuration.diagonal_bands.high.offset = 1.25
 
-                    test_html(graph, "points.log.diagonal.middle_fills.html")
-                    return nothing
+                    nested_test("10") do
+                        graph.configuration.x_axis.log_scale = Log10Scale
+                        graph.configuration.y_axis.log_scale = Log10Scale
+                        test_html(graph, "points.log.diagonal.middle_fills.html")
+                        return nothing
+                    end
+
+                    nested_test("2") do
+                        graph.configuration.x_axis.log_scale = Log2Scale
+                        graph.configuration.y_axis.log_scale = Log2Scale
+                        test_html(graph, "points.log2.diagonal.middle_fills.html")
+                        return nothing
+                    end
                 end
             end
         end
@@ -2008,49 +2721,60 @@ nested_test("renderers") do
             end
 
             nested_test("!log") do
-                graph.configuration.points.color_scale.log_regularization = 0
-                @test_throws "non-real data.points_colors with configuration.points.color_scale.log_regularization" graph.figure
+                graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                @test_throws "non-real data.points_colors with configuration.points.colors_configuration.color_axis.log_scale" graph.figure
+            end
+
+            nested_test("!reverse") do
+                graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                @test_throws "non-real data.points_colors with configuration.points.colors_configuration.color_axis.log_scale" graph.figure
             end
 
             nested_test("!legend") do
-                graph.configuration.points.show_color_scale = true
-                @test_throws "explicit data.points_colors specified for configuration.points.show_color_scale" graph.figure
+                graph.configuration.points.colors_configuration.show_legend = true
+                @test_throws "explicit data.points_colors specified for configuration.points.colors_configuration.show_legend" graph.figure
             end
         end
 
         nested_test("categorical") do
             graph.data.points_colors = ["Foo", "Bar", "Baz"]
-            graph.configuration.points.color_palette =
-                [("Foo", "red"), ("Bar", "green"), ("Baz", "blue"), ("Vaz", "magenta")]
+            graph.configuration.points.colors_configuration.colors_palette =
+                ["Foo" => "red", "Bar" => "green", "Baz" => "blue", "Vaz" => "magenta"]
 
             nested_test("()") do
                 test_html(graph, "points.categorical.html")
                 return nothing
             end
 
+            nested_test("!percent") do
+                graph.data.points_colors = [1.0, 2.0, 3.0]
+                graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                @test_throws "non-string data.points_colors for categorical configuration.points.colors_configuration.colors_palette" graph.figure
+            end
+
             nested_test("!log") do
                 graph.data.points_colors = [1.0, 2.0, 3.0]
-                graph.configuration.points.color_scale.log_regularization = 0
-                @test_throws "non-string data.points_colors for categorical configuration.points.color_palette" graph.figure
+                graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                @test_throws "non-string data.points_colors for categorical configuration.points.colors_configuration.colors_palette" graph.figure
             end
 
             nested_test("~color") do
-                graph.configuration.points.color_palette[2] = ("Bar", "oobleck")
-                @test_throws "invalid configuration.points.color_palette[2] color: oobleck" graph.figure
+                graph.configuration.points.colors_configuration.colors_palette[2] = "Bar" => "oobleck"
+                @test_throws "invalid configuration.points.colors_configuration.colors_palette[2] color: oobleck" graph.figure
             end
 
             nested_test("!color") do
                 graph.data.points_colors = ["Foo", "Faz", "Baz"]
-                @test_throws "categorical configuration.points.color_palette does not contain data.points_colors[2]: Faz" graph.figure
+                @test_throws "categorical configuration.points.colors_configuration.colors_palette does not contain data.points_colors[2]: Faz" graph.figure
             end
 
-            nested_test("!reversed") do
-                graph.configuration.points.reverse_color_scale = true
-                @test_throws "reversed categorical configuration.points.color_palette" graph.figure
+            nested_test("!reverse") do
+                graph.configuration.points.colors_configuration.reverse = true
+                @test_throws "reversed categorical configuration.points.colors_configuration.colors_palette" graph.figure
             end
 
             nested_test("legend") do
-                graph.configuration.points.show_color_scale = true
+                graph.configuration.points.colors_configuration.show_legend = true
                 test_legend(graph, "points.categorical") do
                     graph.data.points_colors_title = "Points"
                     return nothing
@@ -2070,50 +2794,50 @@ nested_test("renderers") do
 
                 nested_test("invalid") do
                     nested_test("!colorscale") do
-                        graph.configuration.points.color_palette = Vector{Tuple{Real, String}}()
-                        @test_throws "empty configuration.points.color_palette" graph.figure
+                        graph.configuration.points.colors_configuration.colors_palette = Vector{Tuple{Real, String}}()
+                        @test_throws "empty configuration.points.colors_configuration.colors_palette" graph.figure
                         return nothing
                     end
 
                     nested_test("~colorscale") do
-                        graph.configuration.points.color_palette = [(-1.0, "blue"), (-1.0, "red")]
-                        @test_throws "single configuration.points.color_palette value: -1.0" graph.figure
+                        graph.configuration.points.colors_configuration.colors_palette = [(-1.0, "blue"), (-1.0, "red")]
+                        @test_throws "single configuration.points.colors_configuration.colors_palette value: -1.0" graph.figure
                         return nothing
                     end
 
                     nested_test("!range") do
-                        graph.configuration.points.color_scale.minimum = 1.5
-                        graph.configuration.points.color_scale.maximum = 0.5
+                        graph.configuration.points.colors_configuration.color_axis.minimum = 1.5
+                        graph.configuration.points.colors_configuration.color_axis.maximum = 0.5
                         @test_throws dedent("""
-                            configuration.points.color_scale.maximum: 0.5
-                            is not larger than configuration.points.color_scale.minimum: 1.5
+                            configuration.points.colors_configuration.color_axis.maximum: 0.5
+                            is not larger than configuration.points.colors_configuration.color_axis.minimum: 1.5
                         """) graph.figure
                         return nothing
                     end
                 end
 
                 nested_test("range") do
-                    graph.configuration.points.color_scale.minimum = 0.5
-                    graph.configuration.points.color_scale.maximum = 1.5
-                    graph.configuration.points.show_color_scale = true
+                    graph.configuration.points.colors_configuration.color_axis.minimum = 0.5
+                    graph.configuration.points.colors_configuration.color_axis.maximum = 1.5
+                    graph.configuration.points.colors_configuration.show_legend = true
                     test_html(graph, "points.continuous.range.html")
                     return nothing
                 end
 
                 nested_test("viridis") do
-                    graph.configuration.points.color_palette = "Viridis"
+                    graph.configuration.points.colors_configuration.colors_palette = "Viridis"
                     test_html(graph, "points.continuous.viridis.html")
                     return nothing
                 end
 
-                nested_test("reversed") do
-                    graph.configuration.points.reverse_color_scale = true
+                nested_test("reverse") do
+                    graph.configuration.points.colors_configuration.reverse = true
                     test_html(graph, "points.continuous.reversed.html")
                     return nothing
                 end
 
                 nested_test("legend") do
-                    graph.configuration.points.show_color_scale = true
+                    graph.configuration.points.colors_configuration.show_legend = true
                     test_legend(graph, "points.continuous") do
                         graph.data.points_colors_title = "Points"
                         return nothing
@@ -2122,21 +2846,21 @@ nested_test("renderers") do
                 end
 
                 nested_test("gradient") do
-                    graph.configuration.points.color_palette = [(-1.0, "blue"), (3.0, "red")]
+                    graph.configuration.points.colors_configuration.colors_palette = [-1.0 => "blue", 3.0 => "red"]
 
                     nested_test("()") do
                         test_html(graph, "points.continuous.gradient.html")
                         return nothing
                     end
 
-                    nested_test("reversed") do
-                        graph.configuration.points.reverse_color_scale = true
+                    nested_test("reverse") do
+                        graph.configuration.points.colors_configuration.reverse = true
                         test_html(graph, "points.continuous.gradient.reversed.html")
                         return nothing
                     end
 
                     nested_test("legend") do
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.show_legend = true
                         test_legend(graph, "points.gradient") do
                             graph.data.points_colors_title = "Points"
                             return nothing
@@ -2148,105 +2872,190 @@ nested_test("renderers") do
 
             nested_test("log") do
                 graph.data.points_colors = [0.0, 5.0, 10.0]
-                graph.configuration.points.color_scale.log_regularization = 1.0
+                graph.configuration.points.colors_configuration.color_axis.log_regularization = 1.0
 
                 nested_test("invalid") do
-                    nested_test("!log_color_scale_regularization") do
-                        graph.configuration.points.color_scale.log_regularization = -1.0
-                        @test_throws "negative configuration.points.color_scale.log_regularization: -1.0" graph.figure
+                    nested_test("!log_colors_axis_regularization") do
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                        graph.configuration.points.colors_configuration.color_axis.log_regularization = -1.0
+                        @test_throws "negative configuration.points.colors_configuration.color_axis.log_regularization: -1.0" graph.figure
                     end
 
                     nested_test("!cmin") do
-                        graph.configuration.points.color_palette = [(-1.0, "blue"), (1.0, "red")]
-                        @test_throws "log of non-positive configuration.points.color_palette[1]: 0.0" graph.figure
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                        graph.configuration.points.colors_configuration.colors_palette = [(-1.0, "blue"), (1.0, "red")]
+                        @test_throws "log of non-positive configuration.points.colors_configuration.colors_palette[1]: 0.0" graph.figure
                     end
 
                     nested_test("!colors") do
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
                         graph.data.points_colors[1] = -2.0
                         @test_throws "log of non-positive data.points_colors[1]: -1.0" graph.figure
                     end
 
                     nested_test("!minimum") do
-                        graph.configuration.points.color_scale.minimum = -1.5
-                        @test_throws "log of non-positive configuration.points.color_scale.minimum: -0.5" graph.figure
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                        graph.configuration.points.colors_configuration.color_axis.minimum = -1.5
+                        @test_throws "log of non-positive configuration.points.colors_configuration.color_axis.minimum: -0.5" graph.figure
                         return nothing
                     end
 
                     nested_test("!minimum") do
-                        graph.configuration.points.color_scale.maximum = -1.5
-                        @test_throws "log of non-positive configuration.points.color_scale.maximum: -0.5" graph.figure
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                        graph.configuration.points.colors_configuration.color_axis.maximum = -1.5
+                        @test_throws "log of non-positive configuration.points.colors_configuration.color_axis.maximum: -0.5" graph.figure
                         return nothing
                     end
                 end
 
-                nested_test("()") do
+                nested_test("10") do
+                    graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
                     test_html(graph, "points.log.continuous.html")
                     return nothing
                 end
 
-                nested_test("viridis") do
-                    graph.configuration.points.color_palette = "Viridis"
-                    test_html(graph, "points.log.continuous.viridis.html")
+                nested_test("2") do
+                    graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                    test_html(graph, "points.log2.continuous.html")
                     return nothing
                 end
 
-                nested_test("!reversed") do
-                    graph.configuration.points.reverse_color_scale = true
-                    @test_throws "reversed log configuration.points.color_scale" graph.figure
+                nested_test("viridis") do
+                    graph.configuration.points.colors_configuration.colors_palette = "Viridis"
+
+                    nested_test("10") do
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                        test_html(graph, "points.log.continuous.viridis.html")
+                        return nothing
+                    end
+
+                    nested_test("2") do
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                        test_html(graph, "points.log2.continuous.viridis.html")
+                        return nothing
+                    end
+                end
+
+                nested_test("!reverse") do
+                    graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                    graph.configuration.points.colors_configuration.reverse = true
+                    @test_throws "reversed log configuration.points.colors_configuration.color_axis" graph.figure
                 end
 
                 nested_test("legend") do
-                    graph.configuration.points.show_color_scale = true
+                    graph.configuration.points.colors_configuration.show_legend = true
 
                     nested_test("small") do
-                        test_legend(graph, "points.log.continuous.small") do
-                            graph.data.points_colors_title = "Points"
+                        nested_test("10") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                            test_legend(graph, "points.log.continuous.small") do
+                                graph.data.points_colors_title = "Points"
+                                return nothing
+                            end
                             return nothing
                         end
-                        return nothing
+
+                        nested_test("2") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                            test_legend(graph, "points.log2.continuous.small") do
+                                graph.data.points_colors_title = "Points"
+                                return nothing
+                            end
+                            return nothing
+                        end
                     end
 
                     nested_test("large") do
                         graph.data.points_colors .*= 10
                         graph.data.points_colors[1] += 6
-                        test_legend(graph, "points.log.continuous.large") do
-                            graph.data.points_colors_title = "Points"
-                            return nothing
+
+                        nested_test("10") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                            test_legend(graph, "points.log.continuous.large") do
+                                graph.data.points_colors_title = "Points"
+                                return nothing
+                            end
                         end
-                        return nothing
+
+                        nested_test("2") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                            test_legend(graph, "points.log2.continuous.large") do
+                                graph.data.points_colors_title = "Points"
+                                return nothing
+                            end
+                        end
                     end
 
                     nested_test("huge") do
                         graph.data.points_colors .*= 100
-                        test_legend(graph, "points.log.continuous.huge") do
-                            graph.data.points_colors_title = "Points"
-                            return nothing
+
+                        nested_test("10") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                            test_legend(graph, "points.log.continuous.huge") do
+                                graph.data.points_colors_title = "Points"
+                                return nothing
+                            end
                         end
-                        return nothing
+
+                        nested_test("2") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                            test_legend(graph, "points.log2.continuous.huge") do
+                                graph.data.points_colors_title = "Points"
+                                return nothing
+                            end
+                        end
                     end
                 end
 
                 nested_test("gradient") do
-                    graph.configuration.points.color_palette = [(0.0, "blue"), (10.0, "red")]
+                    graph.configuration.points.colors_configuration.colors_palette = [0.0 => "blue", 10.0 => "red"]
 
-                    nested_test("()") do
+                    nested_test("10") do
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
                         test_html(graph, "points.log.continuous.gradient.html")
                         return nothing
                     end
 
-                    nested_test("reversed") do
-                        graph.configuration.points.reverse_color_scale = true
-                        test_html(graph, "points.log.continuous.gradient.reversed.html")
+                    nested_test("2") do
+                        graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                        test_html(graph, "points.log2.continuous.gradient.html")
                         return nothing
                     end
 
-                    nested_test("legend") do
-                        graph.configuration.points.show_color_scale = true
-                        test_legend(graph, "points.log.gradient") do
-                            graph.data.points_colors_title = "Points"
+                    nested_test("reverse") do
+                        graph.configuration.points.colors_configuration.reverse = true
+
+                        nested_test("10") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                            test_html(graph, "points.log.continuous.gradient.reversed.html")
                             return nothing
                         end
-                        return nothing
+
+                        nested_test("2") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                            test_html(graph, "points.log2.continuous.gradient.reversed.html")
+                            return nothing
+                        end
+                    end
+
+                    nested_test("legend") do
+                        graph.configuration.points.colors_configuration.show_legend = true
+
+                        nested_test("10") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log10Scale
+                            test_legend(graph, "points.log.gradient") do
+                                graph.data.points_colors_title = "Points"
+                                return nothing
+                            end
+                        end
+
+                        nested_test("2") do
+                            graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                            test_legend(graph, "points.log2.gradient") do
+                                graph.data.points_colors_title = "Points"
+                                return nothing
+                            end
+                        end
                     end
                 end
             end
@@ -2283,9 +3092,17 @@ nested_test("renderers") do
             end
 
             nested_test("log") do
-                graph.configuration.points.size_scale.log_regularization = 0
-                test_html(graph, "points.sizes.log.html")
-                return nothing
+                nested_test("10") do
+                    graph.configuration.points.size_axis.log_scale = Log10Scale
+                    test_html(graph, "points.sizes.log.html")
+                    return nothing
+                end
+
+                nested_test("2") do
+                    graph.configuration.points.size_axis.log_scale = Log2Scale
+                    test_html(graph, "points.sizes.log2.html")
+                    return nothing
+                end
             end
 
             nested_test("colors") do
@@ -2296,7 +3113,8 @@ nested_test("renderers") do
 
             nested_test("categorical") do
                 graph.data.points_colors = ["Foo", "Bar", "Baz"]
-                graph.configuration.points.color_palette = [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")]
+                graph.configuration.points.colors_configuration.colors_palette =
+                    [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")]
                 test_html(graph, "points.sizes.categorical.html")
                 return nothing
             end
@@ -2348,9 +3166,17 @@ nested_test("renderers") do
                 end
 
                 nested_test("log") do
-                    graph.configuration.borders.size_scale.log_regularization = 0
-                    test_html(graph, "points.border.sizes.log.html")
-                    return nothing
+                    nested_test("10") do
+                        graph.configuration.borders.size_axis.log_scale = Log10Scale
+                        test_html(graph, "points.border.sizes.log.html")
+                        return nothing
+                    end
+
+                    nested_test("2") do
+                        graph.configuration.borders.size_axis.log_scale = Log2Scale
+                        test_html(graph, "points.border.sizes.log2.html")
+                        return nothing
+                    end
                 end
 
                 nested_test("color") do
@@ -2367,7 +3193,8 @@ nested_test("renderers") do
 
                 nested_test("categorical") do
                     graph.data.borders_colors = ["Foo", "Bar", "Baz"]
-                    graph.configuration.borders.color_palette = [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")]
+                    graph.configuration.borders.colors_configuration.colors_palette =
+                        ["Foo" => "red", "Bar" => "green", "Baz" => "blue"]
                     test_html(graph, "points.border.sizes.categorical.html")
                     return nothing
                 end
@@ -2379,8 +3206,8 @@ nested_test("renderers") do
                 end
 
                 nested_test("!legend") do
-                    graph.configuration.borders.show_color_scale = true
-                    @test_throws "no data.borders_colors specified for configuration.borders.show_color_scale" graph.figure
+                    graph.configuration.borders.colors_configuration.show_legend = true
+                    @test_throws "no data.borders_colors specified for configuration.borders.colors_configuration.show_legend" graph.figure
                 end
             end
 
@@ -2399,8 +3226,8 @@ nested_test("renderers") do
                 end
 
                 nested_test("!legend") do
-                    graph.configuration.borders.show_color_scale = true
-                    @test_throws "explicit data.borders_colors specified for configuration.borders.show_color_scale" graph.figure
+                    graph.configuration.borders.colors_configuration.show_legend = true
+                    @test_throws "explicit data.borders_colors specified for configuration.borders.colors_configuration.show_legend" graph.figure
                 end
             end
 
@@ -2419,7 +3246,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("legend") do
-                    graph.configuration.borders.show_color_scale = true
+                    graph.configuration.borders.colors_configuration.show_legend = true
 
                     test_legend(graph, "points.border.continuous") do
                         graph.data.borders_colors_title = "Borders"
@@ -2428,8 +3255,8 @@ nested_test("renderers") do
 
                     nested_test("legend") do
                         graph.data.points_colors = [20.0, 10.0, 0.0]
-                        graph.configuration.points.color_palette = "Viridis"
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.colors_palette = "Viridis"
+                        graph.configuration.points.colors_configuration.show_legend = true
 
                         nested_test("()") do
                             test_legend(graph, "points.border.continuous.legend") do
@@ -2449,8 +3276,9 @@ nested_test("renderers") do
 
                     nested_test("legend1") do
                         graph.data.points_colors = ["Foo", "Bar", "Baz"]
-                        graph.configuration.points.color_palette = [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")]
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.colors_palette =
+                            [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")]
+                        graph.configuration.points.colors_configuration.show_legend = true
 
                         nested_test("()") do
                             test_legend(graph, "points.border.continuous.legend1") do
@@ -2472,8 +3300,8 @@ nested_test("renderers") do
 
             nested_test("categorical") do
                 graph.data.borders_colors = ["Foo", "Bar", "Baz"]
-                graph.configuration.borders.color_palette =
-                    [("Foo", "red"), ("Bar", "green"), ("Baz", "blue"), ("Vaz", "magenta")]
+                graph.configuration.borders.colors_configuration.colors_palette =
+                    ["Foo" => "red", "Bar" => "green", "Baz" => "blue", "Vaz" => "magenta"]
 
                 nested_test("()") do
                     test_html(graph, "points.border.categorical.html")
@@ -2481,7 +3309,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("legend") do
-                    graph.configuration.borders.show_color_scale = true
+                    graph.configuration.borders.colors_configuration.show_legend = true
 
                     nested_test("()") do
                         test_legend(graph, "points.border.categorical.colors") do
@@ -2492,8 +3320,9 @@ nested_test("renderers") do
 
                     nested_test("legend") do
                         graph.data.points_colors = ["X", "Y", "Z"]
-                        graph.configuration.points.color_palette = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.colors_palette =
+                            [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
+                        graph.configuration.points.colors_configuration.show_legend = true
 
                         nested_test("()") do
                             test_legend(graph, "points.border.categorical.legend") do
@@ -2513,8 +3342,8 @@ nested_test("renderers") do
 
                     nested_test("legend1") do
                         graph.data.points_colors = [20.0, 10.0, 0.0]
-                        graph.configuration.points.color_palette = "Viridis"
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.colors_palette = "Viridis"
+                        graph.configuration.points.colors_configuration.show_legend = true
 
                         nested_test("()") do
                             test_legend(graph, "points.border.categorical.legend1") do
@@ -2618,7 +3447,7 @@ nested_test("renderers") do
         end
 
         nested_test("legend") do
-            graph.configuration.points.show_color_scale = true
+            graph.configuration.points.colors_configuration.show_legend = true
             test_legend(graph, "grid") do
                 graph.data.points_colors_title = "Grid"
                 return nor
@@ -2637,13 +3466,15 @@ nested_test("renderers") do
         end
 
         nested_test("~colors") do
-            graph.configuration.points.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
-            @test_throws "non-string data.points_colors for categorical configuration.points.color_palette" graph.figure
+            graph.configuration.points.colors_configuration.colors_palette =
+                ["A" => "red", "B" => "green", "C" => "blue"]
+            @test_throws "non-string data.points_colors for categorical configuration.points.colors_configuration.colors_palette" graph.figure
         end
 
         nested_test("categorical") do
             graph.data.points_colors = ["A" "B" "C"; "C" "B" "A"]
-            graph.configuration.points.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
+            graph.configuration.points.colors_configuration.colors_palette =
+                [("A", "red"), ("B", "green"), ("C", "blue")]
 
             nested_test("!scale") do
                 test_html(graph, "grid.categorical.html")
@@ -2652,11 +3483,11 @@ nested_test("renderers") do
 
             nested_test("!color") do
                 graph.data.points_colors[1, 2] = "D"
-                @test_throws "categorical configuration.points.color_palette does not contain data.points_colors[1,2)]: D" graph.figure
+                @test_throws "categorical configuration.points.colors_configuration.colors_palette does not contain data.points_colors[1,2)]: D" graph.figure
             end
 
             nested_test("legend") do
-                graph.configuration.points.show_color_scale = true
+                graph.configuration.points.colors_configuration.show_legend = true
                 test_legend(graph, "grid.categorical") do
                     graph.data.points_colors_title = "Grid"
                     return nothing
@@ -2677,8 +3508,8 @@ nested_test("renderers") do
 
             nested_test("!scale") do
                 graph.data.points_colors = nothing
-                graph.configuration.points.show_color_scale = true
-                @test_throws "no data.points_colors specified for configuration.points.show_color_scale" graph.figure
+                graph.configuration.points.colors_configuration.show_legend = true
+                @test_throws "no data.points_colors specified for configuration.points.colors_configuration.show_legend" graph.figure
             end
 
             nested_test("~sizes") do
@@ -2707,7 +3538,8 @@ nested_test("renderers") do
 
             nested_test("categorical") do
                 graph.data.points_colors = ["Foo" "Bar" "Baz"; "Baz" "Bar" "Foo"]
-                graph.configuration.points.color_palette = [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")]
+                graph.configuration.points.colors_configuration.colors_palette =
+                    ["Foo" => "red", "Bar" => "green", "Baz" => "blue"]
 
                 nested_test("()") do
                     test_html(graph, "grid.sizes.categorical.html")
@@ -2715,8 +3547,8 @@ nested_test("renderers") do
                 end
 
                 nested_test("!log") do
-                    graph.configuration.points.color_scale.log_regularization = 0
-                    @test_throws "non-real data.points_colors with configuration.points.color_scale.log_regularization" graph.figure
+                    graph.configuration.points.colors_configuration.color_axis.log_scale = Log2Scale
+                    @test_throws "non-real data.points_colors with configuration.points.colors_configuration.color_axis.log_scale" graph.figure
                 end
             end
 
@@ -2739,9 +3571,19 @@ nested_test("renderers") do
             end
 
             nested_test("log") do
-                graph.configuration.points.size_scale.log_regularization = 1
-                test_html(graph, "grid.sizes.log.html")
-                return nothing
+                nested_test("10") do
+                    graph.configuration.points.size_axis.log_scale = Log10Scale
+                    graph.configuration.points.size_axis.log_regularization = 1
+                    test_html(graph, "grid.sizes.log.html")
+                    return nothing
+                end
+
+                nested_test("2") do
+                    graph.configuration.points.size_axis.log_scale = Log2Scale
+                    graph.configuration.points.size_axis.log_regularization = 1
+                    test_html(graph, "grid.sizes.log2.html")
+                    return nothing
+                end
             end
         end
 
@@ -2805,9 +3647,19 @@ nested_test("renderers") do
                 end
 
                 nested_test("log") do
-                    graph.configuration.borders.size_scale.log_regularization = 1
-                    test_html(graph, "grid.border.sizes.log.html")
-                    return nothing
+                    nested_test("10") do
+                        graph.configuration.borders.size_axis.log_scale = Log10Scale
+                        graph.configuration.borders.size_axis.log_regularization = 1
+                        test_html(graph, "grid.border.sizes.log.html")
+                        return nothing
+                    end
+
+                    nested_test("2") do
+                        graph.configuration.borders.size_axis.log_scale = Log2Scale
+                        graph.configuration.borders.size_axis.log_regularization = 1
+                        test_html(graph, "grid.border.sizes.log2.html")
+                        return nothing
+                    end
                 end
 
                 nested_test("color") do
@@ -2824,7 +3676,8 @@ nested_test("renderers") do
 
                 nested_test("categorical") do
                     graph.data.borders_colors = ["Foo" "Bar" "Baz"; "Baz" "Bar" "Foo"]
-                    graph.configuration.borders.color_palette = [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")]
+                    graph.configuration.borders.colors_configuration.colors_palette =
+                        [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")]
                     test_html(graph, "grid.border.sizes.categorical.html")
                     return nothing
                 end
@@ -2855,14 +3708,15 @@ nested_test("renderers") do
                 end
 
                 nested_test("!scale") do
-                    graph.configuration.borders.show_color_scale = true
-                    @test_throws "explicit data.borders_colors specified for configuration.borders.show_color_scale" graph.figure
+                    graph.configuration.borders.colors_configuration.show_legend = true
+                    @test_throws "explicit data.borders_colors specified for configuration.borders.colors_configuration.show_legend" graph.figure
                 end
             end
 
             nested_test("categorical") do
                 graph.data.borders_colors = ["A" "B" "C"; "C" "B" "A"]
-                graph.configuration.borders.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
+                graph.configuration.borders.colors_configuration.colors_palette =
+                    ["A" => "red", "B" => "green", "C" => "blue"]
 
                 nested_test("()") do
                     test_html(graph, "grid.border.categorical.html")
@@ -2870,7 +3724,7 @@ nested_test("renderers") do
                 end
 
                 nested_test("legend") do
-                    graph.configuration.borders.show_color_scale = true
+                    graph.configuration.borders.colors_configuration.show_legend = true
 
                     nested_test("()") do
                         test_legend(graph, "grid.border.categorical") do
@@ -2881,8 +3735,9 @@ nested_test("renderers") do
 
                     nested_test("legend") do
                         graph.data.points_colors = ["X" "Y" "Z"; "Z" "Y" "X"]
-                        graph.configuration.points.color_palette = [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.colors_palette =
+                            [("X", "cyan"), ("Y", "magenta"), ("Z", "yellow")]
+                        graph.configuration.points.colors_configuration.show_legend = true
 
                         nested_test("()") do
                             test_legend(graph, "grid.border.categorical.legend") do
@@ -2902,7 +3757,7 @@ nested_test("renderers") do
 
                     nested_test("legend1") do
                         graph.data.points_colors = [1.0 2.0 3.0; 4.0 5.0 6.0]
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.show_legend = true
 
                         nested_test("()") do
                             test_legend(graph, "grid.border.categorical.legend1") do
@@ -2930,12 +3785,12 @@ nested_test("renderers") do
                 end
 
                 nested_test("log") do
-                    graph.configuration.borders.color_scale.log_regularization = 0.0
+                    graph.configuration.borders.colors_configuration.color_axis.log_scale = Log10Scale
                     @test_throws "log of non-positive data.borders_colors[2,3]: -6.0" graph.figure
                 end
 
                 nested_test("legend") do
-                    graph.configuration.borders.show_color_scale = true
+                    graph.configuration.borders.colors_configuration.show_legend = true
 
                     nested_test("()") do
                         test_legend(graph, "grid.border.continuous") do
@@ -2945,7 +3800,7 @@ nested_test("renderers") do
                     end
 
                     nested_test("legend") do
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.show_legend = true
 
                         nested_test("()") do
                             test_legend(graph, "grid.border.continuous.legend") do
@@ -2964,8 +3819,9 @@ nested_test("renderers") do
 
                     nested_test("legend1") do
                         graph.data.points_colors = ["A" "B" "C"; "C" "B" "A"]
-                        graph.configuration.points.color_palette = [("A", "red"), ("B", "green"), ("C", "blue")]
-                        graph.configuration.points.show_color_scale = true
+                        graph.configuration.points.colors_configuration.colors_palette =
+                            ["A" => "red", "B" => "green", "C" => "blue"]
+                        graph.configuration.points.colors_configuration.show_legend = true
 
                         nested_test("()") do
                             test_legend(graph, "grid.border.continuous.legend1") do
@@ -3014,15 +3870,35 @@ nested_test("renderers") do
 
         nested_test("hovers") do
             graph.data.entries_hovers = ["A" "B" "C"; "D" "E" "F"]
-            test_html(graph, "heatmap.hovers.html")
-            return nothing
+
+            nested_test("()") do
+                test_html(graph, "heatmap.hovers.html")
+                return nothing
+            end
+
+            nested_test("reorder") do
+                graph.data.rows_order = [2, 1]
+                graph.data.columns_order = [3, 2, 1]
+                test_html(graph, "heatmap.hovers.reorder.html")
+                return nothing
+            end
         end
 
         nested_test("ticks") do
             graph.data.rows_names = ["Foo", "Bar"]
             graph.data.columns_names = ["Baz", "Vaz", "Faz"]
-            test_html(graph, "heatmap.ticks.html")
-            return nothing
+
+            nested_test("()") do
+                test_html(graph, "heatmap.ticks.html")
+                return nothing
+            end
+
+            nested_test("reorder") do
+                graph.data.rows_order = [2, 1]
+                graph.data.columns_order = [3, 2, 1]
+                test_html(graph, "heatmap.ticks.reorder.html")
+                return nothing
+            end
         end
 
         nested_test("!ticks") do
@@ -3032,7 +3908,7 @@ nested_test("renderers") do
         end
 
         nested_test("legend") do
-            graph.configuration.entries.show_color_scale = true
+            graph.configuration.entries.show_legend = true
 
             test_legend(graph, "heatmap") do
                 graph.data.entries_colors_title = "Entries"
@@ -3049,54 +3925,115 @@ nested_test("renderers") do
         end
 
         nested_test("annotations") do
-            graph.data.rows_annotations =
-                [AnnotationsData(; values = [1, 2], hovers = ["A", "B"], title = "Bar", name = "Foo")]
-            graph.data.columns_annotations = [AnnotationsData(; values = [3, 2, 1], hovers = ["X", "Y", "Z"])]
-            graph.configuration.annotations["Foo"] = AnnotationsConfiguration(; color_palette = "Viridis")
+            graph.data.rows_annotations = [
+                AnnotationData(;
+                    values = [1, 2],
+                    hovers = ["A", "B"],
+                    title = "Bar",
+                    colors_configuration = ColorsConfiguration(; colors_palette = "Viridis"),
+                ),
+            ]
+            graph.data.columns_annotations = [AnnotationData(; values = [3, 2, 1], hovers = ["X", "Y", "Z"])]
+            graph.data.figure_title = "Graph"
 
             nested_test("()") do
-                graph.data.figure_title = "Graph"
                 test_html(graph, "heatmap.annotations.html")
                 return nothing
             end
 
+            nested_test("~rows_order") do
+                graph.data.rows_order = [3, 2, 1]
+                @test_throws dedent("""
+                    the data.rows_order size: 3
+                    is different from the number of rows: 2
+                """) graph.figure
+                return nothing
+            end
+
+            nested_test("~columns_order") do
+                graph.data.columns_order = [2, 1]
+                @test_throws dedent("""
+                    the data.columns_order size: 2
+                    is different from the number of columns: 3
+                """) graph.figure
+                return nothing
+            end
+
+            nested_test("reorder") do
+                graph.data.rows_order = [2, 1]
+                graph.data.columns_order = [3, 2, 1]
+                test_html(graph, "heatmap.annotations.reorder.html")
+                return nothing
+            end
+
+            nested_test("categorical") do
+                graph.data.rows_annotations = [
+                    AnnotationData(;
+                        values = ["Foo", "Bar"],
+                        colors_configuration = ColorsConfiguration(;
+                            colors_palette = [("Foo", "red"), ("Bar", "green"), ("Baz", "blue")],
+                        ),
+                    ),
+                ]
+                test_html(graph, "heatmap.annotations.categorical.html")
+                return nothing
+            end
+
+            nested_test("colors") do
+                graph.data.rows_annotations = [AnnotationData(; values = ["red", "green"])]
+                test_html(graph, "heatmap.annotations.colors.html")
+                return nothing
+            end
+
+            nested_test("size") do
+                graph.configuration.rows_annotations_size = 0.2
+                graph.configuration.columns_annotations_size = 0.1
+                test_html(graph, "heatmap.annotations.size.html")
+                return nothing
+            end
+
+            nested_test("~rows_size") do
+                graph.configuration.rows_annotations_size = -0.1
+                @test_throws "negative rows_annotations_size: -0.1" graph.figure
+                return nothing
+            end
+
+            nested_test("~columns_size") do
+                graph.configuration.columns_annotations_size = -0.1
+                @test_throws "negative columns_annotations_size: -0.1" graph.figure
+                return nothing
+            end
+
             nested_test("~gap") do
-                graph.data.figure_title = "Graph"
                 graph.configuration.annotations_gap = -0.1
                 @test_throws "negative annotations_gap: -0.1" graph.figure
                 return nothing
             end
 
             nested_test("!gap") do
-                graph.data.figure_title = "Graph"
                 graph.configuration.annotations_gap = 0
                 test_html(graph, "heatmap.annotations.!gap.html")
                 return nothing
             end
 
             nested_test("!values") do
-                graph.data.columns_annotations = [AnnotationsData(; values = [2, 1])]
+                graph.data.columns_annotations = [AnnotationData(; values = [2, 1])]
                 @test_throws dedent("""
                     the data.columns_annotations[1].values size: 2
-                    is different from the number of columns of the data.entries_colors: 3
+                    is different from the number of columns: 3
                 """) graph.figure
             end
 
             nested_test("!hovers") do
-                graph.data.columns_annotations = [AnnotationsData(; values = [3, 2, 1], hovers = ["X", "Y"])]
+                graph.data.rows_annotations = [AnnotationData(; values = [2, 1], hovers = ["X", "Y", "Z"])]
                 @test_throws dedent("""
-                    the data.columns_annotations[1].hovers size: 2
-                    is different from the number of columns of the data.entries_colors: 3
-                """) graph.figure
-            end
-
-            nested_test("!name") do
-                graph.data.columns_annotations = [AnnotationsData(; values = [3, 2, 1], name = "Bar")]
-                @test_throws dedent("""
-                    the data.columns_annotations[1].name: Bar
-                    does not exist in the configuration.annotations
+                    the data.rows_annotations[1].hovers size: 3
+                    is different from the number of rows: 2
                 """) graph.figure
             end
         end
     end
 end
+
+# TODOX Ramat Hasharon 03-760-9260
+# TODOX Savyon - 03-758-9999

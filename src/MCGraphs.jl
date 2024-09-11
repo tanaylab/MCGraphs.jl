@@ -20,6 +20,8 @@ include("validations.jl")
 include("renderers.jl")
 @reexport using .Renderers
 
+include("shorthands.jl")
+
 include("extractors.jl")
 @reexport using .Extractors
 
